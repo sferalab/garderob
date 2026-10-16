@@ -19,11 +19,11 @@ function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    layout: 'straight', metal: 'white', wall: '#e8d3bd', floor: 'oak', preset: 'warm', view: 'all', card: null, postH: 1920, railTop: 210, dims: true, dm: { h: true, v: true, c: false },
+    layout: 'straight', metal: 'white', wall: '#e8d3bd', floor: 'oak', preset: 'warm', view: 'all', decor: true, card: null, postH: 1920, railTop: 210, dims: true, dm: { h: true, v: true, c: false },
     walls: [
       { gap: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), it('basket', 40, 75, 85), it('pull', 40, 50, 181)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('rail', 30, 100)])] },
-      { gap: 45, sections: [sec(60, [it('metal', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('ldsp', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)])] },
-      { gap: 45, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 180)]), sec(60, [it('mesh', 40, 192), it('mesh', 40, 140), it('mesh', 40, 90), it('shoe', 40, 30)])] }
+      { gap: 50, sections: [sec(60, [it('metal', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('ldsp', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)])] },
+      { gap: 50, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 180)]), sec(60, [it('mesh', 40, 192), it('mesh', 40, 140), it('mesh', 40, 90), it('shoe', 40, 30)])] }
     ]
   };
 }
@@ -175,9 +175,10 @@ function buildItem(g, item, x0, x1) {
   }
 }
 
+function effGap(wi) { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.max(S.walls[wi].gap, Math.ceil(d + 9)); }
 function placeWall(g, wi, backW) {
   if (wi === 0) return;
-  const gap = S.walls[wi].gap * 10 * MM;
+  const gap = effGap(wi) * 10 * MM;
   if (wi === 1) { g.rotation.y = -Math.PI / 2; g.scale.z = -1; g.position.set(-0.02, 0, gap); }
   if (wi === 2) { g.rotation.y = Math.PI / 2; g.scale.x = -1; g.scale.z = -1; g.position.set(backW + 0.02, 0, gap); }
 }
@@ -194,6 +195,50 @@ function buildRoom(backW) {
   const base = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
   room.add(box(right - left, 0.06, 0.012, (left + right) / 2, 0.03, 0.006, base));
   if (!catcher) { catcher = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.25 })); catcher.rotation.x = -Math.PI / 2; catcher.receiveShadow = true; model.add(catcher); }
+}
+
+// ---------- decor ----------
+const decor = new THREE.Group(); scene.add(decor);
+function juteTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d'); g.fillStyle = '#c9ad84'; g.fillRect(0, 0, 512, 512);
+  for (let y = 0; y < 512; y += 8) for (let x = 0; x < 512; x += 8) { const l = 150 + Math.random() * 60; g.fillStyle = `rgba(${l + 40},${l + 15},${l - 30},0.9)`; if (((x + y) / 8) % 2) g.fillRect(x, y, 8, 5); else g.fillRect(x, y, 5, 8); }
+  g.strokeStyle = 'rgba(90,70,40,0.5)'; g.lineWidth = 6; g.strokeRect(14, 14, 484, 484);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 2); return t;
+}
+function buildDecor() {
+  decor.clear(); decor.visible = !!S.decor && !photo; if (!S.decor) return;
+  const corner = S.layout !== 'straight', Wb = wallWidth(0) * MM;
+  const sideLen = corner ? (effGap(1) + wallWidth(1) / 10) / 100 : 0;
+  const px = corner ? 0.2 : -0.45, pz = corner ? sideLen + 0.5 : 0.4;
+  // pot
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.3, 32), new THREE.MeshStandardMaterial({ color: 0xe9e1d4, roughness: 0.75 }));
+  pot.position.set(px, 0.15, pz); pot.castShadow = pot.receiveShadow = true; decor.add(pot);
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.01, 24), new THREE.MeshStandardMaterial({ color: 0x4a3a2a })); soil.position.set(px, 0.29, pz); decor.add(soil);
+  // olive branches
+  const stemM = new THREE.MeshStandardMaterial({ color: 0x5a4a38, roughness: 0.9 }), leafM = new THREE.MeshStandardMaterial({ color: 0x6f7d4e, roughness: 0.65, side: THREE.DoubleSide });
+  const leafG = new THREE.SphereGeometry(1, 8, 4); leafG.scale(0.035, 0.008, 0.011);
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const stems = [], leaves = [];
+  for (let b = 0; b < 7; b++) {
+    let p = V(px + (rnd() - 0.5) * 0.06, 0.29, pz + (rnd() - 0.5) * 0.06); const d = V((rnd() - 0.5) * 0.6, 1, (rnd() - 0.5) * 0.6).normalize();
+    const n = 9 + Math.floor(rnd() * 5);
+    for (let k = 0; k < n; k++) { const q = p.clone().addScaledVector(d, 0.058); stems.push([p, q, 0.006 - k * 0.0003]); d.x += (rnd() - 0.5) * 0.25; d.z += (rnd() - 0.5) * 0.25; d.normalize();
+      if (k > 1) for (let l = 0; l < 3; l++) leaves.push([q.clone(), rnd() * 6.28, rnd() * 6.28]); p = q; }
+  }
+  decor.add(rods(stems, stemM));
+  const im = new THREE.InstancedMesh(leafG, leafM, leaves.length), m4 = new THREE.Matrix4(), e = new THREE.Euler();
+  leaves.forEach(([p, a, b], i) => { e.set(b * 0.3, a, 0.6 + b * 0.2); m4.makeRotationFromEuler(e); m4.setPosition(p.x + Math.cos(a) * 0.03, p.y, p.z + Math.sin(a) * 0.03); im.setMatrixAt(i, m4); });
+  im.castShadow = true; decor.add(im);
+  // rug
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.0), new THREE.MeshStandardMaterial({ map: juteTex(), roughness: 1 }));
+  rug.rotation.x = -Math.PI / 2; rug.position.set(corner ? 0.95 : Wb * 0.25, 0.004, corner ? sideLen + 0.55 : 1.3); rug.rotation.z = 0.08; rug.receiveShadow = true; decor.add(rug);
+  // sheer curtain
+  const cg = new THREE.PlaneGeometry(0.9, 2.7, 60, 1), pa = cg.attributes.position;
+  for (let i = 0; i < pa.count; i++) pa.setZ(i, Math.sin(pa.getX(i) * 38) * 0.03);
+  cg.computeVertexNormals();
+  const cur = new THREE.Mesh(cg, new THREE.MeshStandardMaterial({ color: 0xfff8ee, roughness: 0.9, transparent: true, opacity: 0.55, side: THREE.DoubleSide }));
+  if (corner) { cur.rotation.y = Math.PI / 2; cur.position.set(0.02, 1.38, sideLen + 1.25); } else { cur.position.set(-0.9, 1.38, 0.08); }
+  decor.add(cur);
 }
 
 // ---------- dimensions ----------
@@ -266,6 +311,7 @@ function rebuild() {
     labels.forEach(([p, t]) => { const sp = labelSprite(t, true); sp.position.copy(dg.localToWorld(p.clone())); sp.userData.parentWall = g; dimsG.add(sp); });
   });
   model.traverse(o => { if (o.isMesh && o !== catcher && !o.userData.dims) { const f = !!o.userData.frame; o.visible = S.view === 'all' || (S.view === 'frame' ? f : !f); } });
+  buildDecor();
   applyLights();
   applyModelXf();
   setDims(true);
@@ -288,6 +334,26 @@ function applyModelXf() {
 }
 
 // ---------- camera ----------
+function meshBox() { const b = new THREE.Box3(); model.traverse(o => { if (o.isMesh && o.visible && o !== catcher && !o.userData.dims) { let p = o.parent, ok = true; while (p) { if (p.visible === false) ok = false; p = p.parent; } if (ok) b.expandByObject(o); } }); return b.isEmpty() ? bbox.clone() : b; }
+function fitCard(aspect, topF, botF, sideF = 0.06) {
+  const b = meshBox(), c = b.getCenter(new THREE.Vector3());
+  const corner = S.layout !== 'straight', az = corner ? V(0.62, 0, 1).normalize() : V(0.32, 0, 1).normalize(), e = (corner ? 26 : 24) * Math.PI / 180;
+  const dir = V(az.x * Math.cos(e), Math.sin(e), az.z * Math.cos(e));
+  const cam = camera.clone(); cam.aspect = aspect; cam.fov = 46; cam.updateProjectionMatrix();
+  const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
+  const yTop = 1 - 2 * topF, yBot = -1 + 2 * botF, xm = 1 - 2 * sideF;
+  let tg = c.clone();
+  const ndc = d => { cam.position.copy(tg).addScaledVector(dir, d); cam.lookAt(tg); cam.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9; pts.forEach(p => { const q = p.clone().project(cam); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }); return [x0, x1, y0, y1]; };
+  let d = 3;
+  for (let it = 0; it < 5; it++) {
+    let lo = 0.5, hi = 40; for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2, [x0, x1, y0, y1] = ndc(m); if ((x1 - x0) <= 2 * xm && (y1 - y0) <= (yTop - yBot)) hi = m; else lo = m; } d = hi;
+    const [x0, x1, y0, y1] = ndc(d), up = V(0, 1, 0).applyQuaternion(cam.quaternion), rt = V(1, 0, 0).applyQuaternion(cam.quaternion);
+    const th = Math.tan(cam.fov * Math.PI / 360) * d, dy = ((y0 + y1) / 2 - (yTop + yBot) / 2) * th, dx = ((x0 + x1) / 2) * th * aspect;
+    tg.addScaledVector(up, dy).addScaledVector(rt, dx);
+  }
+  cam.position.copy(tg).addScaledVector(dir, d);
+  return { pos: cam.position.clone(), tg, fov: 46 };
+}
 function camTo(kind) {
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
   const dir = kind === 'front' ? V(0, 0.05, 1) : kind === 'iso' ? V(1, 0.45, 1.1) : V(0, 1, 0.35);
@@ -295,7 +361,8 @@ function camTo(kind) {
   const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
   const dist = Math.max(hgt / (2 * Math.tan(fov / 2)), span / (2 * Math.tan(fov / 2) * asp)) * 1.35 + sz.z * 0.5;
-  if (photo) { c.applyMatrix4(new THREE.Matrix4()); }
+  if (kind === 'card') { const f = fitCard(camera.aspect, 0.06, 0.06); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); controls.target.copy(f.tg); controls.update(); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); return; }
+  camera.fov = 35; camera.updateProjectionMatrix();
   camera.position.copy(c).addScaledVector(dir, dist); controls.target.copy(c); camera.up.set(0, 1, 0); controls.update();
   document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind));
 }
@@ -314,23 +381,31 @@ $('photoOff').onclick = () => { photo = null; photoImg = null; $('photoBg').styl
 ['mx', 'my', 'ms', 'mr'].forEach(id => $(id).oninput = applyModelXf);
 $('showRoom').onchange = () => { setBg(); rebuild(); };
 function goboTex() {
-  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
-  g.fillStyle = '#000'; g.fillRect(0, 0, 512, 512);
-  g.fillStyle = '#fff'; g.filter = 'blur(6px)';
-  [[60, 50, 180, 190], [272, 50, 180, 190], [60, 262, 180, 190], [272, 262, 180, 190]].forEach(([x, y, w, h]) => g.fillRect(x, y, w, h));
-  g.fillStyle = '#000'; g.filter = 'blur(10px)';
-  for (let i = 0; i < 26; i++) { const x = 20 + Math.random() * 200, y = 260 + Math.random() * 240; g.save(); g.translate(x, y); g.rotate(Math.random() * 3); g.beginPath(); g.ellipse(0, 0, 26, 9, 0, 0, 7); g.fill(); g.restore(); }
-  g.fillRect(110, 300, 6, 220);
+  const c = document.createElement('canvas'); c.width = c.height = 1024; const g = c.getContext('2d');
+  g.fillStyle = '#000'; g.fillRect(0, 0, 1024, 1024);
+  g.fillStyle = '#fff'; g.filter = 'blur(3px)';
+  const fx = 180, fy = 120, fw = 660, fh = 820, m = 22;
+  g.fillRect(fx, fy, fw, fh);
+  g.fillStyle = '#000'; g.fillRect(fx + fw / 2 - m / 2, fy, m, fh); g.fillRect(fx, fy + fh * 0.38, fw, m);
+  // leaves (olive branch silhouettes)
+  g.filter = 'blur(5px)';
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let br = 0; br < 5; br++) {
+    let x = 120 + rnd() * 380, y = 1000, a = -1.3 - rnd() * 0.5; g.strokeStyle = '#000'; g.lineWidth = 5;
+    for (let k = 0; k < 16; k++) { const nx = x + Math.cos(a) * 34, ny = y + Math.sin(a) * 34; g.beginPath(); g.moveTo(x, y); g.lineTo(nx, ny); g.stroke();
+      for (const sd of [-1, 1]) { g.save(); g.translate(nx, ny); g.rotate(a + sd * (0.7 + rnd() * 0.4)); g.beginPath(); g.ellipse(26, 0, 28, 7, 0, 0, 7); g.fill(); g.restore(); }
+      x = nx; y = ny; a += (rnd() - 0.5) * 0.35; }
+  }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 const gobo = new THREE.SpotLight(0xffd9a8, 0); gobo.map = goboTex(); gobo.castShadow = true; gobo.shadow.mapSize.set(1024, 1024); gobo.shadow.radius = 4;
-gobo.angle = 0.55; gobo.penumbra = 0.5; gobo.decay = 0; scene.add(gobo, gobo.target);
+gobo.angle = 0.62; gobo.penumbra = 0.15; gobo.shadow.bias = -0.0005; gobo.decay = 0; scene.add(gobo, gobo.target);
 function applyLights() {
   const c = bbox.getCenter(new THREE.Vector3()); const warm = S.preset === 'warm';
   if (warm) {
-    sun.color.set(0xffe2bb); sun.intensity = 1.2; sun.position.set(c.x - 3.5, 3.6, 3.2);
-    gobo.intensity = 6; gobo.position.set(c.x - 3.2, 2.6, 2.8); gobo.target.position.set(c.x + 0.6, 1.2, 0);
-    renderer.toneMappingExposure = 0.95; hemi.color.set(0xffe8cc); hemi.groundColor.set(0xd9b48a); hemi.intensity = 0.75; fill.color.set(0xffdcb4); fill.intensity = 0.5; fill.position.set(c.x + 3, 2.2, 4);
+    sun.color.set(0xffe4c0); sun.intensity = 0.9; sun.position.set(c.x - 1.6, 3.4, 4.2); sun.shadow.radius = 3;
+    gobo.color.set(0xffcf94); gobo.intensity = 9; gobo.position.set(c.x - 1.4, 3.3, 3.0); gobo.target.position.set(c.x + 0.4, 1.5, 0);
+    renderer.toneMappingExposure = 1.0; hemi.color.set(0xfff0dd); hemi.groundColor.set(0xe8c49c); hemi.intensity = 1.0; fill.color.set(0xffe2c2); fill.intensity = 0.45; fill.position.set(c.x + 3, 2.2, 4);
   } else { sun.color.set(0xffffff); sun.intensity = 1.6; gobo.intensity = 0; renderer.toneMappingExposure = 1.0; hemi.color.set(0xffffff); hemi.groundColor.set(0xd8cfc2); hemi.intensity = 0.6; fill.color.set(0xfff4e6); fill.intensity = 0.35; fill.position.set(-3, 2, 4); }
 }
 function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(0xe9e6e0); }
@@ -361,12 +436,7 @@ function makeCard() {
   const sv = { pos: camera.position.clone(), tg: controls.target.clone(), pr: renderer.getPixelRatio() };
   const dimsWas = dimsG.visible; if (!C.dims) setDims(false);
   renderer.setPixelRatio(2); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix();
-  // fit model into the free area between texts
-  const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
-  const dir = (lastCam === 'front' ? V(0, 0.05, 1) : V(0.9, 0.18, 1)).normalize(), fov = camera.fov * Math.PI / 180;
-  const free = (CH - top - bot) / CH, span = Math.max(sz.x, sz.z) * 1.05, dist = Math.max(sz.y / (2 * Math.tan(fov / 2) * free), span / (2 * Math.tan(fov / 2) * camera.aspect * 0.92)) * 1.08 + sz.z * 0.3;
-  const shiftY = ((top - bot) / 2 / CH) * 2 * Math.tan(fov / 2) * dist;
-  const tg = c.clone().add(V(0, shiftY, 0)); camera.position.copy(tg).addScaledVector(dir, dist); camera.lookAt(tg);
+  const sfov = camera.fov; const f = fitCard(CW / CH, top / CH, bot / CH, 0.05); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); camera.lookAt(f.tg); camera.updateMatrixWorld();
   renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   g.drawImage(renderer.domElement, 0, 0, CW, CH);
@@ -392,7 +462,7 @@ function makeCard() {
     g.textAlign = 'left'; g.font = `400 25px ${serif}`; lines.forEach((t, i) => g.fillText(t, px + 32, py + 112 + i * 40));
   }
   // restore
-  renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); controls.target.copy(sv.tg); controls.update(); if (dimsWas) setDims(true);
+  renderer.setPixelRatio(sv.pr); resize(); camera.fov = sfov; camera.updateProjectionMatrix(); camera.position.copy(sv.pos); controls.target.copy(sv.tg); controls.update(); if (dimsWas) setDims(true);
   return out;
 }
 
@@ -427,7 +497,7 @@ function overall() {
   const W = Math.round(wallWidth(0) / 10 + 2.5);
   let maxD = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => maxD = Math.max(maxD, o.d)));
   let D = maxD + 5;
-  if (S.layout !== 'straight') { const w = [1, 2].filter(i => wallsActive().includes(i)).map(i => S.walls[i].gap + wallWidth(i) / 10 + 2.5); D = Math.round(Math.max(D, ...w)); }
+  if (S.layout !== 'straight') { const w = [1, 2].filter(i => wallsActive().includes(i)).map(i => effGap(i) + wallWidth(i) / 10 + 2.5); D = Math.round(Math.max(D, ...w)); }
   return `${W} × ${D} × ${S.railTop} см`;
 }
 function summary() {
@@ -445,7 +515,7 @@ function fillGeneral() {
     const l = document.createElement('label'); l.innerHTML = 'Тип гардеробной<select id="layout">' + Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('') + '</select>';
     $('metal').parentNode.before(l); $('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); camTo(S.layout === 'straight' ? 'front' : 'iso'); };
   }
-  $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('preset').value = S.preset || 'none';
+  $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('preset').value = S.preset || 'none';
 }
 $('metal').onchange = e => { S.metal = e.target.value; rebuild(); };
 $('wall').oninput = e => { S.wall = e.target.value; rebuild(); };
@@ -513,6 +583,7 @@ $('resetBtn').onclick = () => { if (!confirm('Сбросить все настр
 $('cardBtn').onclick = () => { const o = makeCard(); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
 $('cAuto').onclick = () => { S.card.size = overall(); S.card.panel = specData().cardLines.join('\n'); cardUI(); cardRead(); };
 ['cTitle', 'cTOn', 'cSize', 'cSOn', 'cPanel', 'cPOn', 'cPos', 'cNote', 'cNOn', 'cDims'].forEach(id => $(id).onchange = cardRead);
+$('decor').onchange = e => { S.decor = e.target.checked; rebuild(); };
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#e8d3bd'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); camTo(S.layout === 'straight' ? 'front' : 'iso');

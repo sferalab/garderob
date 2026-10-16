@@ -6,7 +6,7 @@
 <div id="app">
 <div id="viewWrap"><div id="photoBg"></div><div id="view"></div>
 <div class="tools">
-<button data-cam="front">Прямо</button><button data-cam="iso">45°</button><button data-cam="top">Сверху</button>
+<button data-cam="front">Прямо</button><button data-cam="iso">45°</button><button data-cam="top">Сверху</button><button data-cam="card">Карточка</button>
 <button id="dH">Горизонтальные</button><button id="dV">Вертикальные</button><button id="dC">Между полками</button><button id="dAll">Все вкл</button><button id="dNone">Все выкл</button><button id="pngBtn" class="acc">Скачать картинку</button>
 </div>
 <div id="hint">Вращайте пальцем или мышью, колесико или щипок для масштаба</div>
@@ -14,6 +14,7 @@
 <div id="panel">
 <div class="grp"><h3>Общие настройки</h3>
 <label>Интерьер<select id="preset"><option value="warm">Теплая солнечная</option><option value="none">Нейтральная студия</option></select></label>
+<label class="chk"><input type="checkbox" id="decor"> Декор (растение, ковер, штора)</label>
 <label>Показывать<select id="viewMode"><option value="all">Все</option><option value="frame">Только каркас</option><option value="fill">Только наполнение</option></select></label>
 <label>Цвет металла<select id="metal"><option value="white">Белый (RAL 9016)</option><option value="black">Черный (RAL 9005)</option><option value="graphite">Графит</option></select></label>
 <div class="row2"><label>Цвет стены<input type="color" id="wall"></label><label>Пол<select id="floor"><option value="oak">Ламинат дуб</option><option value="walnut">Доска состаренная</option><option value="parquet">Паркет елочкой</option><option value="tile">Мрамор</option><option value="concrete">Бетон</option></select></label></div>
