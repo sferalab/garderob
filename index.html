@@ -4,57 +4,60 @@
 <link rel="stylesheet" href="style.css">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head><body>
+<div id="topbar"><button id="undoBtn" title="Ctrl+Z"><i>↶</i><span>Отменить</span></button><button id="redoBtn" title="Ctrl+Y"><i>↷</i><span>Повторить</span></button><button id="saveBtn"><i>💾</i><span>Сохранить</span></button><button id="loadBtn"><i>📂</i><span>Загрузить</span></button><button id="shareBtn"><i>🔗</i><span>Ссылка</span></button><button id="tplBtn"><i>★</i><span>Шаблоны</span></button><button id="resetBtn" class="danger"><i>⟲</i><span>Сброс</span></button>
+<div id="tplPop" class="hide"><div class="btns"><button id="tplSave" class="acc">Сохранить как шаблон</button></div><div id="myTpl" class="sum"></div></div></div>
+<div id="msg"></div>
 <div id="app">
 <div id="viewWrap"><div id="photoBg"></div><div id="view"></div>
 <div class="tools"><button id="menuT">☰ Вид и размеры</button>
 <button data-cam="front">Спереди</button><button data-cam="iso">3D</button><button data-cam="top">Сверху</button><button data-cam="card">Карточка</button>
-<button id="dT">Общая длина</button><button id="dS">Секции</button><button id="dV">Вертикальные</button><button id="dC">Между полками</button><button id="dAll">Все вкл</button><button id="dNone">Все выкл</button><button id="pngBtn" class="acc">Красивый снимок</button>
+<button id="dT">Общая длина</button><button id="dS">Секции</button><button id="dV">Вертикальные</button><button id="dC">Между полками</button><button id="dAll">Все вкл</button><button id="dNone">Все выкл</button><button id="pngBtn" class="acc">Красивый снимок</button><button id="wbBtn" class="acc">Снимок WB 3:4</button>
 </div>
 <div id="hint">Мышь: левая кнопка — поворот и высота, правая — сдвиг, колесо — масштаб. Палец: поворот, двумя — сдвиг и масштаб. Потяните полку, чтобы поднять или опустить</div>
 <div id="dragTip" class="hide"></div>
 </div>
 <div id="panel">
 <div class="grp"><h3>1. Размеры</h3>
-<label>С чего начать</label><div class="chips"><button data-start="p3">Стандарт прямая</button><button data-start="l23">Стандарт угловая</button><button data-start="zero">С нуля</button></div>
-<div class="btns"><button id="tplSave">Сохранить как шаблон</button></div>
-<details id="myTplBox"><summary>Мои шаблоны</summary><div id="myTpl" class="sum"></div></details>
+<div class="szlab">С чего начать</div><div class="chips"><button data-start="l23">Стандарт угловая</button><button data-start="p3">Стандарт прямая</button><button data-start="zero">С нуля</button></div>
 <label>Тип гардеробной<select id="layout"></select></label>
-<div class="dim3">
-<div><label>Ширина, см<input type="number" id="fW" min="40" max="720" step="1"></label><input type="range" id="rW" min="40" max="720" step="1"></div>
-<div><label>Высота, см<input type="number" id="fH" min="50" max="300" step="1"></label><input type="range" id="rH" min="50" max="300" step="1"></div>
-<div><label>Глубина, см<input type="number" id="fD" min="30" max="50" step="10"></label><input type="range" id="rD" min="30" max="50" step="10"></div>
+<div class="szlab">Ширина стены, см <span class="foot" id="szWnote"></span></div><div class="sz" id="szW"></div>
+<div class="own hide" id="ownW"><input type="range" id="rW" min="40" max="720" step="1"><input type="number" id="fW" min="40" max="720" step="1"></div>
+<div class="szlab">Количество секций</div><div class="sz" id="szN"></div>
+<div class="szlab">Ширина секций, см <span class="foot">(полки 463 / 603 / 903 / 1203 мм)</span></div><div class="sz" id="szS"></div>
+<div class="own hide" id="ownS"><input type="range" id="rS" min="20" max="200" step="1"><input type="number" id="fS" min="20" max="200" step="1"></div>
+<div class="szlab">Высота стоек, см</div><div class="sz" id="szH"></div>
+<div class="own hide" id="ownH"><input type="range" id="rH" min="50" max="300" step="1"><input type="number" id="fH" min="50" max="300" step="1"></div>
+<div class="szlab">Глубина, см</div><div class="sz" id="szD"></div>
+<div class="szlab">Показывать</div><div class="sz" id="szV"></div>
+<div class="szlab">Фон студии</div><div class="sw" id="bgSw"></div>
+<div class="hide"><input id="nSec" type="number"><select id="allW"><option value="">—</option></select><select id="setTpl"><option value=""></option></select><select id="postH"><option>512</option><option>1025</option><option>1156</option><option>1536</option><option>1920</option><option>2304</option><option value="custom">custom</option></select><input type="number" id="postHc"><input type="number" id="railTop"><select id="viewMode"><option value="all">Все</option><option value="frame">frame</option><option value="fill">fill</option></select><input type="number" id="fD"><input type="range" id="rD" min="30" max="50" step="10"><select id="bStyle"><option value="mesh">mesh</option><option value="plastic">plastic</option></select></div>
 </div>
-<p class="foot">Ширина делится поровну между секциями текущей стены. Высота — длина стоек. Глубина применяется ко всем элементам.</p>
-<div class="row2"><label>Количество секций (1–6)<input type="number" id="nSec" min="1" max="6" step="1"></label><label>Ширина всех секций, см<select id="allW"><option value="">—</option><option>45</option><option>60</option><option>90</option><option>120</option></select></label></div>
-<label>Поднять по стене (низ стоек от пола): <b id="liftV"></b> см<input type="range" id="lift" min="0" max="150" step="1"></label>
+<div class="grp"><h3>2. Секции и наполнение</h3><div id="secTabs"></div><div id="secEdit"></div>
+<p class="foot">Стойки и верхняя направляющая ставятся автоматически. Нажмите на секцию в 3D, чтобы открыть ее наполнение.</p></div>
+<div class="grp"><h3>Положение</h3>
+<label>Поднять секции от пола (низ стоек): <b id="liftV"></b> см<input type="range" id="lift" min="0" max="150" step="1"></label>
 <div class="row2"><label class="chk"><input type="checkbox" id="ceilT"> Потолок</label><label>Высота потолка: <b id="ceilV"></b> см<input type="range" id="ceilH" min="220" max="350" step="1"></label></div>
-<label>Шаблон всего набора<select id="setTpl"><option value="">Выбрать…</option><option value="p2">Прямая 2 секции</option><option value="p3">Прямая 3 секции</option><option value="p6">Прямая 6 секций</option><option value="l23">Угловая 2+3</option><option value="zero">С нуля</option></select></label>
-<details><summary>Дополнительно</summary>
-<div class="row2"><label>Высота стоек, мм<select id="postH"><option>512</option><option>1025</option><option>1156</option><option>1536</option><option>1920</option><option>2304</option><option value="custom">свое значение</option></select></label><label>Свое, мм<input type="number" id="postHc" min="300" max="3000" step="1"></label></div>
-<label>Верх рельса от пола, см<input type="number" id="railTop" min="60" max="350" step="1"></label>
-</details>
+<div id="posGap"></div>
+<div class="btns"><button id="mirrorBtn">⇄ Отзеркалить</button></div>
 </div>
-<div class="grp"><h3>2. Секции и наполнение</h3><div class="btns"><button id="mirrorBtn" class="acc">⇄ Отзеркалить</button></div><div id="secTabs" class="tabs"></div><div id="secEdit"></div>
-<p class="foot">Стойки и верхняя направляющая ставятся автоматически.</p></div>
-<div class="grp" id="viewGrp"><h3>3. Вид и декор</h3><div id="toolsDock"></div>
-<label>Показывать<select id="viewMode"><option value="all">Все</option><option value="frame">Только каркас</option><option value="fill">Только наполнение</option></select></label>
+<div class="grp" id="viewGrp"><h3>3. Вид и декор</h3><div id="toolsDock"></div><div class="szlab">Цвет размеров</div><div class="sz" id="dimColBtns"><button data-dc="#ffffff">Белый</button><button data-dc="#1e1e1e">Черный</button><input type="color" id="dimCol" title="Свой цвет"><button id="dimEye">Пипетка</button></div>
 <label>Интерьер<select id="preset"><option value="warm">Теплая солнечная</option><option value="none">Нейтральная студия</option></select></label>
-<label>Корзины по умолчанию<select id="bStyle"><option value="mesh">Сетчатые</option><option value="plastic">Перфорированные</option></select></label>
 <div class="row2"><label>Цвет металла<select id="metal"><option value="white">Белый (RAL 9016)</option><option value="black">Черный (RAL 9005)</option><option value="silver">Серебристый (RAL 9006)</option><option value="graphite">Графит</option></select></label><label>Цвет штанги<select id="rodC"><option value="chrome">Хром</option><option value="white">Белая</option><option value="black">Черная</option></select></label></div>
-<div class="row2"><label>Цвет стен<input type="color" id="wall"><div class="sw" id="swatches"></div><button class="mini" id="eyeBtn" type="button">Пипетка</button><select id="wallTone"><option value="">Готовые тона…</option><option value="#ecdcc8">Светло-бежевый (как на карточке)</option><option value="#e8d3bd">Теплый бежевый</option><option value="#f2efe9">Молочный</option><option value="#dcd9d3">Светло-серый</option></select></label><label>Пол<select id="floor"><option value="oak">Дуб</option><option value="lam">Светлый ламинат</option><option value="tile">Плитка</option><option value="carpet">Ковролин</option></select></label></div>
+<label>Пол<select id="floor"><option value="oak">Дуб</option><option value="lam">Светлый ламинат</option><option value="tile">Плитка</option><option value="carpet">Ковролин</option></select></label>
 <label>Отделка стен<select id="wallFin"><option value="paint">Краска</option><option value="plaster">Штукатурка</option><option value="paper">Обои</option></select></label>
-<div class="soon"><b>Свет и тени - скоро</b><br><span class="foot">Здесь появится свет от окна и настройка теней.</span></div>
 <label class="chk"><input type="checkbox" id="decor"> Декор (ковер, штора)</label>
 <label class="chk"><input type="checkbox" id="sunT"> Солнце и тени от окна</label>
-<div class="row2"><label class="chk"><input type="checkbox" id="skirtT"> Плинтус</label><label>Цвет плинтуса<input type="color" id="skirtC"></label></div>
-<label class="chk"><input type="checkbox" id="lampT"> Точечные светильники в потолке</label>
 <label>Мягкий блик от окна<select id="glowS"><option value="none">Нет</option><option value="left">Слева</option><option value="right">Справа</option></select></label>
-<label class="chk"><input type="checkbox" id="shOnT"> Тень от гардеробной</label>
-<label>Угол тени: <b id="shAngV"></b><input type="range" id="shAng" min="-70" max="70" step="1"></label>
+<div class="sub"><h4>Стены, плинтус, свет</h4><label>Цвет стен<input type="color" id="wall"><div class="sw" id="swatches"></div><button class="mini" id="eyeBtn" type="button">Пипетка</button><select id="wallTone"><option value="">Готовые тона…</option><option value="#ecdcc8">Светло-бежевый (как на карточке)</option><option value="#e8d3bd">Теплый бежевый</option><option value="#f2efe9">Молочный</option><option value="#dcd9d3">Светло-серый</option></select></label>
+<div class="row2"><label class="chk"><input type="checkbox" id="skirtT"> Плинтус</label><label>Цвет плинтуса<input type="color" id="skirtC"></label></div>
+<label class="chk"><input type="checkbox" id="lampT"> Точечные светильники в потолке</label></div>
+<div class="sub"><h4>Тень от гардеробной</h4><label class="chk"><input type="checkbox" id="shOnT"> Показывать тень</label>
+<label>Направление: <b id="shAngV"></b><input type="range" id="shAng" min="-70" max="70" step="1"></label>
+<label>Расстояние: <b id="shDistV"></b><input type="range" id="shDist" min="0" max="1" step="0.05"></label>
 <label>Размытие: <b id="shBlurV"></b><input type="range" id="shBlur" min="1" max="20" step="1"></label>
-<label>Отдаление тени: <b id="shDistV"></b><input type="range" id="shDist" min="0" max="1" step="0.05"></label>
+<label>Сила: <b id="shadowV"></b><input type="range" id="shadow" min="0" max="1" step="0.05"></label></div>
+<div class="soon"><b>Свет из окна - скоро</b></div>
 <label>Блики: <b id="glareV"></b><input type="range" id="glare" min="0" max="1" step="0.05"></label>
-<label>Тени: <b id="shadowV"></b><input type="range" id="shadow" min="0" max="1" step="0.05"></label>
 <label>Угол между стенами: <b id="angV"></b><input type="range" id="angR" min="90" max="105" step="1"></label>
 <label>Расширить комнату (угол и стены), см: <b id="roomV"></b><input type="range" id="roomX" min="0" max="300" step="1"></label>
 </div>
@@ -88,10 +91,6 @@
 <label class="chk"><input type="checkbox" id="showRoom"> Показывать стену и пол</label>
 <button id="photoOff">Убрать фото</button></div>
 </div>
-<div class="grp"><h3>Сохранение</h3>
-<div class="btns"><button id="undoBtn" title="Ctrl+Z">↶ Отменить</button><button id="redoBtn" title="Ctrl+Y">↷ Повторить</button><button id="saveBtn">Сохранить</button><button id="loadBtn">Загрузить</button><button id="shareBtn">Ссылка на конфигурацию</button><button id="resetBtn" class="danger">Сбросить</button></div>
-<p class="foot">Картинка скачивается с теми размерами, которые сейчас включены.</p>
-<div id="msg" class="sum"></div></div>
 <p class="foot">Размеры элементов взяты из каталога ТИТАН GS 2024. Визуализация ориентировочная.</p>
 </div></div>
 <script type="module" src="app.js"></script>
