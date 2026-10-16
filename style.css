@@ -1,4 +1,4 @@
-*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f3f2ef;color:#222}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Manrope,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f3f2ef;color:#222}
 #app{display:flex;height:100%}#viewWrap{position:relative;flex:1;min-width:0;background:#ddd}
 #view,#photoBg{position:absolute;inset:0}#photoBg{background-size:cover;background-position:center}
 #view canvas{display:block;touch-action:none}

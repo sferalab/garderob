@@ -249,8 +249,8 @@ function buildDecor() {
 const LINE = new THREE.LineBasicMaterial({ color: 0x2a2a2a });
 function labelSprite(text, small) {
   const c = document.createElement('canvas'), g = c.getContext('2d'), fs = 44;
-  g.font = `500 ${fs}px -apple-system,Segoe UI,Roboto,Arial`; const w = Math.ceil(g.measureText(text).width) + 28;
-  c.width = w; c.height = 64; g.font = `500 ${fs}px -apple-system,Segoe UI,Roboto,Arial`;
+  g.font = `600 ${fs}px Manrope,Arial,sans-serif`; const w = Math.ceil(g.measureText(text).width) + 28;
+  c.width = w; c.height = 64; g.font = `600 ${fs}px Manrope,Arial,sans-serif`;
   g.fillStyle = 'rgba(255,255,255,0.95)'; g.beginPath(); g.roundRect(1, 6, w - 2, 52, 10); g.fill();
   g.fillStyle = '#222'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, 33);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
@@ -486,9 +486,10 @@ function cardDefaults() { return { title: 'Наполнение для карк�
 function cardUI() {
   if (!S.card) S.card = cardDefaults(); const C = S.card;
   if (!C.size) C.size = overall(); if (!C.panel) C.panel = specData().cardLines.join('\n');
-  $('cTitle').value = C.title; $('cTOn').checked = C.tOn; $('cSize').value = C.size; $('cSOn').checked = C.sOn; $('cPanel').value = C.panel; $('cPOn').checked = C.pOn; $('cPos').value = C.pos; $('cNote').value = C.note; $('cNOn').checked = C.nOn; $('cDims').checked = C.dims;
+  $('cTitle').value = C.title; $('cFont').value = C.font || 'manrope'; $('cTOn').checked = C.tOn; $('cSize').value = C.size; $('cSOn').checked = C.sOn; $('cPanel').value = C.panel; $('cPOn').checked = C.pOn; $('cPos').value = C.pos; $('cNote').value = C.note; $('cNOn').checked = C.nOn; $('cDims').checked = C.dims;
 }
-function cardRead() { const C = S.card; C.title = $('cTitle').value; C.tOn = $('cTOn').checked; C.size = $('cSize').value; C.sOn = $('cSOn').checked; C.panel = $('cPanel').value; C.pOn = $('cPOn').checked; C.pos = $('cPos').value; C.note = $('cNote').value; C.nOn = $('cNOn').checked; C.dims = $('cDims').checked; localStorage.setItem('gs_auto', JSON.stringify(S)); }
+function cardRead() { const C = S.card; C.font = $('cFont').value; C.title = $('cTitle').value; C.tOn = $('cTOn').checked; C.size = $('cSize').value; C.sOn = $('cSOn').checked; C.panel = $('cPanel').value; C.pOn = $('cPOn').checked; C.pos = $('cPos').value; C.note = $('cNote').value; C.nOn = $('cNOn').checked; C.dims = $('cDims').checked; localStorage.setItem('gs_auto', JSON.stringify(S)); }
+['Manrope', 'Montserrat', 'Inter', 'Playfair Display'].forEach(f => [500, 700, 800].forEach(w => document.fonts.load(`${w} 40px "${f}"`, 'Наполнение КАРКАС 0123')));
 function makeCard() {
   cardRead(); const C = S.card, CW = 900, CH = 1200, top = C.tOn || C.sOn ? 230 : 40, bot = C.nOn ? 190 : 40;
   const sv = { pos: camera.position.clone(), tg: controls.target.clone(), pr: renderer.getPixelRatio() };
@@ -514,14 +515,15 @@ function makeCard() {
   g.drawImage(renderer.domElement, 0, 0, CW, CH);
   // occupancy: projected boxes of visible meshes
   const rects = []; model.traverse(o => { if (o.isMesh && o.visible && o !== catcher && !o.userData.dims) { const b = new THREE.Box3().setFromObject(o); if (b.isEmpty()) return; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (let i = 0; i < 8; i++) { const p = V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).project(camera); const X = (p.x + 1) / 2 * CW, Y = (1 - p.y) / 2 * CH; x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); } rects.push([x0, y0, x1, y1]); } });
-  const serif = 'Georgia, "Times New Roman", "PT Serif", serif', ink = '#231c16';
+  const FF = { manrope: ['Manrope', 'Manrope'], montserrat: ['Montserrat', 'Montserrat'], inter: ['Inter', 'Inter'], playfair: ['Playfair Display', 'Manrope'] }[C.font || 'manrope'] || ['Manrope', 'Manrope'];
+  const TF = `"${FF[0]}", Arial, sans-serif`, serif = `"${FF[1]}", Arial, sans-serif`, ink = '#231c16';
   const rule = (y, x0, x1) => { g.strokeStyle = 'rgba(35,28,22,0.7)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); };
   g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillStyle = ink;
-  if (C.tOn) { let fs = 66; g.font = `500 ${fs}px ${serif}`; while (g.measureText(C.title).width > CW - 80 && fs > 30) { fs -= 2; g.font = `500 ${fs}px ${serif}`; } g.fillText(C.title, CW / 2, 112); }
-  if (C.sOn) { g.font = `400 40px ${serif}`; const w = g.measureText(C.size).width; g.fillText(C.size, CW / 2, 182); rule(170, CW / 2 - w / 2 - 110, CW / 2 - w / 2 - 25); rule(170, CW / 2 + w / 2 + 25, CW / 2 + w / 2 + 110); }
-  if (C.nOn) { const L = C.note.split('\n').filter(Boolean), last = L.pop() || ''; g.font = `400 32px ${serif}`; L.forEach((t, i) => g.fillText(t, CW / 2, CH - 118 + (i - L.length + 1) * 38)); g.font = `700 50px ${serif}`; const w = g.measureText(last).width; g.fillText(last, CW / 2, CH - 52); rule(CH - 68, CW / 2 - w / 2 - 140, CW / 2 - w / 2 - 25); rule(CH - 68, CW / 2 + w / 2 + 25, CW / 2 + w / 2 + 140); }
+  if (C.tOn) { let fs = 66; const tw = FF[0] === 'Playfair Display' ? 600 : 700; g.font = `${tw} ${fs}px ${TF}`; while (g.measureText(C.title).width > CW - 80 && fs > 30) { fs -= 2; g.font = `${tw} ${fs}px ${TF}`; } g.fillText(C.title, CW / 2, 112); }
+  if (C.sOn) { g.font = `500 38px ${serif}`; const w = g.measureText(C.size).width; g.fillText(C.size, CW / 2, 182); rule(170, CW / 2 - w / 2 - 110, CW / 2 - w / 2 - 25); rule(170, CW / 2 + w / 2 + 25, CW / 2 + w / 2 + 110); }
+  if (C.nOn) { const L = C.note.split('\n').filter(Boolean), last = L.pop() || ''; g.font = `400 32px ${serif}`; L.forEach((t, i) => g.fillText(t, CW / 2, CH - 118 + (i - L.length + 1) * 38)); g.font = `800 48px ${serif}`; g.letterSpacing = '2px'; const w = g.measureText(last).width; g.fillText(last, CW / 2, CH - 52); rule(CH - 68, CW / 2 - w / 2 - 140, CW / 2 - w / 2 - 25); rule(CH - 68, CW / 2 + w / 2 + 25, CW / 2 + w / 2 + 140); g.letterSpacing = '0px'; }
   if (C.pOn && C.panel.trim()) {
-    const lines = C.panel.split('\n').filter(Boolean); g.font = `400 25px ${serif}`;
+    const lines = C.panel.split('\n').filter(Boolean); g.font = `500 24px ${serif}`;
     const pw = Math.min(CW - 80, Math.max(330, ...lines.map(t => g.measureText(t).width + 64))), ph = 104 + lines.length * 40;
     const yT = top + 20, yB = CH - bot - ph - 20, yM = (top + CH - bot - ph) / 2;
     const cand = { tl: [40, yT], tr: [CW - pw - 40, yT], bl: [40, yB], br: [CW - pw - 40, yB], cr: [CW - pw - 40, yM] };
@@ -530,8 +532,8 @@ function makeCard() {
     const [px, py] = cand[key];
     g.save(); g.beginPath(); g.roundRect(px, py, pw, ph, 22); g.clip(); g.filter = 'blur(8px)'; g.drawImage(out, 0, 0); g.filter = 'none';
     g.fillStyle = 'rgba(255,247,238,0.62)'; g.fillRect(px, py, pw, ph); g.restore();
-    g.fillStyle = ink; g.font = `500 29px ${serif}`; g.textAlign = 'center'; g.fillText('КОМПЛЕКТАЦИЯ', px + pw / 2, py + 52); rule(py + 68, px + 40, px + pw - 40);
-    g.textAlign = 'left'; g.font = `400 25px ${serif}`; lines.forEach((t, i) => g.fillText(t, px + 32, py + 112 + i * 40));
+    g.fillStyle = ink; g.font = `700 26px ${serif}`; g.letterSpacing = '3px'; g.textAlign = 'center'; g.fillText('КОМПЛЕКТАЦИЯ', px + pw / 2, py + 52); g.letterSpacing = '0px'; rule(py + 68, px + 40, px + pw - 40);
+    g.textAlign = 'left'; g.font = `500 24px ${serif}`; lines.forEach((t, i) => g.fillText(t, px + 32, py + 112 + i * 40));
   }
   // restore
   renderer.setPixelRatio(sv.pr); resize(); camera.fov = sfov; camera.updateProjectionMatrix(); camera.position.copy(sv.pos); controls.target.copy(sv.tg); controls.update(); if (dimsWas) setDims(true);
@@ -658,12 +660,14 @@ $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = v; cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo(lastCam); msg('Конфигурация загружена'); };
 $('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = defaults(); cur = { w: 0, s: 0 }; fillGeneral(); cardUI(); rebuild(); renderSec(); camTo('front'); };
 
-$('cardBtn').onclick = () => { const o = makeCard(); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
+async function fontsFor(C) { const f = { montserrat: 'Montserrat', inter: 'Inter', playfair: 'Playfair Display' }[C.font] || 'Manrope'; await Promise.all([document.fonts.load(`700 60px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load('500 30px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load('800 48px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load(`800 48px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load(`500 30px "${f}"`, 'Наполнение КАРКАС 0123')]).catch(() => {}); }
+$('cardBtn').onclick = async () => { cardRead(); await fontsFor(S.card); const o = makeCard(); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
 $('cAuto').onclick = () => { S.card.size = overall(); S.card.panel = specData().cardLines.join('\n'); cardUI(); cardRead(); };
-['cTitle', 'cTOn', 'cSize', 'cSOn', 'cPanel', 'cPOn', 'cPos', 'cNote', 'cNOn', 'cDims'].forEach(id => $(id).onchange = cardRead);
+['cFont', 'cTitle', 'cTOn', 'cSize', 'cSOn', 'cPanel', 'cPOn', 'cPos', 'cNote', 'cNOn', 'cDims'].forEach(id => $(id).onchange = cardRead);
 $('decor').onchange = e => { S.decor = e.target.checked; rebuild(); };
 $('sunT').onchange = e => { S.sun = e.target.checked; rebuild(); };
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : S.layout === 'straight' ? 'front' : 'iso');
-const _x=0;window.__gs = { get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, camTo, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+const _x=0;window.__gs = { get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+document.fonts.ready.then(() => rebuild());
