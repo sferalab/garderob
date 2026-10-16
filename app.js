@@ -348,7 +348,7 @@ function fitCard(aspect, topF, botF, sideF = 0.06) {
   const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
   const yTop = 1 - 2 * topF, yBot = -1 + 2 * botF, xm = 1 - 2 * sideF;
   let tg = c.clone();
-  const ndc = d => { cam.position.copy(tg).addScaledVector(dir, d); cam.lookAt(tg); cam.updateMatrixWorld(); levelCam(cam, tg, 1); cam.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9; pts.forEach(p => { const q = p.clone().project(cam); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }); return [x0, x1, y0, y1]; };
+  const ndc = d => { cam.position.copy(tg).addScaledVector(dir, d); cam.lookAt(tg); cam.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9; pts.forEach(p => { const q = p.clone().project(cam); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }); return [x0, x1, y0, y1]; };
   let d = 3;
   for (let it = 0; it < 5; it++) {
     let lo = 0.5, hi = 40; for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2, [x0, x1, y0, y1] = ndc(m); if ((x1 - x0) <= 2 * xm && (y1 - y0) <= (yTop - yBot)) hi = m; else lo = m; } d = hi;
@@ -374,7 +374,7 @@ function levelCam(cam, tg, k) {
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
 }
 controls.addEventListener('start', () => { levelTarget = 0; level = 0; });
-controls.addEventListener('end', () => { levelTarget = 1; });
+
 function camTo(kind) {
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
   const dir = kind === 'front' ? V(0, 0, 1) : kind === 'iso' ? V(1, 0.25, 1.1) : V(0, 1, 0.35);
@@ -389,7 +389,7 @@ function camTo(kind) {
 }
 function resize() { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(view);
-renderer.setAnimationLoop(() => { controls.update(); level += (levelTarget - level) * 0.12; if (Math.abs(levelTarget - level) < 0.002) level = levelTarget; levelCam(camera, controls.target, level); renderer.render(scene, camera); });
+renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -460,7 +460,21 @@ function makeCard() {
   const sv = { pos: camera.position.clone(), tg: controls.target.clone(), pr: renderer.getPixelRatio() };
   const dimsWas = dimsG.visible; if (!C.dims) setDims(false);
   renderer.setPixelRatio(2); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix();
-  const sfov = camera.fov; const f = fitCard(CW / CH, top / CH, bot / CH, 0.05); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); camera.lookAt(f.tg); camera.updateMatrixWorld(); levelCam(camera, f.tg, 1); camera.updateMatrixWorld();
+  const sfov = camera.fov;
+  { // same viewing angle as on screen; only dolly back/shift (no rotation) so the set fits between texts
+    const b = meshBox(), pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
+    const fwd = V(0, 0, -1).applyQuaternion(camera.quaternion), up = V(0, 1, 0).applyQuaternion(camera.quaternion), rt = V(1, 0, 0).applyQuaternion(camera.quaternion);
+    const c = b.getCenter(new THREE.Vector3()), base = camera.position.clone(), yTop = 1 - 2 * top / CH, yBot = -1 + 2 * bot / CH, xm = 0.9;
+    const dist0 = c.clone().sub(base).dot(fwd); let off = V(0, 0, 0);
+    const ndc = dd => { camera.position.copy(c).addScaledVector(fwd, -dd).add(off); camera.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9; pts.forEach(p => { const q = p.clone().project(camera); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }); return [x0, x1, y0, y1]; };
+    let d = Math.max(dist0, 0.5);
+    for (let it = 0; it < 4; it++) {
+      let lo = 0.3, hi = 60; for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2, [x0, x1, y0, y1] = ndc(m); if (x1 - x0 <= 2 * xm && y1 - y0 <= yTop - yBot) hi = m; else lo = m; } d = hi;
+      const [x0, x1, y0, y1] = ndc(d), th = Math.tan(camera.fov * Math.PI / 360) * d;
+      off.addScaledVector(up, ((y0 + y1) / 2 - (yTop + yBot) / 2) * th).addScaledVector(rt, ((x0 + x1) / 2) * th * camera.aspect);
+    }
+    ndc(d);
+  }
   renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   g.drawImage(renderer.domElement, 0, 0, CW, CH);
