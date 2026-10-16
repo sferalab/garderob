@@ -16,6 +16,7 @@
 <div class="grp" id="viewGrp"><h3>Вид и размеры</h3><div id="toolsDock"></div></div>
 <div class="grp"><h3>Общие настройки</h3>
 <label>Интерьер<select id="preset"><option value="warm">Теплая солнечная</option><option value="none">Нейтральная студия</option></select></label>
+<label>Шаблон всего набора<select id="setTpl"><option value="">Выбрать…</option><option value="p2">Прямая 2 секции</option><option value="p3">Прямая 3 секции</option><option value="p6">Прямая 6 секций</option><option value="l23">Угловая 2+3</option><option value="zero">С нуля</option></select></label>
 <label>Корзины<select id="bStyle"><option value="mesh">Сетчатые (каталог)</option><option value="plastic">Пластиковые с перфорацией</option></select></label>
 <label>Показывать<select id="viewMode"><option value="all">Все</option><option value="frame">Только каркас</option><option value="fill">Только наполнение</option></select></label>
 <label>Цвет штанги<select id="rodC"><option value="chrome">Хром</option><option value="white">Белая</option><option value="black">Черная</option></select></label>
@@ -30,11 +31,15 @@
 <div class="grp"><h3>Карточка для маркетплейса 900×1200</h3>
 <label>Шрифт<select id="cFont"><option value="manrope">Manrope (современный, по умолчанию)</option><option value="montserrat">Montserrat</option><option value="inter">Inter</option><option value="playfair">Playfair Display + Manrope (элегантный)</option></select></label>
 <label class="chk"><input type="checkbox" id="cTOn"> Заголовок</label><input type="text" id="cTitle">
+<div class="row2"><label>Размер габаритов<input type="range" id="cSSize" min="24" max="60" step="1"></label><label>Цвет габаритов<input type="color" id="cSColor"></label></div>
 <div class="row2"><label>Размер заголовка<input type="range" id="cTSize" min="36" max="96" step="1"></label><label>Цвет текста<input type="color" id="cTColor"></label></div>
 <label>Сдвиг заголовка вниз<input type="range" id="cTY" min="0" max="200" step="1"></label>
 <label class="chk"><input type="checkbox" id="cSOn"> Габариты</label><input type="text" id="cSize">
 <label class="chk"><input type="checkbox" id="cPOn"> Панель «КОМПЛЕКТАЦИЯ»</label><textarea id="cPanel" rows="5"></textarea>
 <div class="row2"><label>Цвет плашки<input type="color" id="cPColor"></label><label>Прозрачность<input type="range" id="cPOp" min="0" max="1" step="0.05"></label></div>
+<label>Плашка по X (−1 = авто)<input type="range" id="cPX" min="-1" max="1" step="0.01"></label>
+<label>Плашка по Y (−1 = авто)<input type="range" id="cPY" min="-1" max="1" step="0.01"></label>
+<label>Ширина плашки, px (0 = авто)<input type="range" id="cPW" min="0" max="820" step="10"></label>
 <label>Размер плашки<input type="range" id="cPScale" min="0.7" max="1.5" step="0.05"></label>
 <label class="chk"><input type="checkbox" id="cPFit"> Автоподбор размера текста в плашке</label>
 <label>Положение панели<select id="cPos"><option value="auto">Авто (не закрывать гардеробную)</option><option value="tl">Сверху слева</option><option value="tr">Сверху справа</option><option value="bl">Снизу слева</option><option value="br">Снизу справа</option><option value="cr">Справа по центру</option></select></label>
@@ -45,10 +50,16 @@
 <label class="chk"><input type="checkbox" id="decor"> Декор (ковер, штора)</label>
 <label class="chk"><input type="checkbox" id="sunT"> Солнце и тени от окна</label>
 <label class="chk"><input type="checkbox" id="ceilT"> Потолок</label>
-<label class="chk"><input type="checkbox" id="skirtT"> Плинтус</label>
-<label class="chk"><input type="checkbox" id="lampT"> Светильники на потолке</label>
+<div class="row2"><label class="chk"><input type="checkbox" id="skirtT"> Плинтус</label><label>Цвет плинтуса<input type="color" id="skirtC"></label></div>
+<div class="row2"><label class="chk"><input type="checkbox" id="lampT"> Светильники</label><label>Тип<select id="lampType"><option value="spot">Точечные</option><option value="loft">Лофт (подвесные)</option></select></label></div>
+<label>Мягкий блик от окна<select id="glowS"><option value="none">Нет</option><option value="left">Слева</option><option value="right">Справа</option></select></label>
+<label class="chk"><input type="checkbox" id="shOnT"> Тень от гардеробной</label>
+<label>Угол тени: <b id="shAngV"></b><input type="range" id="shAng" min="-70" max="70" step="1"></label>
+<label>Размытие: <b id="shBlurV"></b><input type="range" id="shBlur" min="1" max="20" step="1"></label>
+<label>Отдаление тени: <b id="shDistV"></b><input type="range" id="shDist" min="0" max="1" step="0.05"></label>
 <label>Блики: <b id="glareV"></b><input type="range" id="glare" min="0" max="1" step="0.05"></label>
 <label>Тени: <b id="shadowV"></b><input type="range" id="shadow" min="0" max="1" step="0.05"></label>
+<label>Угол между стенами: <b id="angV"></b><input type="range" id="angR" min="90" max="105" step="1"></label>
 <label>Расширить комнату (угол и стены), см: <b id="roomV"></b><input type="range" id="roomX" min="0" max="300" step="1"></label>
 </div>
 <div class="grp" id="photoGrp"><h3>Фото стены клиента</h3>
