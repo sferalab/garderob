@@ -19,7 +19,7 @@ function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    layout: 'straight', metal: 'white', wall: '#e8d3bd', floor: 'oak', preset: 'warm', view: 'all', decor: true, card: null, postH: 1920, railTop: 210, dims: true, dm: { h: true, v: true, c: false },
+    layout: 'straight', metal: 'white', wall: '#e8d3bd', floor: 'oak', preset: 'warm', view: 'all', decor: true, card: null, postH: 1920, railTop: 210, dims: true, dm: { t: true, s: true, v: true, c: false },
     walls: [
       { gap: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), it('basket', 40, 75, 85), it('pull', 40, 50, 181)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('rail', 30, 100)])] },
       { gap: 50, sections: [sec(60, [it('metal', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('ldsp', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)])] },
@@ -27,7 +27,7 @@ function defaults() {
     ]
   };
 }
-let S = load('gs_auto') || defaults(); if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.view) S.view = 'all'; if (!S.preset) S.preset = 'none'; if (!S.dm) S.dm = { h: true, v: true, c: false }; S.dims = true;
+let S = load('gs_auto') || defaults(); if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.view) S.view = 'all'; if (!S.preset) S.preset = 'none'; if (!S.dm) S.dm = { t: true, s: true, v: true, c: false }; if ('h' in S.dm) { S.dm.t = S.dm.s = S.dm.h; delete S.dm.h; } S.dims = true;
 let cur = { w: 0, s: 0 };
 function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v && v.walls ? v : null; } catch (e) { return null; } }
 
@@ -51,6 +51,7 @@ sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 6
 const sc = sun.shadow.camera; sc.left = -5; sc.right = 5; sc.top = 5; sc.bottom = -5; sc.near = 0.5; sc.far = 20;
 scene.add(sun, sun.target);
 const fill = new THREE.DirectionalLight(0xfff4e6, 0.35); fill.position.set(-3, 2, 4); scene.add(fill);
+const sideFill = new THREE.DirectionalLight(0xffe6c8, 0); scene.add(sideFill, sideFill.target);
 
 const room = new THREE.Group(); scene.add(room);
 const model = new THREE.Group(); scene.add(model);
@@ -88,9 +89,17 @@ function makeMats() {
   const rt = slotTex(true); M.railTex = rt;
   M.rail = new THREE.MeshStandardMaterial({ ...pc, map: rt });
   M.chrome = new THREE.MeshStandardMaterial({ color: 0xe8e8e8, metalness: 1, roughness: 0.18 });
+  M.rod = S.rod === 'white' ? new THREE.MeshStandardMaterial({ color: 0xf2f1ee, metalness: 0.2, roughness: 0.35 }) : S.rod === 'black' ? new THREE.MeshStandardMaterial({ color: 0x1c1c1e, metalness: 0.7, roughness: 0.3 }) : new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 1, roughness: 0.12 });
+  M.plastic = new THREE.MeshStandardMaterial({ color: S.metal === 'black' ? 0x2a2a2c : S.metal === 'graphite' ? 0x6a6d70 : 0xf4f3f0, roughness: 0.5, metalness: 0 });
   M.ldsp = new THREE.MeshStandardMaterial({ color: S.metal === 'black' ? 0x3b3836 : (S.metal === 'graphite' ? 0x8a8580 : 0xf3f1ec), roughness: 0.6, metalness: 0 });
 }
 
+let SLOT;
+function basketMat(rx, ry) {
+  if (!SLOT) { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#000'; g.beginPath(); g.roundRect(27, 14, 10, 36, 5); g.fill(); SLOT = c; }
+  const t = new THREE.CanvasTexture(SLOT); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(Math.round(rx), Math.max(1, Math.round(ry)));
+  return new THREE.MeshStandardMaterial({ color: M.plastic.color, roughness: 0.5, alphaMap: t, alphaTest: 0.5, side: THREE.DoubleSide });
+}
 // ---------- geometry helpers ----------
 const CYL = new THREE.CylinderGeometry(1, 1, 1, 8, 1); CYL.translate(0, 0.5, 0);
 const BOX = new THREE.BoxGeometry(1, 1, 1);
@@ -111,10 +120,10 @@ function wallWidth(w) { return S.walls[w].sections.reduce((a, s) => a + s.w * 10
 
 function buildWall(wi) {
   const W = S.walls[wi], g = new THREE.Group(); g.userData.wi = wi;
-  const total = wallWidth(wi), railY = S.railTop * 10 * MM, Z0 = 0.03;
+  const total = wallWidth(wi), railY = S.railTop * 10 * MM, Z0 = 0.017;
   const rl = (total + 40) * MM;
   M.railTex.repeat.set(rl / 0.032, 1);
-  { const rb = box(rl, 0.03, 0.03, total * MM / 2, railY - 0.015, 0.015, M.rail); rb.userData.frame = true; g.add(rb); }
+  { const cx = total * MM / 2, parts = [box(rl, 0.05, 0.003, cx, railY - 0.025, 0.0015, M.metal), box(rl, 0.003, 0.016, cx, railY - 0.0015, 0.008, M.metal), box(rl, 0.003, 0.016, cx, railY - 0.0485, 0.008, M.metal), box(rl, 0.012, 0.003, cx, railY - 0.006, 0.0155, M.metal)]; parts.forEach(p => { p.userData.frame = true; g.add(p); }); }
   const pb = postBottom() * MM, pt = (S.railTop * 10 - 10) * MM;
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   xs.forEach(x => { const pm = box(0.025, pt - pb, 0.018, x, (pt + pb) / 2, Z0 + 0.009, M.post); pm.userData.frame = true; g.add(pm); });
@@ -135,9 +144,9 @@ function buildItem(g, item, x0, x1) {
   const brL = dep + 0.03;
   if (item.t !== 'rail') { bracket(g, x0, y, brL); bracket(g, x1, y, brL); }
   if (item.t === 'mesh') {
-    const r = []; const n = Math.max(2, Math.round(L / 0.03)), wr = 0.0022;
+    const r = []; const n = Math.max(2, Math.round(L / 0.013)), wr = 0.0016;
     for (let i = 0; i <= n; i++) { const x = a + L * i / n; r.push([V(x, y, z0), V(x, y, zf), wr]); }
-    [0, 0.25, 0.5, 0.75].forEach(t => r.push([V(a, y - 0.005, z0 + dep * t + 0.01), V(b, y - 0.005, z0 + dep * t + 0.01), 0.0024]));
+    for (let t = 0; t <= 1.001; t += 0.125) r.push([V(a, y - 0.003, z0 + dep * t), V(b, y - 0.003, z0 + dep * t), 0.0018]);
     r.push([V(a, y, z0), V(b, y, z0), 0.003]);
     g.add(rods(r, M.metal));
     // front lip frame 28 mm
@@ -150,16 +159,16 @@ function buildItem(g, item, x0, x1) {
   } else if (item.t === 'ldsp') {
     g.add(box(L, 0.016, dep, (a + b) / 2, y - 0.008, z0 + dep / 2, M.ldsp));
   } else if (item.t === 'basket' || item.t === 'pull') {
-    const h = (item.h || 85) * MM, r = [], bot = y - h, n = Math.max(2, Math.round(L / 0.03)), aa = a + 0.012, bb = b - 0.012, LL = bb - aa;
-    for (let i = 0; i <= n; i++) { const x = aa + LL * i / n; r.push([V(x, bot, z0), V(x, bot, zf), 0.0018]); r.push([V(x, bot, zf), V(x, y, zf), 0.0018]); r.push([V(x, bot, z0), V(x, y, z0), 0.0015]); }
-    const m = Math.max(2, Math.round(dep / 0.03));
-    for (let i = 0; i <= m; i++) { const z = z0 + dep * i / m; r.push([V(aa, bot, z), V(aa, y, z), 0.0016]); r.push([V(bb, bot, z), V(bb, y, z), 0.0016]); }
-    [y, bot, (y + bot) / 2].forEach(yy => { r.push([V(aa, yy, z0), V(bb, yy, z0), 0.0028]); r.push([V(aa, yy, zf), V(bb, yy, zf), 0.0028]); r.push([V(aa, yy, z0), V(aa, yy, zf), 0.0028]); r.push([V(bb, yy, z0), V(bb, yy, zf), 0.0028]); });
-    g.add(rods(r, M.metal));
-    if (item.t === 'pull') {
-      g.add(box(0.008, 0.02, dep, a + 0.004, y - 0.01, z0 + dep / 2, M.chrome)); g.add(box(0.008, 0.02, dep, b - 0.004, y - 0.01, z0 + dep / 2, M.chrome));
-      g.add(rods([[V(aa + LL * 0.3, y - 0.01, zf + 0.02), V(bb - LL * 0.3, y - 0.01, zf + 0.02), 0.005], [V(aa + LL * 0.3, y - 0.01, zf), V(aa + LL * 0.3, y - 0.01, zf + 0.02), 0.003], [V(bb - LL * 0.3, y - 0.01, zf), V(bb - LL * 0.3, y - 0.01, zf + 0.02), 0.003]], M.chrome));
-    }
+    const h = (item.h || 85) * MM, bot = y - h, aa = a + 0.02, bb = b - 0.02, LL = bb - aa;
+    g.add(box(0.012, 0.012, dep, a + 0.006, y - 0.006, z0 + dep / 2, M.metal)); g.add(box(0.012, 0.012, dep, b - 0.006, y - 0.006, z0 + dep / 2, M.metal));
+    g.add(box(LL + 0.02, 0.014, 0.012, (a + b) / 2, y - 0.007, zf - 0.006, M.metal)); g.add(box(LL + 0.02, 0.006, 0.01, (a + b) / 2, y - 0.003, z0 + 0.005, M.metal));
+    const bw = LL, bd = dep - 0.03, cz = z0 + dep / 2, fh = h - 0.012;
+    const face = (w, x, z, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, fh), basketMat(w / 0.05, fh / 0.06)); m.position.set(x, bot + fh / 2, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; g.add(m); };
+    face(bw, (aa + bb) / 2, cz + bd / 2, 0); face(bw, (aa + bb) / 2, cz - bd / 2, Math.PI);
+    face(bd, aa, cz, -Math.PI / 2); face(bd, bb, cz, Math.PI / 2);
+    g.add(box(bw, 0.003, bd, (aa + bb) / 2, bot + 0.0015, cz, M.plastic));
+    g.add(box(bw + 0.02, 0.012, bd + 0.02, (aa + bb) / 2, y - 0.018, cz, M.plastic));
+    if (item.t === 'pull') g.add(box(LL * 0.3, 0.012, 0.012, (aa + bb) / 2, y - 0.04, cz + bd / 2 + 0.008, M.plastic));
   } else if (item.t === 'shoe') {
     const drop = 0.11, r = [], n = Math.max(2, Math.round(L / 0.03));
     const P = t => V(0, y - drop * t, z0 + dep * t);
@@ -168,30 +177,32 @@ function buildItem(g, item, x0, x1) {
     const p1 = P(1); r.push([V(a, p1.y + 0.04, p1.z + 0.003), V(b, p1.y + 0.04, p1.z + 0.003), 0.003]);
     g.add(rods(r, M.metal));
   } else if (item.t === 'rail') {
-    const arm = 0.335, zr = 0.3, ty = y + 0.06;
+    const arm = 0.37, zr = 0.33, ty = y + 0.06;
     [x0, x1].forEach(x => g.add(box(0.004, 0.025, arm, x, ty - 0.012, 0.048 + arm / 2, M.metal)));
-    [a + 0.01, b - 0.01].forEach(x => g.add(box(0.03, 0.065, 0.004, x, y + 0.025, zr, M.chrome)));
-    const rr = rods([[V(a, y, zr), V(b, y, zr), 0.0125]], M.chrome); rr.geometry = new THREE.CylinderGeometry(1, 1, 1, 24, 1).translate(0, 0.5, 0); rr.scale.set(1, 1, 1); g.add(rr);
+    [a + 0.008, b - 0.008].forEach(x => { g.add(box(0.006, 0.07, 0.03, x, y + 0.025, zr, M.metal)); });
+    const rr = rods([[V(a, y, zr), V(b, y, zr), 0.0125]], M.rod); rr.geometry = new THREE.CylinderGeometry(1, 1, 1, 24, 1).translate(0, 0.5, 0); rr.scale.set(1, 1, 1); g.add(rr);
   }
 }
 
-function effGap(wi) { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.max(S.walls[wi].gap, Math.ceil(d + 9)); }
+function effGap(wi) { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.max(0, S.walls[wi].gap || 0); }
+function minGap() { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.ceil(d + 5.5); }
 function placeWall(g, wi, backW) {
-  if (wi === 0) return;
+  const g0 = effGap(0) * 10 * MM;
+  if (wi === 0) { g.position.x = g0; return; }
   const gap = effGap(wi) * 10 * MM;
   if (wi === 1) { g.rotation.y = -Math.PI / 2; g.scale.z = -1; g.position.set(-0.02, 0, gap); }
-  if (wi === 2) { g.rotation.y = Math.PI / 2; g.scale.x = -1; g.scale.z = -1; g.position.set(backW + 0.02, 0, gap); }
+  if (wi === 2) { g.rotation.y = Math.PI / 2; g.scale.x = -1; g.scale.z = -1; g.position.set(g0 + backW + 0.02, 0, gap); }
 }
 
 function buildRoom(backW) {
   room.clear();
   const floorM = floorMat();
   const wallM = wallMat();
-  const left = S.layout === 'straight' ? -2 : -0.02, right = S.layout === 'U' ? backW + 0.02 : backW + 2;
+  const g0 = effGap(0) * 10 * MM, left = -0.02, right = S.layout === 'U' ? g0 + backW + 0.02 : g0 + backW + 2.5;
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), floorM); fl.rotation.x = -Math.PI / 2; fl.position.set(backW / 2, 0, 5); fl.receiveShadow = true; room.add(fl);
   const bw = new THREE.Mesh(new THREE.PlaneGeometry(right - left, 3.2), wallM); bw.position.set((left + right) / 2, 1.6, 0); bw.receiveShadow = true; room.add(bw);
   const side = x => { const p = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.2), wallM); p.rotation.y = x < 0.5 ? Math.PI / 2 : -Math.PI / 2; p.position.set(x, 1.6, 3); p.receiveShadow = true; room.add(p); };
-  if (S.layout !== 'straight') side(left); if (S.layout === 'U') side(right);
+  side(left); if (S.layout === 'U') side(right);
   const base = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
   room.add(box(right - left, 0.06, 0.012, (left + right) / 2, 0.03, 0.006, base));
   if (!catcher) { catcher = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.25 })); catcher.rotation.x = -Math.PI / 2; catcher.receiveShadow = true; model.add(catcher); }
@@ -272,10 +283,11 @@ function buildDims(g, wi) {
   const labels = [], W = S.walls[wi], z = 0.004, railY = S.railTop * 10 * MM, D = S.dm || {};
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   const tot = xs[xs.length - 1];
-  if (D.h) {
-    W.sections.forEach((s, i) => { if (s.items.some(o => o.t !== 'rail')) dimH(g, labels, xs[i] + 0.006, xs[i + 1] - 0.006, railY + 0.09, z, cm((s.w * 10) - 12), railY); });
-    W.sections.forEach((s, i) => dimH(g, labels, xs[i], xs[i + 1], railY + 0.19, z, cm(s.w * 10), railY));
-    dimH(g, labels, -0.0125, tot + 0.0125, railY + 0.29, z, cm(tot / MM + 25), railY);
+  if (D.s) W.sections.forEach((s, i) => dimH(g, labels, xs[i], xs[i + 1], railY + 0.1, z, cm(s.w * 10), railY));
+  if (D.t) dimH(g, labels, -0.0125, tot + 0.0125, railY + (D.s ? 0.21 : 0.1), z, cm(tot / MM + 25), railY);
+  if (D.s) {
+    const eg = effGap(wi); if (eg > 0 && !(wi === 2)) dimH(g, labels, -eg / 100 - (wi === 0 ? 0.02 : 0), -0.0125, railY + 0.1, z, cm(eg * 10 - 12.5), railY);
+    if (wi === 2 && eg > 0) dimH(g, labels, -eg / 100, -0.0125, railY + 0.1, z, cm(eg * 10 - 12.5), railY);
   }
   if (D.v) {
     const left = wi === 0 && S.layout === 'straight', sg = left ? -1 : 1, xb = left ? -0.0125 : tot + 0.0125;
@@ -360,7 +372,7 @@ function camTo(kind) {
   dir.normalize();
   const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
-  const dist = Math.max(hgt / (2 * Math.tan(fov / 2)), span / (2 * Math.tan(fov / 2) * asp)) * 1.35 + sz.z * 0.5;
+  const dist = Math.max(hgt / (2 * Math.tan(fov / 2)), span / (2 * Math.tan(fov / 2) * asp)) * (view.clientWidth < 800 ? 1.08 : 1.3) + sz.z * 0.35;
   if (kind === 'card') { const f = fitCard(camera.aspect, 0.06, 0.06); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); controls.target.copy(f.tg); controls.update(); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); return; }
   camera.fov = 35; camera.updateProjectionMatrix();
   camera.position.copy(c).addScaledVector(dir, dist); controls.target.copy(c); camera.up.set(0, 1, 0); controls.update();
@@ -405,8 +417,8 @@ function applyLights() {
   if (warm) {
     sun.color.set(0xffe4c0); sun.intensity = 0.9; sun.position.set(c.x - 1.6, 3.4, 4.2); sun.shadow.radius = 3;
     gobo.color.set(0xffcf94); gobo.intensity = 9; gobo.position.set(c.x - 1.4, 3.3, 3.0); gobo.target.position.set(c.x + 0.4, 1.5, 0);
-    renderer.toneMappingExposure = 1.0; hemi.color.set(0xfff0dd); hemi.groundColor.set(0xe8c49c); hemi.intensity = 1.0; fill.color.set(0xffe2c2); fill.intensity = 0.45; fill.position.set(c.x + 3, 2.2, 4);
-  } else { sun.color.set(0xffffff); sun.intensity = 1.6; gobo.intensity = 0; renderer.toneMappingExposure = 1.0; hemi.color.set(0xffffff); hemi.groundColor.set(0xd8cfc2); hemi.intensity = 0.6; fill.color.set(0xfff4e6); fill.intensity = 0.35; fill.position.set(-3, 2, 4); }
+    renderer.toneMappingExposure = 1.0; hemi.color.set(0xfff0dd); hemi.groundColor.set(0xe8c49c); hemi.intensity = 1.0; fill.color.set(0xffe2c2); fill.intensity = 0.45; fill.position.set(c.x + 3, 2.2, 4); sideFill.intensity = 2.0; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
+  } else { sun.color.set(0xffffff); sun.intensity = 1.6; gobo.intensity = 0; renderer.toneMappingExposure = 1.0; hemi.color.set(0xffffff); hemi.groundColor.set(0xd8cfc2); sideFill.intensity = 0; hemi.intensity = 0.6; fill.color.set(0xfff4e6); fill.intensity = 0.35; fill.position.set(-3, 2, 4); }
 }
 function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(0xe9e6e0); }
 
@@ -508,7 +520,7 @@ function summary() {
 // ---------- UI ----------
 function clampY(v) { const lo = Math.ceil(postBottom() / 10) + 3, hi = S.railTop - 4; return Math.max(lo, Math.min(hi, v)); }
 function fillGeneral() {
-  $('metal').value = S.metal; $('wall').value = S.wall; $('floor').value = S.floor; $('railTop').value = S.railTop;
+  $('metal').value = S.metal; $('rodC').value = S.rod || 'chrome'; $('wall').value = S.wall; $('floor').value = S.floor; $('railTop').value = S.railTop;
   const pre = ['512', '1025', '1156', '1536', '1920', '2304'].includes(String(S.postH));
   $('postH').value = pre ? String(S.postH) : 'custom'; $('postHc').value = S.postH;
   if (!$('layout')) {
@@ -517,6 +529,7 @@ function fillGeneral() {
   }
   $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('preset').value = S.preset || 'none';
 }
+$('rodC').onchange = e => { S.rod = e.target.value; rebuild(); };
 $('metal').onchange = e => { S.metal = e.target.value; rebuild(); };
 $('wall').oninput = e => { S.wall = e.target.value; rebuild(); };
 $('floor').onchange = e => { S.floor = e.target.value; rebuild(); };
@@ -533,11 +546,13 @@ function renderSec() {
   $('nSec').parentNode.firstChild.textContent = act.length > 1 ? 'Секций на этой стене' : 'Количество секций';
   let h = '';
   if (act.length > 1) h += '<div class="tabs">' + act.map(wi => `<button data-w="${wi}" class="${wi === cur.w ? 'on' : ''}">${WALLNAMES[wi]}</button>`).join('') + '</div>';
-  if (cur.w > 0) h += `<label>Отступ от угла (свободный угол), см<input type="number" id="gap" min="0" max="150" value="${W.gap}"></label>`;
+  { const eg = effGap(cur.w); h += `<label>Отступ от угла: <b id="gapV">${eg}</b> см<input type="range" id="gapR" min="0" max="300" step="1" value="${eg}"></label><label>Точно, см<input type="number" id="gap" min="0" max="300" step="1" value="${eg}"></label><div id="gapWarn" class="sum" style="color:#b0552a"></div>`; }
   $('secTabs').innerHTML = h + '<div class="tabs">' + W.sections.map((s, i) => `<button data-s="${i}" class="${i === cur.s ? 'on' : ''}">${i + 1}: ${s.w}</button>`).join('') + '</div>';
   $('secTabs').querySelectorAll('[data-w]').forEach(b => b.onclick = () => { cur = { w: +b.dataset.w, s: 0 }; renderSec(); });
   $('secTabs').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { cur.s = +b.dataset.s; renderSec(); });
-  if ($('gap')) $('gap').onchange = e => { W.gap = Math.max(0, Math.min(150, +e.target.value || 0)); rebuild(); };
+  const warn = () => { const m = minGap(), bad = cur.w > 0 && S.layout !== 'straight' && W.gap < m; $('gapWarn').textContent = bad ? `Полки пересекутся с полками основной стены. Нужно от ${m} см.` : ''; };
+  let tmr; const setGap = (v, live) => { W.gap = Math.max(0, Math.min(300, Math.round(v))); $('gapV').textContent = W.gap; $('gap').value = W.gap; $('gapR').value = W.gap; warn(); clearTimeout(tmr); tmr = setTimeout(rebuild, live ? 30 : 0); };
+  $('gapR').oninput = e => setGap(+e.target.value, true); $('gap').onchange = e => setGap(+e.target.value || 0); warn();
   const s = W.sections[cur.s];
   let e = `<label>Ширина секции между стойками, см<input type="number" id="secW" min="20" max="200" value="${s.w}"></label>
   <div class="btns">${[45, 60, 90, 120].map(v => `<button class="mini" data-pw="${v}">${v}</button>`).join('')}<button class="mini" id="copyAll">Скопировать на все секции</button></div>`;
@@ -570,11 +585,12 @@ function renderSec() {
 }
 
 let lastCam = 'front';
-document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => { lastCam = b.dataset.cam; camTo(lastCam); });
-const DMB = { dH: 'h', dV: 'v', dC: 'c' };
+document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => { lastCam = b.dataset.cam; camTo(lastCam); document.querySelector('.tools').classList.remove('open'); });
+$('menuT').onclick = () => document.querySelector('.tools').classList.toggle('open');
+const DMB = { dT: 't', dS: 's', dV: 'v', dC: 'c' };
 Object.entries(DMB).forEach(([id, k]) => $(id).onclick = () => { S.dm[k] = !S.dm[k]; rebuild(); });
-$('dAll').onclick = () => { S.dm = { h: true, v: true, c: true }; rebuild(); };
-$('dNone').onclick = () => { S.dm = { h: false, v: false, c: false }; rebuild(); };
+$('dAll').onclick = () => { S.dm = { t: true, s: true, v: true, c: true }; rebuild(); };
+$('dNone').onclick = () => { S.dm = { t: false, s: false, v: false, c: false }; rebuild(); };
 const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textContent = '', 3000); };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = v; cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo(lastCam); msg('Конфигурация загружена'); };
