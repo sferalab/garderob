@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { CATALOG } from './catalog.js';
+import { CATALOG, RULES } from './catalog.js';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
-const METAL = { white: 0xf1f0ec, black: 0x1d1e20, graphite: 0x4b4e52 };
-const FLOORS = { oak: ['laminate_floor_02', 6], walnut: ['wood_floor_worn', 6], parquet: ['herringbone_parquet', 7], tile: ['marble_01', 5], concrete: ['concrete_floor_worn_001', 4] };
+const METAL = { white: 0xf1f0ec, black: 0x1d1e20, graphite: 0x4b4e52, silver: 0xbfc2c5 };
+const FLOORS = { oak: ['herringbone_parquet', 6, 0xffffff], lam: ['laminate_floor_02', 6, 0xffffff], tile: ['marble_01', 4, 0xffffff], carpet: [null, 1, 0xffffff] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
   basket: 'Корзина стационарная', pull: 'Корзина выдвижная', rail: 'Штанга для вешалок', shoe: 'Полка для обуви', trouser: 'Брючница выдвижная'
@@ -33,7 +33,7 @@ function defaults() {
     ]
   };
 }
-const ROOMDEF = { extra: 0, ceiling: false, ceilH: 275, ao: 0.45, skirting: true, lamps: false, glare: 0.3, shadow: 0.5, angle: 90, skirtColor: '#ffffff', lampType: 'spot', glow: 'none', shOn: true, shAng: 20, shBlur: 6, shDist: 0.4 };
+const ROOMDEF = { extra: 0, ceiling: false, ceilH: 275, skirting: true, lamps: false, glare: 0.3, shadow: 0.5, angle: 90, skirtColor: '#ffffff', lampType: 'spot', glow: 'none', shOn: true, shAng: 20, shBlur: 6, shDist: 0.4 };
 function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); S.room.lampType = 'spot'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40; S.walls.forEach(w => { if (w.sections.length > 6) w.sections.length = 6; }); return S; }
 function setTemplate(t) {
   const m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y }), sh = y => ({ t: 'shoe', d: 40, y }), pu = (y, h) => ({ t: 'pull', d: 40, y, h });
@@ -58,14 +58,15 @@ const QS = new URLSearchParams(location.search);
 try {
   if (QS.get('preset') === 'card') S = migrate(cardPreset());
   else if (QS.get('cfg')) { const v = JSON.parse(decodeURIComponent(escape(atob(QS.get('cfg').replace(/-/g, '+').replace(/_/g, '/'))))); if (v && v.walls) S = migrate(v); }
-} catch (e) { console.warn('cfg', e); } if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.view) S.view = 'all'; S = migrate(S); if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.preset) S.preset = 'none'; if (!S.dm) S.dm = { t: true, s: true, v: true, c: false }; if ('h' in S.dm) { S.dm.t = S.dm.s = S.dm.h; delete S.dm.h; } S.dims = true;
+} catch (e) { console.warn('cfg', e); } if (!FLOORS[S.floor]) S.floor = S.floor === 'parquet' || S.floor === 'walnut' ? 'oak' : 'lam'; if (!S.view) S.view = 'all'; S = migrate(S); if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.preset) S.preset = 'none'; if (!S.dm) S.dm = { t: true, s: true, v: true, c: false }; if ('h' in S.dm) { S.dm.t = S.dm.s = S.dm.h; delete S.dm.h; } S.dims = true;
 let cur = { w: 0, s: 0 }, drag = null;
 function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v && v.walls ? v : null; } catch (e) { return null; } }
 
 // ---------- renderer ----------
 const view = $('view');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: false });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 2 : 1.5); let PR = PR_MAX;
+renderer.setPixelRatio(PR);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -101,17 +102,45 @@ function tex(name, srgb, rep) {
   const k = name + rep; if (!TC[k]) { const t = TL.load('tex/' + name + '.jpg', () => {}); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); t.anisotropy = 8; if (srgb) t.colorSpace = THREE.SRGBColorSpace; TC[k] = t; }
   return TC[k];
 }
-function floorMat() {
-  const [n, rep] = FLOORS[S.floor];
-  return new THREE.MeshStandardMaterial({ color: S.preset === 'warm' ? 0xfff0dc : 0xffffff, map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1 });
+function canvasTex(w, h, draw, rep) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); t.anisotropy = 8; return t; }
+let CARPET;
+function carpetTex() {
+  if (!CARPET) { let sd = 3; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    const col = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#b9ab98'; g.fillRect(0, 0, w, h); for (let i = 0; i < 60000; i++) { const l = 150 + rnd() * 50; g.fillStyle = `rgba(${l + 25},${l + 12},${l - 6},0.55)`; g.fillRect(rnd() * w, rnd() * h, 1.6, 1.6); } }, 6);
+    col.colorSpace = THREE.SRGBColorSpace;
+    const nor = canvasTex(512, 512, (g, w, h) => { g.fillStyle = 'rgb(128,128,255)'; g.fillRect(0, 0, w, h); for (let i = 0; i < 40000; i++) { g.fillStyle = `rgb(${100 + rnd() * 56},${100 + rnd() * 56},255)`; g.fillRect(rnd() * w, rnd() * h, 2, 2); } }, 6);
+    CARPET = [col, nor]; }
+  return CARPET;
 }
-// walls: exactly the chosen color on every wall (unlit), shadows come from a ShadowMaterial overlay
-function wallMat() { return new THREE.MeshBasicMaterial({ color: new THREE.Color(S.wall), toneMapped: false }); }
-function wallShadowMat() { return new THREE.ShadowMaterial({ opacity: 0.22, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); }
-let AOT;
-function aoMat(k) {
-  if (!AOT) { const c = document.createElement('canvas'); c.width = 256; c.height = 4; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 256, 0); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.25, 'rgba(0,0,0,0.45)'); gr.addColorStop(0.6, 'rgba(0,0,0,0.12)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 4); AOT = new THREE.CanvasTexture(c); }
-  return new THREE.MeshBasicMaterial({ map: AOT, transparent: true, opacity: 0.18 + 0.5 * k, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+function floorMat() {
+  const [n, rep, tint] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm';
+  if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2 }); }
+  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, clearcoat: S.floor === 'tile' ? 0.6 : 0.25, clearcoatRoughness: 0.35 });
+}
+let PAPER;
+function paperTex() {
+  if (!PAPER) PAPER = canvasTex(256, 512, (g, w, h) => { g.fillStyle = 'rgb(128,128,255)'; g.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 32) { g.fillStyle = 'rgb(150,128,255)'; g.fillRect(x, 0, 2, h); g.fillStyle = 'rgb(106,128,255)'; g.fillRect(x + 2, 0, 2, h); }
+    for (let y = 32; y < h; y += 64) for (let x = 16; x < w; x += 64) { g.strokeStyle = 'rgb(150,150,255)'; g.lineWidth = 2; g.beginPath(); g.ellipse(x + (y % 128 ? 32 : 0), y, 10, 18, 0, 0, 7); g.stroke(); } }, 2);
+  return PAPER;
+}
+// walls: unlit exact color (identical on every wall) with a baked finish texture; shadows via a ShadowMaterial overlay
+const FIN = {};
+function finishTex(f) {
+  if (!FIN[f]) { let sd = 11; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    FIN[f] = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+      if (f === 'plaster') { for (let i = 0; i < 900; i++) { const x = rnd() * w, y = rnd() * h, r = 6 + rnd() * 26, l = 228 + rnd() * 27; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${l},${l},${l},0.22)`); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); } }
+      else if (f === 'paper') { for (let x = 0; x < w; x += 64) { g.fillStyle = 'rgba(0,0,0,0.035)'; g.fillRect(x, 0, 30, h); } g.strokeStyle = 'rgba(0,0,0,0.06)'; g.lineWidth = 2; for (let y = 32; y < h; y += 64) for (let x = 0; x < w; x += 64) { const cx = x + 32 + (y % 128 > 64 ? 32 : 0); g.beginPath(); g.ellipse(cx % w, y, 9, 16, 0, 0, 7); g.stroke(); } }
+      for (let i = 0; i < 20000; i++) { const l = 235 + rnd() * 20; g.fillStyle = `rgba(${l},${l},${l},0.25)`; g.fillRect(rnd() * w, rnd() * h, 1.5, 1.5); } }, f === 'paper' ? 3 : 2);
+    FIN[f].colorSpace = THREE.SRGBColorSpace; }
+  return FIN[f];
+}
+function wallMat() { return new THREE.MeshBasicMaterial({ color: new THREE.Color(S.wall), map: finishTex(S.wallFin || 'paint'), toneMapped: false }); }
+function wallShadowMat() { return new THREE.ShadowMaterial({ opacity: 0.2, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); }
+let CONTACT;
+function contactMat() {
+  if (!CONTACT) { const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(0,0,0,0.55)'); gr.addColorStop(0.35, 'rgba(0,0,0,0.22)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 64);
+    const m = g.getImageData(0, 0, 128, 64); for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const k = Math.min(1, Math.min(x, 127 - x) / 18); m.data[(y * 128 + x) * 4 + 3] *= k; } g.putImageData(m, 0, 0); CONTACT = new THREE.CanvasTexture(c); }
+  return new THREE.MeshBasicMaterial({ map: CONTACT, transparent: true, depthWrite: false, opacity: 0.6, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 }
 
 // ---------- materials ----------
@@ -119,11 +148,13 @@ let M = {};
 function makeMats() {
   const col = METAL[S.metal];
   const pc = { color: col, metalness: S.metal === 'white' ? 0.25 : 0.5, roughness: S.metal === 'black' ? 0.45 : 0.38 };
-  M.metal = new THREE.MeshStandardMaterial(pc);
+  pc.metalness = S.metal === 'silver' ? 0.85 : pc.metalness; pc.roughness = S.metal === 'silver' ? 0.3 : pc.roughness;
+  const pp = { ...pc, clearcoat: 0.35, clearcoatRoughness: 0.25 };
+  M.metal = new THREE.MeshPhysicalMaterial(pp);
   const pt = slotTex(false); pt.repeat.set(1, S.postH / 32);
-  M.post = new THREE.MeshStandardMaterial({ ...pc, map: pt });
+  M.post = new THREE.MeshPhysicalMaterial({ ...pp, map: pt });
   const rt = slotTex(true); M.railTex = rt;
-  M.rail = new THREE.MeshStandardMaterial({ ...pc, map: rt });
+  M.rail = new THREE.MeshPhysicalMaterial({ ...pp, map: rt });
   M.chrome = new THREE.MeshStandardMaterial({ color: 0xe8e8e8, metalness: 1, roughness: 0.18 });
   M.rod = S.rod === 'white' ? new THREE.MeshStandardMaterial({ color: 0xf2f1ee, metalness: 0.2, roughness: 0.35 }) : S.rod === 'black' ? new THREE.MeshStandardMaterial({ color: 0x1c1c1e, metalness: 0.7, roughness: 0.3 }) : new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 1, roughness: 0.12 });
   M.plastic = new THREE.MeshStandardMaterial({ color: S.metal === 'black' ? 0x2a2a2c : S.metal === 'graphite' ? 0x6a6d70 : 0xf4f3f0, roughness: 0.5, metalness: 0 });
@@ -167,7 +198,9 @@ function buildWall(wi) {
   xs.forEach(x => { const pm = box(0.032, pt - pb, 0.034, x, (pt + pb) / 2, 0.011 + 0.017, M.post); pm.userData.frame = true; g.add(pm);
     const hk = box(0.036, 0.03, 0.03, x, pt - 0.012, 0.026, M.metal); hk.userData.frame = true; g.add(hk);
     const cap = box(0.034, 0.012, 0.036, x, pb + 0.006, 0.028, M.plastic); cap.userData.frame = true; g.add(cap); });
-  W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si], xs[si + 1], s); }));
+  W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si], xs[si + 1], s);
+    const ch = isBasket(item.t) ? (item.h || 85) * MM + 0.08 : 0.11, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si], ch), contactMat()); cs.position.set((xs[si] + xs[si + 1]) / 2, itemTop(item) - ch / 2 + 0.005, 0.0012); cs.userData.contact = true; ig.add(cs);
+    if (isBasket(item.t) || item.t === 'trouser' || item.t === 'shoe') { const fl = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si], 0.02), contactMat()); fl.visible = false; ig.add(fl); } }));
   return g;
 }
 const BRG = {};
@@ -266,23 +299,22 @@ function placeWall(g, wi, backW) {
 
 function buildRoom(backW) {
   room.clear();
-  const floorM = floorMat(), wallM = wallMat(), CH = (S.room.ceilH || 275) / 100, ao = S.room.ao ?? 0.45;
+  const floorM = floorMat(), wallM = wallMat(), CH = (S.room.ceilH || 275) / 100;
   const RX = (S.room.extra || 0) / 100, g0 = effGap(0) * 10 * MM, cr = S.layout === 'U' || S.layout === 'Lr', cl = S.layout !== 'Lr';
   const left = cl ? -0.02 : -2.5 - RX, right = cr ? g0 + backW + 0.02 + (S.layout === 'U' ? RX : 0) : g0 + backW + 2.5 + RX;
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), floorM); fl.rotation.x = -Math.PI / 2; fl.position.set(backW / 2, 0, 5); fl.receiveShadow = true; room.add(fl);
-  const plane = (w, h, x, y, z, ry, parent) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallM); p.position.set(x, y, z); p.rotation.y = ry; parent.add(p); const s = new THREE.Mesh(p.geometry, wallShadowMat()); s.position.copy(p.position); s.rotation.y = ry; s.receiveShadow = true; parent.add(s); };
+  const plane = (w, h, x, y, z, ry, parent) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallM); p.position.set(x, y, z); p.rotation.y = ry; parent.add(p); const q = new THREE.Mesh(p.geometry, wallShadowMat()); q.position.copy(p.position); q.rotation.y = ry; q.receiveShadow = true; parent.add(q); };
   plane(right - left, CH, (left + right) / 2, CH / 2, 0, 0, room);
-  const aoW = 0.08 + 0.42 * ao, aoM = aoMat(ao);
+  const cmM = new THREE.MeshStandardMaterial({ color: 0xfbfaf6, roughness: 0.7 }), cornice = (len, x, z, ry, parent) => { const g = new THREE.Group(); g.position.set(x, CH, z); g.rotation.y = ry; [[0.012, 0.09, 0.006], [0.03, 0.05, 0.02], [0.05, 0.022, 0.04]].forEach(([d, hh, zz]) => { const m = box(len, hh, d, 0, -hh / 2, zz - d / 2 + 0.006, cmM); m.castShadow = false; g.add(m); }); parent.add(g); };
   const dA = ((S.room.angle || 90) - 90) * Math.PI / 180, skM = new THREE.MeshStandardMaterial({ color: S.room.skirtColor || '#ffffff', roughness: 0.6 });
   const side = x => { const L = x === left, pv = new THREE.Group(); pv.position.set(x, 0, 0); pv.rotation.y = L ? -dA : dA;
     plane(6 + RX * 2, CH, 0, CH / 2, 3 + RX, L ? Math.PI / 2 : -Math.PI / 2, pv);
-    if (ao > 0) { const q = new THREE.Mesh(new THREE.PlaneGeometry(aoW, CH), aoM); q.rotation.y = L ? Math.PI / 2 : -Math.PI / 2; q.position.set(L ? 0.0008 : -0.0008, CH / 2, aoW / 2); if (L) q.scale.x = -1; pv.add(q); }
-    if (S.room.skirting !== false) pv.add(box(0.014, 0.07, 6 + RX * 2, L ? 0.007 : -0.007, 0.035, 3 + RX, skM)); room.add(pv);
-    if (ao > 0) { const q = new THREE.Mesh(new THREE.PlaneGeometry(aoW, CH), aoM); q.position.set(L ? x + aoW / 2 : x - aoW / 2, CH / 2, 0.0008); if (!L) q.scale.x = -1; room.add(q); } };
+    if (S.room.skirting !== false) { pv.add(box(0.016, 0.08, 6 + RX * 2, L ? 0.008 : -0.008, 0.04, 3 + RX, skM)); pv.add(box(0.022, 0.012, 6 + RX * 2, L ? 0.011 : -0.011, 0.074, 3 + RX, skM)); }
+    if (S.room.ceiling) { const cg = new THREE.Group(); cornice(6 + RX * 2, 0, 3 + RX, L ? Math.PI / 2 : -Math.PI / 2, cg); cg.children[0].position.set(0, CH, 3 + RX); pv.add(cg); } room.add(pv); };
   if (cl) side(left); if (cr) side(right);
-  if (S.room.skirting !== false) room.add(box(right - left, 0.07, 0.014, (left + right) / 2, 0.035, 0.007, skM));
-  if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(right - left + 0.1, 6 + RX * 2), new THREE.MeshBasicMaterial({ color: 0xfbfaf7, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set((left + right) / 2, CH, 3 + RX); room.add(ce);
-    if (ao > 0) { const q = new THREE.Mesh(new THREE.PlaneGeometry(aoW * 0.6, right - left), aoM); q.rotation.z = -Math.PI / 2; q.position.set((left + right) / 2, CH - aoW * 0.3, 0.0008); room.add(q); } }
+  if (S.room.skirting !== false) { room.add(box(right - left, 0.08, 0.016, (left + right) / 2, 0.04, 0.008, skM)); room.add(box(right - left, 0.012, 0.022, (left + right) / 2, 0.074, 0.011, skM)); }
+  if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(right - left + 0.1, 6 + RX * 2), new THREE.MeshBasicMaterial({ color: 0xf6f4ef, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set((left + right) / 2, CH, 3 + RX); room.add(ce);
+    cornice(right - left, (left + right) / 2, 0, 0, room); }
   if (S.room.lamps) { const n = Math.max(2, Math.round((right - left) / 1.2)); for (let i = 0; i < n; i++) { const x = left + (right - left) * (i + 0.5) / n; const d = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.008, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2dc, emissiveIntensity: 1.5 })); d.position.set(x, CH - 0.004, 0.9); room.add(d); const pl = new THREE.PointLight(0xffe9cc, 1.0, 0, 2); pl.position.set(x, CH - 0.12, 0.9); room.add(pl); } }
   if (!catcher) { catcher = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.25 })); catcher.rotation.x = -Math.PI / 2; catcher.receiveShadow = true; model.add(catcher); }
 }
@@ -498,7 +530,11 @@ function camTo(kind) {
 }
 function resize() { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(view);
-renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else controls.update(); renderer.render(scene, camera); });
+let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
+function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
+  if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > 1) { PR = Math.max(1, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
+  else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
+renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else controls.update(); renderer.render(scene, camera); adapt(); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -556,14 +592,14 @@ function setBg() { scene.background = photo && !$('showRoom').checked ? null : n
 // ---------- export ----------
 $('pngBtn').onclick = async () => {
   const hide = false;
-  const w = view.clientWidth, h = view.clientHeight, k = Math.max(2, Math.ceil(3000 / Math.max(w, h)));
+  const w = view.clientWidth, h = view.clientHeight, k = Math.min(4, Math.max(2, Math.ceil(3600 / Math.max(w, h)))), sm = sun.shadow.mapSize.x; sun.shadow.mapSize.set(4096, 4096); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(k); renderer.setSize(w, h, false); renderer.render(scene, camera);
   const W = renderer.domElement.width, H = renderer.domElement.height;
   const out = document.createElement('canvas'); out.width = W; out.height = H; const g = out.getContext('2d');
   if (photoImg && !$('showRoom').checked) { const s = Math.max(W / photoImg.width, H / photoImg.height), iw = photoImg.width * s, ih = photoImg.height * s; g.drawImage(photoImg, (W - iw) / 2, (H - ih) / 2, iw, ih); }
   g.drawImage(renderer.domElement, 0, 0);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); resize(); if (hide) setDims(true);
-  out.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'garderob-titan.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
+  sun.shadow.mapSize.set(sm, sm); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); renderer.setPixelRatio(PR); resize(); if (hide) setDims(true);
+  out.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'garderob-snimok.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
 };
 
 // ---------- marketplace card ----------
@@ -645,9 +681,9 @@ function specData() {
       const bk = perfOf(o) ? 'перфорированная' : 'сетчатая';
       if (o.t === 'basket') { add(fill, `Корзина ${bk} стационарная ${nearest([603, 903], w)}x${d}x${o.h || 85}`); add(card, `Корзина ${nom}`); }
       if (o.t === 'pull') { add(fill, `Корзина ${bk} выдвижная ${nearest([563, 863], w)}x${d}x${o.h || 85}`); add(card, `Корзина выдвижная ${nom}`); }
-      if (o.t === 'trouser') { add(fill, `Брючница выдвижная ${nearest([563, 863], w)}x${d}`); add(card, `Брючница ${nom}`); }
-      if (o.t === 'shoe') { add(fill, `Полка для обуви ${nearest([603, 903], w)}x406x77`); add(card, `Полка для обуви ${nom}`); }
-      if (o.t === 'rail') { add(fill, `Перекладина ${nearest([640, 940, 1240, 2000], w)} мм`); add(fill, 'Держатель штанги с фланцем', 2); add(card, 'Штанга'); }
+      if (o.t === 'trouser') { add(fill, `Брючница выдвижная ${nearest([463, 603], w)}x440x45`); add(card, `Брючница ${nom}`); }
+      if (o.t === 'shoe') { add(fill, `Полка обувная сетчатая ${nearest([604, 904], w)}x${o.d === 30 ? 306 : 406}`); add(card, `Полка для обуви ${nom}`); }
+      if (o.t === 'rail') { add(fill, `Перекладина ${nearest([520, 640, 940, 1240, 2000], w)} мм`); add(fill, 'Кронштейн для перекладины 30×30×100', 2); add(fill, 'Заглушка перекладины 15×23×23', 2); add(card, 'Штанга'); }
       else [si, si + 1].forEach(p => { const k = `${wi}:${p}:${o.y}`; if (!brk.has(k)) { brk.add(k); add(fill, `Кронштейн ${br} мм`); add(card, 'Кронштейн для полки'); } });
     }));
     walls.push(`<b>${WALLNAMES[wi]}:</b> ${cm(tot)} см, секций ${W.sections.length}, рельс ${rails.join(' + ')} мм`);
@@ -676,6 +712,7 @@ function summary() {
     if (collisions(sc).size) W.push(`${nm}: элементы пересекаются`);
     sc.items.forEach(o => { if (itemTop(o) > S.railTop * 10 * MM - 0.04) W.push(`${nm}: ${TYPES[o.t]} выше стоек`); if (itemBot(o) < postBottom() * MM - 0.005) W.push(`${nm}: ${TYPES[o.t]} ниже стоек`); });
   }));
+  if (S.walls.some(w => w.sections.some(sc => sc.items.some(o => o.t === 'pull' && (o.h || 85) === 285)))) W.push('Выдвижной корзины высотой 285 мм нет в крупной сетке (есть 85 и 181); 285 мм бывает у мелкосетчатой 535');
   if (S.room.ceiling && S.railTop > (S.room.ceilH || 275)) W.push(`Гардеробная (${S.railTop} см) выше потолка (${S.room.ceilH} см)`);
   if (!['512', '1025', '1156', '1536', '1920', '2304'].includes(String(S.postH))) W.push(`Стоек ${S.postH} мм нет в каталоге. Стандартные: 512, 1025, 1156, 1536, 1920, 2304 мм`);
   wallsActive().forEach(wi => { const L = wallWidth(wi) + 40, c = railCombo(L); if (c.length > 1) W.push(`${WALLNAMES[wi]}: рельс ${L} мм собирается из ${c.length} частей (${c.join(' + ')} мм), нужен стык`); });
@@ -689,13 +726,14 @@ function fillGeneral() {
   $('metal').value = S.metal; $('rodC').value = S.rod || 'chrome'; $('wall').value = S.wall; $('floor').value = S.floor; $('railTop').value = S.railTop;
   const pre = ['512', '1025', '1156', '1536', '1920', '2304'].includes(String(S.postH));
   $('postH').value = pre ? String(S.postH) : 'custom'; $('postHc').value = S.postH;
-  $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('sunT').checked = !!S.sun; $('bStyle').value = S.basketStyle || 'mesh'; const R = S.room; $('ceilT').checked = !!R.ceiling; $('skirtT').checked = R.skirting !== false; $('lampT').checked = !!R.lamps; $('glare').value = R.glare; $('glareV').textContent = Math.round(R.glare * 100) + '%'; $('shadow').value = R.shadow; $('shadowV').textContent = Math.round(R.shadow * 100) + '%'; $('roomX').value = R.extra; $('roomV').textContent = R.extra; $('angR').value = R.angle; $('ao').value = R.ao; $('aoV').textContent = Math.round(R.ao * 100) + '%'; $('ceilH').value = R.ceilH; $('ceilV').textContent = R.ceilH; $('angV').textContent = R.angle + '°'; $('skirtC').value = R.skirtColor; $('glowS').value = R.glow; $('shOnT').checked = R.shOn !== false; $('shAng').value = R.shAng; $('shAngV').textContent = R.shAng + '°'; $('shBlur').value = R.shBlur; $('shBlurV').textContent = R.shBlur; $('shDist').value = R.shDist; $('shDistV').textContent = Math.round(R.shDist * 100) + '%'; $('preset').value = S.preset || 'none'; fillDims();
+  $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('sunT').checked = !!S.sun; $('bStyle').value = S.basketStyle || 'mesh'; const R = S.room; $('ceilT').checked = !!R.ceiling; $('skirtT').checked = R.skirting !== false; $('lampT').checked = !!R.lamps; $('glare').value = R.glare; $('glareV').textContent = Math.round(R.glare * 100) + '%'; $('shadow').value = R.shadow; $('shadowV').textContent = Math.round(R.shadow * 100) + '%'; $('roomX').value = R.extra; $('roomV').textContent = R.extra; $('angR').value = R.angle; $('wallFin').value = S.wallFin || 'paint'; $('ceilH').value = R.ceilH; $('ceilV').textContent = R.ceilH; $('angV').textContent = R.angle + '°'; $('skirtC').value = R.skirtColor; $('glowS').value = R.glow; $('shOnT').checked = R.shOn !== false; $('shAng').value = R.shAng; $('shAngV').textContent = R.shAng + '°'; $('shBlur').value = R.shBlur; $('shBlurV').textContent = R.shBlur; $('shDist').value = R.shDist; $('shDistV').textContent = Math.round(R.shDist * 100) + '%'; $('preset').value = S.preset || 'none'; fillDims();
 }
 $('rodC').onchange = e => { S.rod = e.target.value; rebuild(); };
 $('metal').onchange = e => { S.metal = e.target.value; rebuild(); };
 $('wallTone').onchange = e => { if (e.target.value) { S.wall = e.target.value; $('wall').value = S.wall; rebuild(); } e.target.value = ''; };
 $('wall').oninput = e => { S.wall = e.target.value; rebuild(); };
 $('floor').onchange = e => { S.floor = e.target.value; rebuild(); };
+$('wallFin').onchange = e => { S.wallFin = e.target.value; rebuild(); };
 $('postH').onchange = e => { if (e.target.value !== 'custom') { S.postH = +e.target.value; $('postHc').value = S.postH; fix(); } };
 $('postHc').onchange = e => { S.postH = Math.max(300, Math.min(3000, +e.target.value || 1920)); $('postH').value = 'custom'; fix(); };
 $('railTop').onchange = e => { S.railTop = Math.max(60, Math.min(350, +e.target.value || 210)); fix(); };
@@ -803,7 +841,7 @@ function renderCatalog() {
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const cell = v => v === 'уточнить' ? '<span class="tbd">уточнить</span>' : esc(v);
   $('catalog').innerHTML = '<div class="catwrap"><table class="cat"><thead><tr><th>Артикул</th><th>Название</th><th>Размеры</th><th>Правила соединения</th><th>Нагрузка</th><th>Монтаж</th></tr></thead><tbody>' +
-    CATALOG.map(c => `<tr><td>${c.art ? esc(c.art) : '<span class="tbd">—</span>'}</td><td><b>${esc(c.name)}</b><br><span class="foot">${esc(c.group)}</span></td><td>${cell(c.size)}</td><td>${cell(c.conn)}</td><td>${cell(c.load)}</td><td>${cell(c.mount)}</td></tr>`).join('') + '</tbody></table></div>';
+    CATALOG.map(c => `<tr><td>${c.art ? esc(c.art) : '<span class="tbd">—</span>'}</td><td><b>${esc(c.name)}</b><br><span class="foot">${esc(c.group)}</span></td><td>${cell(c.size)}</td><td>${cell(c.conn)}</td><td>${cell(c.load)}</td><td>${cell(c.mount)}</td></tr>`).join('') + '</tbody></table></div><h4>Правила и примечания</h4><ul class="rules">' + RULES.map(t => `<li>${esc(t)}</li>`).join('') + '</ul>';
 }
 renderCatalog();
 // ---------- start choice and user templates ----------
@@ -863,7 +901,7 @@ $('sunT').onchange = e => { S.sun = e.target.checked; rebuild(); };
 $('setTpl').onchange = e => { if (e.target.value) setTemplate(e.target.value); e.target.value = ''; };
 $('bStyle').onchange = e => { S.basketStyle = e.target.value; rebuild(); };
 [['ceilT', 'ceiling'], ['skirtT', 'skirting'], ['lampT', 'lamps'], ['shOnT', 'shOn']].forEach(([id, k]) => $(id).onchange = e => { S.room[k] = e.target.checked; rebuild(); });
-[['angR', 'angle', 'angV', v => v + '°'], ['shAng', 'shAng', 'shAngV', v => v + '°'], ['shBlur', 'shBlur', 'shBlurV', v => v], ['shDist', 'shDist', 'shDistV', v => Math.round(v * 100) + '%'], ['glare', 'glare', 'glareV', v => Math.round(v * 100) + '%'], ['shadow', 'shadow', 'shadowV', v => Math.round(v * 100) + '%'], ['roomX', 'extra', 'roomV', v => v], ['ao', 'ao', 'aoV', v => Math.round(v * 100) + '%'], ['ceilH', 'ceilH', 'ceilV', v => v]].forEach(([id, k, lab, f]) => { let t; $(id).oninput = e => { S.room[k] = +e.target.value; $(lab).textContent = f(S.room[k]); clearTimeout(t); t = setTimeout(rebuild, 40); }; });
+[['angR', 'angle', 'angV', v => v + '°'], ['shAng', 'shAng', 'shAngV', v => v + '°'], ['shBlur', 'shBlur', 'shBlurV', v => v], ['shDist', 'shDist', 'shDistV', v => Math.round(v * 100) + '%'], ['glare', 'glare', 'glareV', v => Math.round(v * 100) + '%'], ['shadow', 'shadow', 'shadowV', v => Math.round(v * 100) + '%'], ['roomX', 'extra', 'roomV', v => v], ['ceilH', 'ceilH', 'ceilV', v => v]].forEach(([id, k, lab, f]) => { let t; $(id).oninput = e => { S.room[k] = +e.target.value; $(lab).textContent = f(S.room[k]); clearTimeout(t); t = setTimeout(rebuild, 40); }; });
 const SW = ['#ecdcc8', '#e8d3bd', '#f2efe9', '#ffffff', '#dcd9d3', '#c9d3cf', '#d8c3b0', '#bfc7d1'];
 $('skirtC').oninput = e => { S.room.skirtColor = e.target.value; rebuild(); }; $('glowS').onchange = e => { S.room.glow = e.target.value; rebuild(); };
 $('swatches').innerHTML = SW.map(c => `<button type="button" style="background:${c}" data-sw="${c}" title="${c}"></button>`).join('');
