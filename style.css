@@ -24,3 +24,8 @@ button{padding:7px 9px;font-size:13px}}
 input[type=text],textarea{display:block;width:100%;font:inherit;font-size:14px;padding:7px;border:1px solid #ccc;border-radius:8px;margin:3px 0 10px}
 #menuT{display:none}
 @media(max-width:800px){#menuT{display:inline-block}.tools>button:not(#menuT):not(#pngBtn){display:none}.tools.open{background:#fffe;padding:6px;border-radius:10px}.tools.open>button{display:inline-block!important}#viewWrap{height:46vh}#hint{display:none}}
+.sw{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}.sw button{width:26px;height:26px;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #ccc}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.chips button{border-radius:999px;padding:6px 11px;font-size:13px;background:#f6f1ea;border-color:#e2d6c6}
+.tabs button{border-radius:999px}.est input{width:80px;display:inline-block;padding:3px 5px;margin:0 4px}.est td{padding:2px 4px;font-size:12px;vertical-align:middle}.est{border-collapse:collapse;width:100%}
+#toolsDock .tools{position:static;display:flex;flex-wrap:wrap;gap:6px}#toolsDock #menuT{display:none}
+@media(max-width:800px){#viewGrp{display:none}}

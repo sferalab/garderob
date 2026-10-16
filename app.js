@@ -27,6 +27,7 @@ function defaults() {
     ]
   };
 }
+function migrate(S) { S.room = Object.assign({ extra: 0, ceiling: false, skirting: true, lamps: false, glare: 0.3, shadow: 0.5 }, S.room || {}); if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; return S; }
 function cardPreset() {
   const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
   Object.assign(S, { layout: 'L', view: 'fill', preset: 'warm', wall: '#ecdcc8', floor: 'oak', railTop: 205, postH: 1920, metal: 'white', rod: 'chrome', decor: true, dm: { t: false, s: false, v: false, c: false } });
@@ -34,12 +35,12 @@ function cardPreset() {
   S.walls[1].gap = 46; S.walls[1].sections = [{ w: 60, items: [m(190), m(140), m(90), m(42)] }];
   S.card = Object.assign(cardDefaults(), { size: '156 × 110 × 205 см' }); S._cam = 'card'; return S;
 }
-let S = load('gs_auto') || defaults();
+let S = migrate(load('gs_auto') || defaults());
 const QS = new URLSearchParams(location.search);
 try {
-  if (QS.get('preset') === 'card') S = cardPreset();
-  else if (QS.get('cfg')) { const v = JSON.parse(decodeURIComponent(escape(atob(QS.get('cfg').replace(/-/g, '+').replace(/_/g, '/'))))); if (v && v.walls) S = v; }
-} catch (e) { console.warn('cfg', e); } if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.view) S.view = 'all'; if (!S.preset) S.preset = 'none'; if (!S.dm) S.dm = { t: true, s: true, v: true, c: false }; if ('h' in S.dm) { S.dm.t = S.dm.s = S.dm.h; delete S.dm.h; } S.dims = true;
+  if (QS.get('preset') === 'card') S = migrate(cardPreset());
+  else if (QS.get('cfg')) { const v = JSON.parse(decodeURIComponent(escape(atob(QS.get('cfg').replace(/-/g, '+').replace(/_/g, '/'))))); if (v && v.walls) S = migrate(v); }
+} catch (e) { console.warn('cfg', e); } if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.view) S.view = 'all'; S.room = Object.assign({ extra: 0, ceiling: false, skirting: true, lamps: false, glare: 0.3, shadow: 0.5 }, S.room || {}); if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.preset) S.preset = 'none'; if (!S.dm) S.dm = { t: true, s: true, v: true, c: false }; if ('h' in S.dm) { S.dm.t = S.dm.s = S.dm.h; delete S.dm.h; } S.dims = true;
 let cur = { w: 0, s: 0 };
 function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v && v.walls ? v : null; } catch (e) { return null; } }
 
@@ -138,8 +139,8 @@ function buildWall(wi) {
   { const cx = total * MM / 2, parts = [box(rl, 0.05, 0.003, cx, railY - 0.025, 0.0015, M.metal), box(rl, 0.003, 0.016, cx, railY - 0.0015, 0.008, M.metal), box(rl, 0.003, 0.016, cx, railY - 0.0485, 0.008, M.metal), box(rl, 0.012, 0.003, cx, railY - 0.006, 0.0155, M.metal)]; parts.forEach(p => { p.userData.frame = true; g.add(p); }); }
   const pb = postBottom() * MM, pt = (S.railTop * 10 - 10) * MM;
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
-  xs.forEach(x => { const pm = box(0.025, pt - pb, 0.018, x, (pt + pb) / 2, Z0 + 0.009, M.post); pm.userData.frame = true; g.add(pm); });
-  W.sections.forEach((s, si) => s.items.forEach(item => buildItem(g, item, xs[si], xs[si + 1])));
+  xs.forEach(x => { const pm = box(0.03, pt - pb, 0.022, x, (pt + pb) / 2, Z0 + 0.011, M.post); pm.userData.frame = true; g.add(pm); });
+  W.sections.forEach((s, si) => s.items.forEach(item => buildItem(g, item, xs[si], xs[si + 1], s)));
   return g;
 }
 const BRG = {};
@@ -150,7 +151,7 @@ function bracket(g, x, y, L) {
   const m = new THREE.Mesh(BRG[k], M.metal); m.position.set(x, y - 0.003, 0.048); m.castShadow = m.receiveShadow = true; g.add(m);
   g.add(box(0.016, 0.003, L, x, y - 0.0015, 0.048 + L / 2, M.metal));
 }
-function buildItem(g, item, x0, x1) {
+function buildItem(g, item, x0, x1, sec) {
   const y = item.y * 10 * MM, dep = (REAL_DEPTH[item.t][item.d] || 400) * MM, z0 = 0.052, zf = z0 + dep;
   const a = x0 + 0.006, b = x1 - 0.006, L = b - a;
   const brL = dep + 0.03;
@@ -170,6 +171,16 @@ function buildItem(g, item, x0, x1) {
     g.add(box(L, 0.02, 0.002, (a + b) / 2, y - 0.01, z0, M.metal));
   } else if (item.t === 'ldsp') {
     g.add(box(L, 0.016, dep, (a + b) / 2, y - 0.008, z0 + dep / 2, M.ldsp));
+  } else if ((item.t === 'basket' || item.t === 'pull') && S.basketStyle !== 'plastic') {
+    const h = (item.h || 85) * MM, r = [], bot = y - h, n = Math.max(2, Math.round(L / 0.025)), aa = a + 0.014, bb = b - 0.014, LL = bb - aa, wz0 = z0 + 0.01, wzf = zf - 0.01;
+    for (let i = 0; i <= n; i++) { const x = aa + LL * i / n; r.push([V(x, bot, wz0), V(x, bot, wzf), 0.0016]); r.push([V(x, bot, wzf), V(x, y, wzf), 0.0016]); r.push([V(x, bot, wz0), V(x, y, wz0), 0.0014]); }
+    const m = Math.max(2, Math.round((wzf - wz0) / 0.025));
+    for (let i = 0; i <= m; i++) { const z = wz0 + (wzf - wz0) * i / m; r.push([V(aa, bot, z), V(aa, y, z), 0.0015]); r.push([V(bb, bot, z), V(bb, y, z), 0.0015]); }
+    const levels = [y, bot]; for (let yy = bot + 0.03; yy < y - 0.01; yy += 0.03) levels.push(yy);
+    levels.forEach((yy, k) => { const rr = k < 2 ? 0.003 : 0.0016; r.push([V(aa, yy, wz0), V(bb, yy, wz0), rr]); r.push([V(aa, yy, wzf), V(bb, yy, wzf), rr]); r.push([V(aa, yy, wz0), V(aa, yy, wzf), rr]); r.push([V(bb, yy, wz0), V(bb, yy, wzf), rr]); });
+    g.add(rods(r, M.metal));
+    g.add(box(0.012, 0.012, dep, a + 0.006, y - 0.006, z0 + dep / 2, M.metal)); g.add(box(0.012, 0.012, dep, b - 0.006, y - 0.006, z0 + dep / 2, M.metal));
+    if (item.t === 'pull') g.add(rods([[V(aa + LL * 0.3, y - 0.012, wzf + 0.025), V(bb - LL * 0.3, y - 0.012, wzf + 0.025), 0.005], [V(aa + LL * 0.3, y - 0.012, wzf), V(aa + LL * 0.3, y - 0.012, wzf + 0.025), 0.003], [V(bb - LL * 0.3, y - 0.012, wzf), V(bb - LL * 0.3, y - 0.012, wzf + 0.025), 0.003]], M.chrome));
   } else if (item.t === 'basket' || item.t === 'pull') {
     const h = (item.h || 85) * MM, bot = y - h, aa = a + 0.02, bb = b - 0.02, LL = bb - aa;
     g.add(box(0.012, 0.012, dep, a + 0.006, y - 0.006, z0 + dep / 2, M.metal)); g.add(box(0.012, 0.012, dep, b - 0.006, y - 0.006, z0 + dep / 2, M.metal));
@@ -189,9 +200,17 @@ function buildItem(g, item, x0, x1) {
     const p1 = P(1); r.push([V(a, p1.y + 0.04, p1.z + 0.003), V(b, p1.y + 0.04, p1.z + 0.003), 0.003]);
     g.add(rods(r, M.metal));
   } else if (item.t === 'rail') {
-    const arm = 0.37, zr = 0.33, ty = y + 0.06;
-    [x0, x1].forEach(x => g.add(box(0.004, 0.025, arm, x, ty - 0.012, 0.048 + arm / 2, M.metal)));
-    [a + 0.008, b - 0.008].forEach(x => { g.add(box(0.006, 0.07, 0.03, x, y + 0.025, zr, M.metal)); });
+    const sh = sec && sec.items.filter(o => o !== item && o.t !== 'rail' && o.t !== 'shoe' && o.y > item.y && o.y - item.y <= 25).sort((p, q) => p.y - q.y)[0];
+    let zr = 0.33;
+    if (sh) {
+      const ys = sh.y * 10 * MM, sd = (REAL_DEPTH[sh.t][sh.d] || 400) * MM; zr = Math.min(0.052 + sd - 0.06, 0.36);
+      // holders hooked under the shelf brackets
+      [x0 + 0.006, x1 - 0.006].forEach(x => { const top = ys - 0.03, hh = top - y; g.add(box(0.004, hh + 0.012, 0.022, x, y + hh / 2, zr, M.metal)); g.add(box(0.004, 0.006, 0.05, x, top + 0.003, zr, M.metal)); g.add(box(0.016, 0.004, 0.03, x + (x < (x0 + x1) / 2 ? 0.006 : -0.006), y - 0.014, zr, M.metal)); });
+    } else {
+      const arm = 0.37, ty = y + 0.06;
+      [x0, x1].forEach(x => g.add(box(0.004, 0.025, arm, x, ty - 0.012, 0.048 + arm / 2, M.metal)));
+      [a + 0.008, b - 0.008].forEach(x => { g.add(box(0.006, 0.07, 0.03, x, y + 0.025, zr, M.metal)); });
+    }
     const rr = rods([[V(a, y, zr), V(b, y, zr), 0.0125]], M.rod); rr.geometry = new THREE.CylinderGeometry(1, 1, 1, 24, 1).translate(0, 0.5, 0); rr.scale.set(1, 1, 1); g.add(rr);
   }
 }
@@ -210,13 +229,15 @@ function buildRoom(backW) {
   room.clear();
   const floorM = floorMat();
   const wallM = wallMat();
-  const g0 = effGap(0) * 10 * MM, left = -0.02, right = S.layout === 'U' ? g0 + backW + 0.02 : g0 + backW + 2.5;
+  const RX = (S.room.extra || 0) / 100, g0 = effGap(0) * 10 * MM, left = -0.02, right = S.layout === 'U' ? g0 + backW + 0.02 + RX : g0 + backW + 2.5 + RX;
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), floorM); fl.rotation.x = -Math.PI / 2; fl.position.set(backW / 2, 0, 5); fl.receiveShadow = true; room.add(fl);
   const bw = new THREE.Mesh(new THREE.PlaneGeometry(right - left, 3.2), wallM); bw.position.set((left + right) / 2, 1.6, 0); bw.receiveShadow = true; room.add(bw);
-  const side = x => { const p = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.2), wallM); p.rotation.y = x < 0.5 ? Math.PI / 2 : -Math.PI / 2; p.position.set(x, 1.6, 3); p.receiveShadow = true; room.add(p); };
+  const side = x => { const p = new THREE.Mesh(new THREE.PlaneGeometry(6 + RX * 2, 3.2), wallM); p.rotation.y = x < 0.5 ? Math.PI / 2 : -Math.PI / 2; p.position.set(x, 1.6, 3 + RX); p.receiveShadow = true; room.add(p); };
   side(left); if (S.layout === 'U') side(right);
   const base = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
-  room.add(box(right - left, 0.06, 0.012, (left + right) / 2, 0.03, 0.006, base));
+  if (S.room.skirting !== false) { room.add(box(right - left, 0.07, 0.014, (left + right) / 2, 0.035, 0.007, base)); room.add(box(0.014, 0.07, 6 + RX * 2, left + 0.007, 0.035, 3 + RX, base)); if (S.layout === 'U') room.add(box(0.014, 0.07, 6 + RX * 2, right - 0.007, 0.035, 3 + RX, base)); }
+  if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(right - left + 0.1, 6 + RX * 2), new THREE.MeshStandardMaterial({ color: 0xfbfaf7, roughness: 0.95 })); ce.rotation.x = Math.PI / 2; ce.position.set((left + right) / 2, 2.75, 3 + RX); room.add(ce); }
+  if (S.room.lamps) { const n = Math.max(2, Math.round((right - left) / 1.2)); for (let i = 0; i < n; i++) { const x = left + (right - left) * (i + 0.5) / n; const d = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2dc, emissiveIntensity: 1.5 })); d.position.set(x, 2.74, 0.9); room.add(d); const pl = new THREE.PointLight(0xffe9cc, 1.2, 0, 2); pl.position.set(x, 2.62, 0.9); room.add(pl); } }
   if (!catcher) { catcher = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.25 })); catcher.rotation.x = -Math.PI / 2; catcher.receiveShadow = true; model.add(catcher); }
 }
 
@@ -247,18 +268,19 @@ function buildDecor() {
 
 // ---------- dimensions ----------
 const LINE = new THREE.LineBasicMaterial({ color: 0x2a2a2a });
-function labelSprite(text, small) {
+function labelSprite(text, small, col = '#222') {
   const c = document.createElement('canvas'), g = c.getContext('2d'), fs = 44;
   g.font = `600 ${fs}px Manrope,Arial,sans-serif`; const w = Math.ceil(g.measureText(text).width) + 28;
   c.width = w; c.height = 64; g.font = `600 ${fs}px Manrope,Arial,sans-serif`;
   g.fillStyle = 'rgba(255,255,255,0.95)'; g.beginPath(); g.roundRect(1, 6, w - 2, 52, 10); g.fill();
-  g.fillStyle = '#222'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, 33);
+  g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, 33);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true }));
   const h = 0.085; sp.scale.set(h * w / 64, h, 1); sp.renderOrder = 10; return sp;
 }
 const LINE2 = new THREE.LineBasicMaterial({ color: 0x777777, transparent: true, opacity: 0.7 });
-function segs(g, pts, mat = LINE) { const geo = new THREE.BufferGeometry().setFromPoints(pts); const l = new THREE.LineSegments(geo, mat); l.renderOrder = 9; g.add(l); }
+let curLine = LINE;
+function segs(g, pts, mat = curLine) { const geo = new THREE.BufferGeometry().setFromPoints(pts); const l = new THREE.LineSegments(geo, mat); l.renderOrder = 9; g.add(l); }
 function dimH(g, labels, xa, xb, y, z, text, yPart) {
   const t = 0.014, gap = 0.02, p = [V(xa, y, z), V(xb, y, z)];
   [xa, xb].forEach(x => p.push(V(x, yPart + gap, z), V(x, y + 0.02, z), V(x, y - t, z), V(x, y + t, z)));
@@ -273,6 +295,7 @@ const cm = mm => String(Math.round(mm / 10 * 10) / 10).replace('.', ',');
 function itemTop(o) { return o.y * 10 * MM + (o.t === 'rail' ? 0.0125 : 0); }
 function itemBot(o) { const y = o.y * 10 * MM; return o.t === 'basket' || o.t === 'pull' ? y - (o.h || 85) * MM : o.t === 'shoe' ? y - 0.11 : o.t === 'rail' ? y - 0.0125 : y - 0.028; }
 function buildDims(g, wi) {
+  curLine = new THREE.LineBasicMaterial({ color: S.walls[wi].dimColor || '#2a2a2a' });
   const labels = [], W = S.walls[wi], z = 0.004, railY = S.railTop * 10 * MM, D = S.dm || {};
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   const tot = xs[xs.length - 1];
@@ -304,6 +327,11 @@ function buildDims(g, wi) {
 
 // ---------- rebuild ----------
 let bbox = new THREE.Box3();
+const HIST = [], RED = []; let histT = 0, histLock = false;
+function pushHist() { if (histLock) return; clearTimeout(histT); histT = setTimeout(() => { const j = JSON.stringify(S); if (HIST[HIST.length - 1] !== j) { HIST.push(j); if (HIST.length > 80) HIST.shift(); RED.length = 0; } }, 250); }
+function restoreHist(j) { histLock = true; S = migrate(JSON.parse(j)); fillGeneral(); rebuild(); renderSec(); cardUI(); histLock = false; }
+function undo() { clearTimeout(histT); if (HIST.length < 2) return; RED.push(HIST.pop()); restoreHist(HIST[HIST.length - 1]); }
+function redo() { if (!RED.length) return; const j = RED.pop(); HIST.push(j); restoreHist(j); }
 function rebuild() {
   makeMats();
   const keep = catcher; model.clear(); if (keep) model.add(keep); dimsG.clear();
@@ -313,17 +341,17 @@ function rebuild() {
     const g = buildWall(wi); placeWall(g, wi, backW); model.add(g);
     const dg = new THREE.Group(); const labels = buildDims(dg, wi); g.add(dg); dg.userData.dims = true;
     g.updateMatrixWorld(true);
-    labels.forEach(([p, t]) => { const sp = labelSprite(t, true); sp.position.copy(dg.localToWorld(p.clone())); sp.userData.parentWall = g; dimsG.add(sp); });
+    labels.forEach(([p, t]) => { const sp = labelSprite(t, true, S.walls[wi].dimColor || '#222'); sp.position.copy(dg.localToWorld(p.clone())); sp.userData.parentWall = g; dimsG.add(sp); });
   });
   model.traverse(o => { if (o.isMesh && o !== catcher && !o.userData.dims) { const f = !!o.userData.frame; o.visible = S.view === 'all' || (S.view === 'frame' ? f : !f); } });
   buildDecor();
-  applyLights();
+  applyLights(); applyGlareShadow();
   applyModelXf();
   setDims(true);
   bbox = new THREE.Box3();
   model.children.forEach(c => { if (c !== catcher) bbox.expandByObject(c); });
   const c = bbox.getCenter(new THREE.Vector3());
-  sun.position.set(c.x + 2.5, 4.5, 5); sun.target.position.copy(c); applyLights();
+  sun.position.set(c.x + 2.5, 4.5, 5); sun.target.position.copy(c); applyLights(); applyGlareShadow(); pushHist();
   catcher.visible = !!photo && !$('showRoom').checked;
   room.visible = !photo || $('showRoom').checked;
   summary(); localStorage.setItem('gs_auto', JSON.stringify(S));
@@ -466,6 +494,11 @@ function applyLights() {
     renderer.toneMappingExposure = 1.0; hemi.color.set(0xfff0dd); hemi.groundColor.set(0xe8c49c); hemi.intensity = 1.0; fill.color.set(0xffe2c2); fill.intensity = 0.45; fill.position.set(c.x + 3, 2.2, 4); sideFill.intensity = 2.0; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
   } else { sun.color.set(0xffffff); sun.intensity = 1.6; gobo.intensity = 0; renderer.toneMappingExposure = 1.0; hemi.color.set(0xffffff); hemi.groundColor.set(0xd8cfc2); sideFill.intensity = 0; hemi.intensity = 0.6; fill.color.set(0xfff4e6); fill.intensity = 0.35; fill.position.set(-3, 2, 4); }
 }
+function applyGlareShadow() {
+  const R = S.room || {}, gl = R.glare ?? 0.3, sh = R.shadow ?? 0.5;
+  sun.intensity *= 0.3 + 1.4 * sh; hemi.intensity *= 1.3 - 0.6 * sh; if (catcher) catcher.material.opacity = 0.08 + 0.4 * sh;
+  scene.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial) o.material.envMapIntensity = o.material.metalness > 0.6 ? 0.4 + gl * 1.6 : 0.7 + gl * 0.8; });
+}
 function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(0xe9e6e0); }
 
 // ---------- export ----------
@@ -482,13 +515,13 @@ $('pngBtn').onclick = async () => {
 };
 
 // ---------- marketplace card ----------
-function cardDefaults() { return { title: 'Наполнение для каркаса', tOn: true, size: '', sOn: true, panel: '', pOn: true, pos: 'auto', note: 'Для монтажа необходимо приобрести\nКАРКАС', nOn: true, dims: false }; }
+function cardDefaults() { return { title: 'Наполнение для каркаса', tOn: true, size: '', sOn: true, panel: '', pOn: true, pos: 'auto', pColor: '#fff7ee', pOp: 0.62, pScale: 1, pFit: true, tSize: 66, tColor: '#231c16', tY: 0, note: 'Для монтажа необходимо приобрести\nКАРКАС', nOn: true, dims: false }; }
 function cardUI() {
-  if (!S.card) S.card = cardDefaults(); const C = S.card;
+  if (!S.card) S.card = cardDefaults(); const C = S.card = Object.assign(cardDefaults(), S.card);
   if (!C.size) C.size = overall(); if (!C.panel) C.panel = specData().cardLines.join('\n');
-  $('cTitle').value = C.title; $('cFont').value = C.font || 'manrope'; $('cTOn').checked = C.tOn; $('cSize').value = C.size; $('cSOn').checked = C.sOn; $('cPanel').value = C.panel; $('cPOn').checked = C.pOn; $('cPos').value = C.pos; $('cNote').value = C.note; $('cNOn').checked = C.nOn; $('cDims').checked = C.dims;
+  $('cTitle').value = C.title; $('cTSize').value = C.tSize; $('cTColor').value = C.tColor; $('cTY').value = C.tY; $('cPColor').value = C.pColor; $('cPOp').value = C.pOp; $('cPScale').value = C.pScale; $('cPFit').checked = C.pFit; $('cFont').value = C.font || 'manrope'; $('cTOn').checked = C.tOn; $('cSize').value = C.size; $('cSOn').checked = C.sOn; $('cPanel').value = C.panel; $('cPOn').checked = C.pOn; $('cPos').value = C.pos; $('cNote').value = C.note; $('cNOn').checked = C.nOn; $('cDims').checked = C.dims;
 }
-function cardRead() { const C = S.card; C.font = $('cFont').value; C.title = $('cTitle').value; C.tOn = $('cTOn').checked; C.size = $('cSize').value; C.sOn = $('cSOn').checked; C.panel = $('cPanel').value; C.pOn = $('cPOn').checked; C.pos = $('cPos').value; C.note = $('cNote').value; C.nOn = $('cNOn').checked; C.dims = $('cDims').checked; localStorage.setItem('gs_auto', JSON.stringify(S)); }
+function cardRead() { const C = S.card; C.tSize = +$('cTSize').value; C.tColor = $('cTColor').value; C.tY = +$('cTY').value; C.pColor = $('cPColor').value; C.pOp = +$('cPOp').value; C.pScale = +$('cPScale').value; C.pFit = $('cPFit').checked; C.font = $('cFont').value; C.title = $('cTitle').value; C.tOn = $('cTOn').checked; C.size = $('cSize').value; C.sOn = $('cSOn').checked; C.panel = $('cPanel').value; C.pOn = $('cPOn').checked; C.pos = $('cPos').value; C.note = $('cNote').value; C.nOn = $('cNOn').checked; C.dims = $('cDims').checked; localStorage.setItem('gs_auto', JSON.stringify(S)); }
 ['Manrope', 'Montserrat', 'Inter', 'Playfair Display'].forEach(f => [500, 700, 800].forEach(w => document.fonts.load(`${w} 40px "${f}"`, 'Наполнение КАРКАС 0123')));
 function makeCard() {
   cardRead(); const C = S.card, CW = 900, CH = 1200, top = C.tOn || C.sOn ? 230 : 40, bot = C.nOn ? 190 : 40;
@@ -516,24 +549,25 @@ function makeCard() {
   // occupancy: projected boxes of visible meshes
   const rects = []; model.traverse(o => { if (o.isMesh && o.visible && o !== catcher && !o.userData.dims) { const b = new THREE.Box3().setFromObject(o); if (b.isEmpty()) return; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (let i = 0; i < 8; i++) { const p = V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).project(camera); const X = (p.x + 1) / 2 * CW, Y = (1 - p.y) / 2 * CH; x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); } rects.push([x0, y0, x1, y1]); } });
   const FF = { manrope: ['Manrope', 'Manrope'], montserrat: ['Montserrat', 'Montserrat'], inter: ['Inter', 'Inter'], playfair: ['Playfair Display', 'Manrope'] }[C.font || 'manrope'] || ['Manrope', 'Manrope'];
-  const TF = `"${FF[0]}", Arial, sans-serif`, serif = `"${FF[1]}", Arial, sans-serif`, ink = '#231c16';
+  const TF = `"${FF[0]}", Arial, sans-serif`, serif = `"${FF[1]}", Arial, sans-serif`, ink = C.tColor || '#231c16';
   const rule = (y, x0, x1) => { g.strokeStyle = 'rgba(35,28,22,0.7)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); };
   g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillStyle = ink;
-  if (C.tOn) { let fs = 66; const tw = FF[0] === 'Playfair Display' ? 600 : 700; g.font = `${tw} ${fs}px ${TF}`; while (g.measureText(C.title).width > CW - 80 && fs > 30) { fs -= 2; g.font = `${tw} ${fs}px ${TF}`; } g.fillText(C.title, CW / 2, 112); }
-  if (C.sOn) { g.font = `500 38px ${serif}`; const w = g.measureText(C.size).width; g.fillText(C.size, CW / 2, 182); rule(170, CW / 2 - w / 2 - 110, CW / 2 - w / 2 - 25); rule(170, CW / 2 + w / 2 + 25, CW / 2 + w / 2 + 110); }
+  if (C.tOn) { let fs = C.tSize || 66; const tw = FF[0] === 'Playfair Display' ? 600 : 700; g.font = `${tw} ${fs}px ${TF}`; while (g.measureText(C.title).width > CW - 80 && fs > 30) { fs -= 2; g.font = `${tw} ${fs}px ${TF}`; } g.fillText(C.title, CW / 2, 112 + (C.tY || 0)); }
+  if (C.sOn) { const ty = C.tY || 0; g.font = `500 38px ${serif}`; const w = g.measureText(C.size).width; g.fillText(C.size, CW / 2, 182 + ty); rule(170 + ty, CW / 2 - w / 2 - 110, CW / 2 - w / 2 - 25); rule(170 + ty, CW / 2 + w / 2 + 25, CW / 2 + w / 2 + 110); }
   if (C.nOn) { const L = C.note.split('\n').filter(Boolean), last = L.pop() || ''; g.font = `400 32px ${serif}`; L.forEach((t, i) => g.fillText(t, CW / 2, CH - 118 + (i - L.length + 1) * 38)); g.font = `800 48px ${serif}`; g.letterSpacing = '2px'; const w = g.measureText(last).width; g.fillText(last, CW / 2, CH - 52); rule(CH - 68, CW / 2 - w / 2 - 140, CW / 2 - w / 2 - 25); rule(CH - 68, CW / 2 + w / 2 + 25, CW / 2 + w / 2 + 140); g.letterSpacing = '0px'; }
   if (C.pOn && C.panel.trim()) {
-    const lines = C.panel.split('\n').filter(Boolean); g.font = `500 24px ${serif}`;
-    const pw = Math.min(CW - 80, Math.max(330, ...lines.map(t => g.measureText(t).width + 64))), ph = 104 + lines.length * 40;
+    const lines = C.panel.split('\n').filter(Boolean); let k = C.pScale || 1; const meas = () => { g.font = `500 ${Math.round(24 * k)}px ${serif}`; return [Math.max(330 * k, ...lines.map(t => g.measureText(t).width + 64 * k)), (104 + lines.length * 40) * k]; };
+    let [pw, ph] = meas(); if (C.pFit) { let it = 0; while ((pw > CW * 0.58 || ph > (CH - top - bot) * 0.62) && it++ < 30) { k *= 0.95; [pw, ph] = meas(); } }
+    pw = Math.min(CW - 80, pw);
     const yT = top + 20, yB = CH - bot - ph - 20, yM = (top + CH - bot - ph) / 2;
     const cand = { tl: [40, yT], tr: [CW - pw - 40, yT], bl: [40, yB], br: [CW - pw - 40, yB], cr: [CW - pw - 40, yM] };
     const ov = ([x, y]) => rects.reduce((a, [x0, y0, x1, y1]) => a + Math.max(0, Math.min(x + pw, x1) - Math.max(x, x0)) * Math.max(0, Math.min(y + ph, y1) - Math.max(y, y0)), 0);
     let key = C.pos; if (key === 'auto') key = Object.keys(cand).sort((a, b) => ov(cand[a]) - ov(cand[b]))[0];
     const [px, py] = cand[key];
     g.save(); g.beginPath(); g.roundRect(px, py, pw, ph, 22); g.clip(); g.filter = 'blur(8px)'; g.drawImage(out, 0, 0); g.filter = 'none';
-    g.fillStyle = 'rgba(255,247,238,0.62)'; g.fillRect(px, py, pw, ph); g.restore();
-    g.fillStyle = ink; g.font = `700 26px ${serif}`; g.letterSpacing = '3px'; g.textAlign = 'center'; g.fillText('КОМПЛЕКТАЦИЯ', px + pw / 2, py + 52); g.letterSpacing = '0px'; rule(py + 68, px + 40, px + pw - 40);
-    g.textAlign = 'left'; g.font = `500 24px ${serif}`; lines.forEach((t, i) => g.fillText(t, px + 32, py + 112 + i * 40));
+    { const pc = new THREE.Color(C.pColor || '#fff7ee'); g.fillStyle = `rgba(${Math.round(pc.r * 255)},${Math.round(pc.g * 255)},${Math.round(pc.b * 255)},${C.pOp ?? 0.62})`; } g.fillRect(px, py, pw, ph); g.restore();
+    g.fillStyle = ink; g.font = `700 ${Math.round(26 * k)}px ${serif}`; g.letterSpacing = '3px'; g.textAlign = 'center'; g.fillText('КОМПЛЕКТАЦИЯ', px + pw / 2, py + 52 * k); g.letterSpacing = '0px'; rule(py + 68 * k, px + 40 * k, px + pw - 40 * k);
+    g.textAlign = 'left'; g.font = `500 ${Math.round(24 * k)}px ${serif}`; lines.forEach((t, i) => g.fillText(t, px + 32 * k, py + (112 + i * 40) * k));
   }
   // restore
   renderer.setPixelRatio(sv.pr); resize(); camera.fov = sfov; camera.updateProjectionMatrix(); camera.position.copy(sv.pos); controls.target.copy(sv.tg); controls.update(); if (dimsWas) setDims(true);
@@ -576,7 +610,11 @@ function overall() {
 }
 function summary() {
   const d = specData(), li = o => Object.entries(o).map(([k, v]) => `${k} — ${v} шт`).join('<br>');
-  $('summary').innerHTML = d.walls.join('<br>') + `<br>Габарит: ${overall()}<details><summary>Каркас</summary>${li(d.frame)}</details><details><summary>Наполнение</summary>${li(d.fill)}</details>`;
+  let total = 0; const row = ([k, v]) => { const p = +(S.prices[k] || 0); total += p * v; return `<tr><td>${k}</td><td>${v} шт</td><td><input type="number" min="0" step="1" data-price="${k}" value="${p || ''}" placeholder="цена"></td><td>${p ? (p * v).toLocaleString('ru-RU') + ' ₽' : ''}</td></tr>`; };
+  const tb = o => `<table class="est">${Object.entries(o).map(row).join('')}</table>`;
+  const fr = tb(d.frame), fi = tb(d.fill);
+  $('summary').innerHTML = d.walls.join('<br>') + `<br>Габарит: ${overall()}<details><summary>Каркас</summary>${fr}</details><details><summary>Наполнение</summary>${fi}</details><details${total ? ' open' : ''}><summary>Смета</summary>Итого: <b>${total.toLocaleString('ru-RU')} ₽</b><br><span class="foot">Цены за штуку вводятся в списках выше и сохраняются.</span></details>`;
+  $('summary').querySelectorAll('[data-price]').forEach(el => el.onchange = () => { S.prices[el.dataset.price] = +el.value || 0; const open = [...$('summary').querySelectorAll('details')].map(x => x.open); summary(); [...$('summary').querySelectorAll('details')].forEach((x, i) => x.open = open[i] || x.open); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); });
 }
 
 // ---------- UI ----------
@@ -589,7 +627,7 @@ function fillGeneral() {
     const l = document.createElement('label'); l.innerHTML = 'Тип гардеробной<select id="layout">' + Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('') + '</select>';
     $('metal').parentNode.before(l); $('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); camTo(S.layout === 'straight' ? 'front' : 'iso'); };
   }
-  $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('sunT').checked = !!S.sun; $('preset').value = S.preset || 'none';
+  $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('sunT').checked = !!S.sun; $('bStyle').value = S.basketStyle || 'mesh'; const R = S.room; $('ceilT').checked = !!R.ceiling; $('skirtT').checked = R.skirting !== false; $('lampT').checked = !!R.lamps; $('glare').value = R.glare; $('glareV').textContent = Math.round(R.glare * 100) + '%'; $('shadow').value = R.shadow; $('shadowV').textContent = Math.round(R.shadow * 100) + '%'; $('roomX').value = R.extra; $('roomV').textContent = R.extra; $('preset').value = S.preset || 'none';
 }
 $('rodC').onchange = e => { S.rod = e.target.value; rebuild(); };
 $('metal').onchange = e => { S.metal = e.target.value; rebuild(); };
@@ -624,10 +662,16 @@ function renderSec() {
     <button class="mini" data-mv="${i}" data-dy="5" title="Выше">▲</button><button class="mini" data-mv="${i}" data-dy="-5" title="Ниже">▼</button><button class="mini danger" data-del="${i}" title="Удалить">✕</button></div>
     <div class="grid"><label>Высота, см<input type="number" data-i="${i}" data-k="y" value="${o.y}"></label>
     <label>Глубина<select data-i="${i}" data-k="d">${DEPTHS[o.t].map(d => `<option value="${d}" ${d === o.d ? 'selected' : ''}>${d} см</option>`).join('')}</select></label>
-    ${o.t === 'pull' || o.t === 'basket' ? `<label>Высота корзины<select data-i="${i}" data-k="h">${(o.t === 'pull' ? [85, 181] : [85]).map(v => `<option value="${v}" ${v === (o.h || 85) ? 'selected' : ''}>${v} мм</option>`).join('')}</select></label>` : ''}</div></div>`;
+    ${o.t === 'pull' || o.t === 'basket' ? `<label>Высота корзины<select data-i="${i}" data-k="h">${[85, 181, 285].map(v => `<option value="${v}" ${v === (o.h || 85) ? 'selected' : ''}>${v} мм</option>`).join('')}</select></label>` : ''}</div></div>`;
   });
-  e += '<div class="btns">' + Object.entries(TYPES).map(([k, v]) => `<button class="mini" data-add="${k}">+ ${v}</button>`).join('') + '</div>';
+  e += '<div class="chips">' + Object.entries(TYPES).map(([k, v]) => `<button data-add="${k}">+ ${v}</button>`).join('') + '</div>';
+  e += `<label>Шаблон секции<select id="tpl"><option value="">Выбрать шаблон…</option><option value="shelves">Только полки</option><option value="rod">Штанга под полкой + полка внизу</option><option value="two">Две штанги</option><option value="baskets">Полки + корзины</option><option value="shoes">Полки + обувь</option></select></label>`;
+  e += `<label>Цвет размеров этой стены<input type="color" id="dimCol" value="${W.dimColor || '#2a2a2a'}"></label>`;
   $('secEdit').innerHTML = e;
+  $('tpl').onchange = ev => { const t = ev.target.value; if (!t) return; const top = S.railTop - 16, lo = Math.ceil(postBottom() / 10) + 10, mid = Math.round((top + lo) / 2), M_ = y => it('mesh', 40, y), R_ = y => it('rail', 30, y);
+    const T = { shelves: () => { const a = []; for (let y = top; y >= lo; y -= 36) a.push(M_(y)); return a; }, rod: () => [M_(top), R_(top - 12), M_(lo + 20)], two: () => [M_(top), R_(top - 12), M_(mid), R_(mid - 12)], baskets: () => [M_(top), M_(top - 38), M_(top - 76), it('pull', 40, lo + 70, 181), it('pull', 40, lo + 45, 181), it('pull', 40, lo + 20, 181)], shoes: () => [M_(top), M_(top - 38), M_(top - 76), it('shoe', 40, lo + 50), it('shoe', 40, lo + 25)] };
+    s.items = T[t]().map(o => (o.y = clampY(o.y), o)); rebuild(); renderSec(); };
+  $('dimCol').oninput = ev => { W.dimColor = ev.target.value; rebuild(); };
   const E = $('secEdit');
   $('secW').onchange = ev => { s.w = Math.max(20, Math.min(200, +ev.target.value || 90)); rebuild(); renderSec(); };
   E.querySelectorAll('[data-pw]').forEach(b => b.onclick = () => { s.w = +b.dataset.pw; rebuild(); renderSec(); });
@@ -657,15 +701,26 @@ $('dNone').onclick = () => { S.dm = { t: false, s: false, v: false, c: false }; 
 const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textContent = '', 3000); };
 $('shareBtn').onclick = async () => { const u = location.origin + location.pathname + '?cfg=' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); try { await navigator.clipboard.writeText(u); msg('Ссылка скопирована'); } catch (e) { prompt('Ссылка на конфигурацию', u); } };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
-$('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = v; cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo(lastCam); msg('Конфигурация загружена'); };
-$('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = defaults(); cur = { w: 0, s: 0 }; fillGeneral(); cardUI(); rebuild(); renderSec(); camTo('front'); };
+$('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = migrate(v); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo(lastCam); msg('Конфигурация загружена'); };
+$('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = migrate(defaults()); cur = { w: 0, s: 0 }; fillGeneral(); cardUI(); rebuild(); renderSec(); camTo('front'); };
 
 async function fontsFor(C) { const f = { montserrat: 'Montserrat', inter: 'Inter', playfair: 'Playfair Display' }[C.font] || 'Manrope'; await Promise.all([document.fonts.load(`700 60px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load('500 30px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load('800 48px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load(`800 48px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load(`500 30px "${f}"`, 'Наполнение КАРКАС 0123')]).catch(() => {}); }
 $('cardBtn').onclick = async () => { cardRead(); await fontsFor(S.card); const o = makeCard(); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
 $('cAuto').onclick = () => { S.card.size = overall(); S.card.panel = specData().cardLines.join('\n'); cardUI(); cardRead(); };
-['cFont', 'cTitle', 'cTOn', 'cSize', 'cSOn', 'cPanel', 'cPOn', 'cPos', 'cNote', 'cNOn', 'cDims'].forEach(id => $(id).onchange = cardRead);
+['cTSize', 'cTColor', 'cTY', 'cPColor', 'cPOp', 'cPScale', 'cPFit', 'cFont', 'cTitle', 'cTOn', 'cSize', 'cSOn', 'cPanel', 'cPOn', 'cPos', 'cNote', 'cNOn', 'cDims'].forEach(id => $(id).onchange = cardRead);
 $('decor').onchange = e => { S.decor = e.target.checked; rebuild(); };
 $('sunT').onchange = e => { S.sun = e.target.checked; rebuild(); };
+$('bStyle').onchange = e => { S.basketStyle = e.target.value; rebuild(); };
+[['ceilT', 'ceiling'], ['skirtT', 'skirting'], ['lampT', 'lamps']].forEach(([id, k]) => $(id).onchange = e => { S.room[k] = e.target.checked; rebuild(); });
+[['glare', 'glare', 'glareV', v => Math.round(v * 100) + '%'], ['shadow', 'shadow', 'shadowV', v => Math.round(v * 100) + '%'], ['roomX', 'extra', 'roomV', v => v]].forEach(([id, k, lab, f]) => { let t; $(id).oninput = e => { S.room[k] = +e.target.value; $(lab).textContent = f(S.room[k]); clearTimeout(t); t = setTimeout(rebuild, 40); }; });
+const SW = ['#ecdcc8', '#e8d3bd', '#f2efe9', '#ffffff', '#dcd9d3', '#c9d3cf', '#d8c3b0', '#bfc7d1'];
+$('swatches').innerHTML = SW.map(c => `<button type="button" style="background:${c}" data-sw="${c}" title="${c}"></button>`).join('');
+$('swatches').querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { S.wall = b.dataset.sw; $('wall').value = S.wall; rebuild(); });
+$('eyeBtn').onclick = async () => { if (!window.EyeDropper) return alert('Пипетка работает в Chrome и Edge на компьютере. Выберите цвет в палитре.'); try { const r = await new EyeDropper().open(); S.wall = r.sRGBHex; $('wall').value = S.wall; rebuild(); } catch (e) {} };
+$('undoBtn').onclick = undo; $('redoBtn').onclick = redo;
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { if (e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey)) { e.preventDefault(); redo(); } } });
+function dockTools() { const t = document.querySelector('.tools'); if (innerWidth > 800) { if (t.parentNode !== $('toolsDock')) $('toolsDock').appendChild(t); } else if (t.parentNode !== $('viewWrap')) $('viewWrap').appendChild(t); }
+addEventListener('resize', dockTools); dockTools();
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : S.layout === 'straight' ? 'front' : 'iso');

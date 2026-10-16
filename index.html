@@ -10,17 +10,17 @@
 <button data-cam="front">Прямо</button><button data-cam="iso">45°</button><button data-cam="top">Сверху</button><button data-cam="card">Карточка</button>
 <button id="dT">Общая длина</button><button id="dS">Секции</button><button id="dV">Вертикальные</button><button id="dC">Между полками</button><button id="dAll">Все вкл</button><button id="dNone">Все выкл</button><button id="pngBtn" class="acc">Скачать картинку</button>
 </div>
-<div id="hint">Вращайте пальцем или мышью, колесико или щипок для масштаба</div>
+<div id="hint">Мышь: левая кнопка — поворот и высота, правая — сдвиг, колесо — масштаб. Палец: поворот, двумя — сдвиг и масштаб</div>
 </div>
 <div id="panel">
+<div class="grp" id="viewGrp"><h3>Вид и размеры</h3><div id="toolsDock"></div></div>
 <div class="grp"><h3>Общие настройки</h3>
 <label>Интерьер<select id="preset"><option value="warm">Теплая солнечная</option><option value="none">Нейтральная студия</option></select></label>
-<label class="chk"><input type="checkbox" id="decor"> Декор (ковер, штора)</label>
-<label class="chk"><input type="checkbox" id="sunT"> Солнце и тени от окна</label>
+<label>Корзины<select id="bStyle"><option value="mesh">Сетчатые (каталог)</option><option value="plastic">Пластиковые с перфорацией</option></select></label>
 <label>Показывать<select id="viewMode"><option value="all">Все</option><option value="frame">Только каркас</option><option value="fill">Только наполнение</option></select></label>
 <label>Цвет штанги<select id="rodC"><option value="chrome">Хром</option><option value="white">Белая</option><option value="black">Черная</option></select></label>
 <label>Цвет металла<select id="metal"><option value="white">Белый (RAL 9016)</option><option value="black">Черный (RAL 9005)</option><option value="graphite">Графит</option></select></label>
-<div class="row2"><label>Цвет стены<input type="color" id="wall"><select id="wallTone"><option value="">Готовые тона…</option><option value="#ecdcc8">Светло-бежевый (как на карточке)</option><option value="#e8d3bd">Теплый бежевый</option><option value="#f2efe9">Молочный</option><option value="#dcd9d3">Светло-серый</option></select></label><label>Пол<select id="floor"><option value="oak">Светлый дуб (как на карточке)</option><option value="walnut">Доска состаренная</option><option value="parquet">Паркет елочкой</option><option value="tile">Мрамор</option><option value="concrete">Бетон</option></select></label></div>
+<div class="row2"><label>Цвет стены<input type="color" id="wall"><div class="sw" id="swatches"></div><button class="mini" id="eyeBtn" type="button">Пипетка</button><select id="wallTone"><option value="">Готовые тона…</option><option value="#ecdcc8">Светло-бежевый (как на карточке)</option><option value="#e8d3bd">Теплый бежевый</option><option value="#f2efe9">Молочный</option><option value="#dcd9d3">Светло-серый</option></select></label><label>Пол<select id="floor"><option value="oak">Светлый дуб (как на карточке)</option><option value="walnut">Доска состаренная</option><option value="parquet">Паркет елочкой</option><option value="tile">Мрамор</option><option value="concrete">Бетон</option></select></label></div>
 <div class="row2"><label>Высота стоек, мм<select id="postH"><option>512</option><option>1025</option><option>1156</option><option>1536</option><option>1920</option><option>2304</option><option value="custom">свое значение</option></select></label><label>Свое, мм<input type="number" id="postHc" min="300" max="3000" step="1"></label></div>
 <label>Верх рельса от пола, см<input type="number" id="railTop" min="60" max="320" step="1"></label>
 <div class="row2"><label>Количество секций<input type="number" id="nSec" min="1" max="12" step="1"></label><label>Ширина всех секций, см<select id="allW"><option value="">—</option><option>60</option><option>90</option><option>120</option></select></label></div>
@@ -30,12 +30,27 @@
 <div class="grp"><h3>Карточка для маркетплейса 900×1200</h3>
 <label>Шрифт<select id="cFont"><option value="manrope">Manrope (современный, по умолчанию)</option><option value="montserrat">Montserrat</option><option value="inter">Inter</option><option value="playfair">Playfair Display + Manrope (элегантный)</option></select></label>
 <label class="chk"><input type="checkbox" id="cTOn"> Заголовок</label><input type="text" id="cTitle">
+<div class="row2"><label>Размер заголовка<input type="range" id="cTSize" min="36" max="96" step="1"></label><label>Цвет текста<input type="color" id="cTColor"></label></div>
+<label>Сдвиг заголовка вниз<input type="range" id="cTY" min="0" max="200" step="1"></label>
 <label class="chk"><input type="checkbox" id="cSOn"> Габариты</label><input type="text" id="cSize">
 <label class="chk"><input type="checkbox" id="cPOn"> Панель «КОМПЛЕКТАЦИЯ»</label><textarea id="cPanel" rows="5"></textarea>
+<div class="row2"><label>Цвет плашки<input type="color" id="cPColor"></label><label>Прозрачность<input type="range" id="cPOp" min="0" max="1" step="0.05"></label></div>
+<label>Размер плашки<input type="range" id="cPScale" min="0.7" max="1.5" step="0.05"></label>
+<label class="chk"><input type="checkbox" id="cPFit"> Автоподбор размера текста в плашке</label>
 <label>Положение панели<select id="cPos"><option value="auto">Авто (не закрывать гардеробную)</option><option value="tl">Сверху слева</option><option value="tr">Сверху справа</option><option value="bl">Снизу слева</option><option value="br">Снизу справа</option><option value="cr">Справа по центру</option></select></label>
 <label class="chk"><input type="checkbox" id="cNOn"> Нижняя надпись (последняя строка крупно)</label><textarea id="cNote" rows="2"></textarea>
 <label class="chk"><input type="checkbox" id="cDims"> Размерные линии на карточке</label>
 <div class="btns"><button id="cAuto">Заполнить из спецификации</button><button id="cardBtn" class="acc">Скачать карточку</button></div></div>
+<div class="grp"><h3>Декор и свет</h3>
+<label class="chk"><input type="checkbox" id="decor"> Декор (ковер, штора)</label>
+<label class="chk"><input type="checkbox" id="sunT"> Солнце и тени от окна</label>
+<label class="chk"><input type="checkbox" id="ceilT"> Потолок</label>
+<label class="chk"><input type="checkbox" id="skirtT"> Плинтус</label>
+<label class="chk"><input type="checkbox" id="lampT"> Светильники на потолке</label>
+<label>Блики: <b id="glareV"></b><input type="range" id="glare" min="0" max="1" step="0.05"></label>
+<label>Тени: <b id="shadowV"></b><input type="range" id="shadow" min="0" max="1" step="0.05"></label>
+<label>Расширить комнату (угол и стены), см: <b id="roomV"></b><input type="range" id="roomX" min="0" max="300" step="1"></label>
+</div>
 <div class="grp" id="photoGrp"><h3>Фото стены клиента</h3>
 <label class="file">Загрузить фото<input type="file" id="photo" accept="image/*"></label>
 <div id="photoCtl" class="hide">
@@ -47,7 +62,7 @@
 <button id="photoOff">Убрать фото</button></div>
 </div>
 <div class="grp"><h3>Сохранение</h3>
-<div class="btns"><button id="saveBtn">Сохранить</button><button id="loadBtn">Загрузить</button><button id="shareBtn">Ссылка на конфигурацию</button><button id="resetBtn" class="danger">Сбросить</button></div>
+<div class="btns"><button id="undoBtn" title="Ctrl+Z">↶ Отменить</button><button id="redoBtn" title="Ctrl+Y">↷ Повторить</button><button id="saveBtn">Сохранить</button><button id="loadBtn">Загрузить</button><button id="shareBtn">Ссылка на конфигурацию</button><button id="resetBtn" class="danger">Сбросить</button></div>
 <p class="foot">Картинка скачивается с теми размерами, которые сейчас включены.</p>
 <div id="msg" class="sum"></div></div>
 <p class="foot">Размеры элементов взяты из каталога ТИТАН GS 2024. Визуализация ориентировочная.</p>
