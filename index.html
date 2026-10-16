@@ -1,0 +1,41 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Конструктор гардеробной ТИТАН GS</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<div id="app">
+<div id="viewWrap"><div id="photoBg"></div><div id="view"></div>
+<div class="tools">
+<button data-cam="front">Прямо</button><button data-cam="iso">45°</button><button data-cam="top">Сверху</button>
+<button id="dimBtn" class="tog">Размеры</button><button id="pngBtn" class="acc">Скачать картинку</button>
+</div>
+<div id="hint">Вращайте пальцем или мышью, колесико или щипок для масштаба</div>
+</div>
+<div id="panel">
+<div class="grp"><h3>Общие настройки</h3>
+<label>Цвет металла<select id="metal"><option value="white">Белый (RAL 9016)</option><option value="black">Черный (RAL 9005)</option><option value="graphite">Графит</option></select></label>
+<div class="row2"><label>Цвет стены<input type="color" id="wall"></label><label>Пол<select id="floor"><option value="oak">Дуб светлый</option><option value="walnut">Орех</option><option value="gray">Серый ламинат</option><option value="tile">Светлая плитка</option><option value="concrete">Бетон</option></select></label></div>
+<div class="row2"><label>Высота стоек, мм<select id="postH"><option>512</option><option>1025</option><option>1156</option><option>1536</option><option>1920</option><option>2304</option><option value="custom">свое значение</option></select></label><label>Свое, мм<input type="number" id="postHc" min="300" max="3000" step="1"></label></div>
+<label>Верх рельса от пола, см<input type="number" id="railTop" min="60" max="320" step="1"></label>
+<div class="row2"><label>Количество секций<input type="number" id="nSec" min="1" max="12" step="1"></label><label>Ширина всех секций, см<select id="allW"><option value="">—</option><option>60</option><option>90</option><option>120</option></select></label></div>
+<div id="summary" class="sum"></div>
+</div>
+<div class="grp"><h3>Секции</h3><div id="secTabs" class="tabs"></div><div id="secEdit"></div></div>
+<div class="grp" id="photoGrp"><h3>Фото стены клиента</h3>
+<label class="file">Загрузить фото<input type="file" id="photo" accept="image/*"></label>
+<div id="photoCtl" class="hide">
+<label>Сдвиг влево / вправо<input type="range" id="mx" min="-3" max="3" step="0.01" value="0"></label>
+<label>Сдвиг вверх / вниз<input type="range" id="my" min="-2" max="2" step="0.01" value="0"></label>
+<label>Масштаб<input type="range" id="ms" min="0.3" max="3" step="0.01" value="1"></label>
+<label>Поворот<input type="range" id="mr" min="-60" max="60" step="1" value="0"></label>
+<label class="chk"><input type="checkbox" id="showRoom"> Показывать стену и пол</label>
+<button id="photoOff">Убрать фото</button></div>
+</div>
+<div class="grp"><h3>Сохранение</h3>
+<div class="btns"><button id="saveBtn">Сохранить</button><button id="loadBtn">Загрузить</button><button id="resetBtn" class="danger">Сбросить</button></div>
+<label class="chk"><input type="checkbox" id="pngDims" checked> Картинка с размерами (если они включены)</label>
+<div id="msg" class="sum"></div></div>
+<p class="foot">Размеры элементов взяты из каталога ТИТАН GS 2024. Визуализация ориентировочная.</p>
+</div></div>
+<script type="module" src="app.js"></script>
+</body></html>
