@@ -233,25 +233,6 @@ function buildDecor() {
   const corner = S.layout !== 'straight', Wb = wallWidth(0) * MM;
   const sideLen = corner ? (effGap(1) + wallWidth(1) / 10) / 100 : 0;
   const px = corner ? 0.2 : -0.45, pz = corner ? sideLen + 0.5 : 0.4;
-  // pot
-  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.11, 0.3, 32), new THREE.MeshStandardMaterial({ color: 0xe9e1d4, roughness: 0.75 }));
-  pot.position.set(px, 0.15, pz); pot.castShadow = pot.receiveShadow = true; decor.add(pot);
-  const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.01, 24), new THREE.MeshStandardMaterial({ color: 0x4a3a2a })); soil.position.set(px, 0.29, pz); decor.add(soil);
-  // olive branches
-  const stemM = new THREE.MeshStandardMaterial({ color: 0x5a4a38, roughness: 0.9 }), leafM = new THREE.MeshStandardMaterial({ color: 0x6f7d4e, roughness: 0.65, side: THREE.DoubleSide });
-  const leafG = new THREE.SphereGeometry(1, 8, 4); leafG.scale(0.035, 0.008, 0.011);
-  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const stems = [], leaves = [];
-  for (let b = 0; b < 7; b++) {
-    let p = V(px + (rnd() - 0.5) * 0.06, 0.29, pz + (rnd() - 0.5) * 0.06); const d = V((rnd() - 0.5) * 0.6, 1, (rnd() - 0.5) * 0.6).normalize();
-    const n = 9 + Math.floor(rnd() * 5);
-    for (let k = 0; k < n; k++) { const q = p.clone().addScaledVector(d, 0.058); stems.push([p, q, 0.006 - k * 0.0003]); d.x += (rnd() - 0.5) * 0.25; d.z += (rnd() - 0.5) * 0.25; d.normalize();
-      if (k > 1) for (let l = 0; l < 3; l++) leaves.push([q.clone(), rnd() * 6.28, rnd() * 6.28]); p = q; }
-  }
-  decor.add(rods(stems, stemM));
-  const im = new THREE.InstancedMesh(leafG, leafM, leaves.length), m4 = new THREE.Matrix4(), e = new THREE.Euler();
-  leaves.forEach(([p, a, b], i) => { e.set(b * 0.3, a, 0.6 + b * 0.2); m4.makeRotationFromEuler(e); m4.setPosition(p.x + Math.cos(a) * 0.03, p.y, p.z + Math.sin(a) * 0.03); im.setMatrixAt(i, m4); });
-  im.castShadow = true; decor.add(im);
   // rug
   const rug = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.0), new THREE.MeshStandardMaterial({ map: juteTex(), roughness: 1 }));
   rug.rotation.x = -Math.PI / 2; rug.position.set(corner ? 0.95 : Wb * 0.25, 0.004, corner ? sideLen + 0.55 : 1.3); rug.rotation.z = 0.08; rug.receiveShadow = true; decor.add(rug);
@@ -361,38 +342,54 @@ function applyModelXf() {
 function meshBox() { const b = new THREE.Box3(); model.traverse(o => { if (o.isMesh && o.visible && o !== catcher && !o.userData.dims) { let p = o.parent, ok = true; while (p) { if (p.visible === false) ok = false; p = p.parent; } if (ok) b.expandByObject(o); } }); return b.isEmpty() ? bbox.clone() : b; }
 function fitCard(aspect, topF, botF, sideF = 0.06) {
   const b = meshBox(), c = b.getCenter(new THREE.Vector3());
-  const corner = S.layout !== 'straight', az = corner ? V(0.62, 0, 1).normalize() : V(0.32, 0, 1).normalize(), e = (corner ? 26 : 24) * Math.PI / 180;
+  const corner = S.layout !== 'straight', az = corner ? V(0.62, 0, 1).normalize() : V(0.32, 0, 1).normalize(), e = (corner ? 15 : 12) * Math.PI / 180;
   const dir = V(az.x * Math.cos(e), Math.sin(e), az.z * Math.cos(e));
-  const cam = camera.clone(); cam.aspect = aspect; cam.fov = 46; cam.updateProjectionMatrix();
+  const cam = camera.clone(); cam.aspect = aspect; cam.fov = 28; cam.updateProjectionMatrix();
   const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
   const yTop = 1 - 2 * topF, yBot = -1 + 2 * botF, xm = 1 - 2 * sideF;
   let tg = c.clone();
-  const ndc = d => { cam.position.copy(tg).addScaledVector(dir, d); cam.lookAt(tg); cam.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9; pts.forEach(p => { const q = p.clone().project(cam); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }); return [x0, x1, y0, y1]; };
+  const ndc = d => { cam.position.copy(tg).addScaledVector(dir, d); cam.lookAt(tg); cam.updateMatrixWorld(); levelCam(cam, tg, 1); cam.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9; pts.forEach(p => { const q = p.clone().project(cam); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }); return [x0, x1, y0, y1]; };
   let d = 3;
   for (let it = 0; it < 5; it++) {
     let lo = 0.5, hi = 40; for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2, [x0, x1, y0, y1] = ndc(m); if ((x1 - x0) <= 2 * xm && (y1 - y0) <= (yTop - yBot)) hi = m; else lo = m; } d = hi;
     const [x0, x1, y0, y1] = ndc(d), up = V(0, 1, 0).applyQuaternion(cam.quaternion), rt = V(1, 0, 0).applyQuaternion(cam.quaternion);
-    const th = Math.tan(cam.fov * Math.PI / 360) * d, dy = ((y0 + y1) / 2 - (yTop + yBot) / 2) * th, dx = ((x0 + x1) / 2) * th * aspect;
+    const th = Math.tan(cam.fov * Math.PI / 360) * d * 0.9, dy = ((y0 + y1) / 2 - (yTop + yBot) / 2) * th, dx = ((x0 + x1) / 2) * th * aspect;
     tg.addScaledVector(up, dy).addScaledVector(rt, dx);
   }
   cam.position.copy(tg).addScaledVector(dir, d);
-  return { pos: cam.position.clone(), tg, fov: 46 };
+  return { pos: cam.position.clone(), tg, fov: 28 };
 }
+let level = 0, levelTarget = 0;
+function levelCam(cam, tg, k) {
+  // keep position; rotate toward horizontal look; lens shift keeps tg centered
+  if (k <= 0) { cam.clearViewOffset(); return; }
+  const d = tg.clone().sub(cam.position), pitch = Math.atan2(d.y, Math.hypot(d.x, d.z));
+  const ap = Math.abs(pitch); k *= Math.max(0, Math.min(1, (0.62 - ap) / 0.22)); if (k <= 0.001) { cam.clearViewOffset(); return; }
+  const qO = new THREE.Quaternion().copy(cam.quaternion);
+  const m = new THREE.Matrix4().lookAt(cam.position, V(tg.x, cam.position.y, tg.z), V(0, 1, 0));
+  const qH = new THREE.Quaternion().setFromRotationMatrix(m);
+  cam.quaternion.slerpQuaternions(qO, qH, k); cam.clearViewOffset(); cam.updateMatrixWorld();
+  const p = tg.clone().applyMatrix4(cam.matrixWorldInverse), t = Math.tan(cam.fov * Math.PI / 360);
+  const yN = (p.y / -p.z) / t; // ndc y of target
+  const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
+}
+controls.addEventListener('start', () => { levelTarget = 0; level = 0; });
+controls.addEventListener('end', () => { levelTarget = 1; });
 function camTo(kind) {
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
-  const dir = kind === 'front' ? V(0, 0.05, 1) : kind === 'iso' ? V(1, 0.45, 1.1) : V(0, 1, 0.35);
+  const dir = kind === 'front' ? V(0, 0, 1) : kind === 'iso' ? V(1, 0.25, 1.1) : V(0, 1, 0.35);
   dir.normalize();
-  const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
+  camera.fov = kind === 'top' ? 35 : 28; const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
   const dist = Math.max(hgt / (2 * Math.tan(fov / 2)), span / (2 * Math.tan(fov / 2) * asp)) * (view.clientWidth < 800 ? 1.08 : 1.3) + sz.z * 0.35;
-  if (kind === 'card') { const f = fitCard(camera.aspect, 0.13, 0.05); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); controls.target.copy(f.tg); controls.update(); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); return; }
-  camera.fov = 35; camera.updateProjectionMatrix();
-  camera.position.copy(c).addScaledVector(dir, dist); controls.target.copy(c); camera.up.set(0, 1, 0); controls.update();
+  if (kind === 'card') { const f = fitCard(camera.aspect, 0.13, 0.05); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); controls.target.copy(f.tg); controls.update(); level = levelTarget = 1; document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); return; }
+  camera.fov = kind === 'top' ? 35 : 28; camera.updateProjectionMatrix();
+  camera.position.copy(c).addScaledVector(dir, dist); controls.target.copy(c); camera.up.set(0, 1, 0); controls.update(); level = levelTarget = kind === 'top' ? 0 : 1;
   document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind));
 }
 function resize() { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(view);
-renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+renderer.setAnimationLoop(() => { controls.update(); level += (levelTarget - level) * 0.12; if (Math.abs(levelTarget - level) < 0.002) level = levelTarget; levelCam(camera, controls.target, level); renderer.render(scene, camera); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -426,7 +423,10 @@ const gobo = new THREE.SpotLight(0xffd9a8, 0); gobo.map = goboTex(); gobo.castSh
 gobo.angle = 0.62; gobo.penumbra = 0.15; gobo.shadow.bias = -0.0005; gobo.decay = 0; scene.add(gobo, gobo.target);
 function applyLights() {
   const c = bbox.getCenter(new THREE.Vector3()); const warm = S.preset === 'warm';
-  if (warm) {
+  if (warm && !S.sun) {
+    sun.color.set(0xfff1e0); sun.intensity = 0.55; sun.position.set(c.x + 1, 4.5, 4); sun.shadow.radius = 8; gobo.intensity = 0;
+    renderer.toneMappingExposure = 1.0; hemi.color.set(0xfff4e8); hemi.groundColor.set(0xeed6b8); hemi.intensity = 1.35; fill.color.set(0xfff0e0); fill.intensity = 0.9; fill.position.set(c.x - 0.5, 1.8, 5); sideFill.intensity = 0.35; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
+  } else if (warm) {
     sun.color.set(0xffe4c0); sun.intensity = 0.9; sun.position.set(c.x - 1.6, 3.4, 4.2); sun.shadow.radius = 3;
     gobo.color.set(0xffcf94); gobo.intensity = 9; gobo.position.set(c.x - 1.4, 3.3, 3.0); gobo.target.position.set(c.x + 0.4, 1.5, 0);
     renderer.toneMappingExposure = 1.0; hemi.color.set(0xfff0dd); hemi.groundColor.set(0xe8c49c); hemi.intensity = 1.0; fill.color.set(0xffe2c2); fill.intensity = 0.45; fill.position.set(c.x + 3, 2.2, 4); sideFill.intensity = 2.0; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
@@ -460,7 +460,7 @@ function makeCard() {
   const sv = { pos: camera.position.clone(), tg: controls.target.clone(), pr: renderer.getPixelRatio() };
   const dimsWas = dimsG.visible; if (!C.dims) setDims(false);
   renderer.setPixelRatio(2); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix();
-  const sfov = camera.fov; const f = fitCard(CW / CH, top / CH, bot / CH, 0.05); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); camera.lookAt(f.tg); camera.updateMatrixWorld();
+  const sfov = camera.fov; const f = fitCard(CW / CH, top / CH, bot / CH, 0.05); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); camera.lookAt(f.tg); camera.updateMatrixWorld(); levelCam(camera, f.tg, 1); camera.updateMatrixWorld();
   renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   g.drawImage(renderer.domElement, 0, 0, CW, CH);
@@ -539,7 +539,7 @@ function fillGeneral() {
     const l = document.createElement('label'); l.innerHTML = 'Тип гардеробной<select id="layout">' + Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('') + '</select>';
     $('metal').parentNode.before(l); $('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); camTo(S.layout === 'straight' ? 'front' : 'iso'); };
   }
-  $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('preset').value = S.preset || 'none';
+  $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('sunT').checked = !!S.sun; $('preset').value = S.preset || 'none';
 }
 $('rodC').onchange = e => { S.rod = e.target.value; rebuild(); };
 $('metal').onchange = e => { S.metal = e.target.value; rebuild(); };
@@ -614,6 +614,7 @@ $('cardBtn').onclick = () => { const o = makeCard(); o.toBlob(b => { const a = d
 $('cAuto').onclick = () => { S.card.size = overall(); S.card.panel = specData().cardLines.join('\n'); cardUI(); cardRead(); };
 ['cTitle', 'cTOn', 'cSize', 'cSOn', 'cPanel', 'cPOn', 'cPos', 'cNote', 'cNOn', 'cDims'].forEach(id => $(id).onchange = cardRead);
 $('decor').onchange = e => { S.decor = e.target.checked; rebuild(); };
+$('sunT').onchange = e => { S.sun = e.target.checked; rebuild(); };
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : S.layout === 'straight' ? 'front' : 'iso');
