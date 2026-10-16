@@ -18,7 +18,7 @@
 <label>Показывать<select id="viewMode"><option value="all">Все</option><option value="frame">Только каркас</option><option value="fill">Только наполнение</option></select></label>
 <label>Цвет штанги<select id="rodC"><option value="chrome">Хром</option><option value="white">Белая</option><option value="black">Черная</option></select></label>
 <label>Цвет металла<select id="metal"><option value="white">Белый (RAL 9016)</option><option value="black">Черный (RAL 9005)</option><option value="graphite">Графит</option></select></label>
-<div class="row2"><label>Цвет стены<input type="color" id="wall"></label><label>Пол<select id="floor"><option value="oak">Ламинат дуб</option><option value="walnut">Доска состаренная</option><option value="parquet">Паркет елочкой</option><option value="tile">Мрамор</option><option value="concrete">Бетон</option></select></label></div>
+<div class="row2"><label>Цвет стены<input type="color" id="wall"><select id="wallTone"><option value="">Готовые тона…</option><option value="#ecdcc8">Светло-бежевый (как на карточке)</option><option value="#e8d3bd">Теплый бежевый</option><option value="#f2efe9">Молочный</option><option value="#dcd9d3">Светло-серый</option></select></label><label>Пол<select id="floor"><option value="oak">Светлый дуб (как на карточке)</option><option value="walnut">Доска состаренная</option><option value="parquet">Паркет елочкой</option><option value="tile">Мрамор</option><option value="concrete">Бетон</option></select></label></div>
 <div class="row2"><label>Высота стоек, мм<select id="postH"><option>512</option><option>1025</option><option>1156</option><option>1536</option><option>1920</option><option>2304</option><option value="custom">свое значение</option></select></label><label>Свое, мм<input type="number" id="postHc" min="300" max="3000" step="1"></label></div>
 <label>Верх рельса от пола, см<input type="number" id="railTop" min="60" max="320" step="1"></label>
 <div class="row2"><label>Количество секций<input type="number" id="nSec" min="1" max="12" step="1"></label><label>Ширина всех секций, см<select id="allW"><option value="">—</option><option>60</option><option>90</option><option>120</option></select></label></div>
@@ -44,7 +44,7 @@
 <button id="photoOff">Убрать фото</button></div>
 </div>
 <div class="grp"><h3>Сохранение</h3>
-<div class="btns"><button id="saveBtn">Сохранить</button><button id="loadBtn">Загрузить</button><button id="resetBtn" class="danger">Сбросить</button></div>
+<div class="btns"><button id="saveBtn">Сохранить</button><button id="loadBtn">Загрузить</button><button id="shareBtn">Ссылка на конфигурацию</button><button id="resetBtn" class="danger">Сбросить</button></div>
 <p class="foot">Картинка скачивается с теми размерами, которые сейчас включены.</p>
 <div id="msg" class="sum"></div></div>
 <p class="foot">Размеры элементов взяты из каталога ТИТАН GS 2024. Визуализация ориентировочная.</p>

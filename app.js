@@ -19,7 +19,7 @@ function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    layout: 'straight', metal: 'white', wall: '#e8d3bd', floor: 'oak', preset: 'warm', view: 'all', decor: true, card: null, postH: 1920, railTop: 210, dims: true, dm: { t: true, s: true, v: true, c: false },
+    layout: 'straight', metal: 'white', wall: '#ecdcc8', floor: 'oak', preset: 'warm', view: 'all', decor: true, card: null, postH: 1920, railTop: 210, dims: true, dm: { t: true, s: true, v: true, c: false },
     walls: [
       { gap: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), it('basket', 40, 75, 85), it('pull', 40, 50, 181)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('rail', 30, 100)])] },
       { gap: 50, sections: [sec(60, [it('metal', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('ldsp', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)])] },
@@ -27,7 +27,19 @@ function defaults() {
     ]
   };
 }
-let S = load('gs_auto') || defaults(); if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.view) S.view = 'all'; if (!S.preset) S.preset = 'none'; if (!S.dm) S.dm = { t: true, s: true, v: true, c: false }; if ('h' in S.dm) { S.dm.t = S.dm.s = S.dm.h; delete S.dm.h; } S.dims = true;
+function cardPreset() {
+  const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
+  Object.assign(S, { layout: 'L', view: 'fill', preset: 'warm', wall: '#ecdcc8', floor: 'oak', railTop: 205, postH: 1920, metal: 'white', rod: 'chrome', decor: true, dm: { t: false, s: false, v: false, c: false } });
+  S.walls[0].gap = 0; S.walls[0].sections = [{ w: 90, items: [m(190), rl(178), m(42)] }, { w: 60, items: [m(190), rl(178), m(42)] }];
+  S.walls[1].gap = 46; S.walls[1].sections = [{ w: 60, items: [m(190), m(140), m(90), m(42)] }];
+  S.card = Object.assign(cardDefaults(), { size: '156 × 110 × 205 см' }); S._cam = 'card'; return S;
+}
+let S = load('gs_auto') || defaults();
+const QS = new URLSearchParams(location.search);
+try {
+  if (QS.get('preset') === 'card') S = cardPreset();
+  else if (QS.get('cfg')) { const v = JSON.parse(decodeURIComponent(escape(atob(QS.get('cfg').replace(/-/g, '+').replace(/_/g, '/'))))); if (v && v.walls) S = v; }
+} catch (e) { console.warn('cfg', e); } if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.view) S.view = 'all'; if (!S.preset) S.preset = 'none'; if (!S.dm) S.dm = { t: true, s: true, v: true, c: false }; if ('h' in S.dm) { S.dm.t = S.dm.s = S.dm.h; delete S.dm.h; } S.dims = true;
 let cur = { w: 0, s: 0 };
 function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v && v.walls ? v : null; } catch (e) { return null; } }
 
@@ -75,7 +87,7 @@ function floorMat() {
   return new THREE.MeshStandardMaterial({ color: S.preset === 'warm' ? 0xfff0dc : 0xffffff, map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1 });
 }
 function wallMat() {
-  return new THREE.MeshStandardMaterial({ color: S.wall, normalMap: tex('painted_plaster_wall_nor_gl', false, 2), normalScale: new THREE.Vector2(0.35, 0.35), roughnessMap: tex('painted_plaster_wall_rough', false, 2), roughness: 1 });
+  const wc = new THREE.Color(S.wall); return new THREE.MeshStandardMaterial({ color: wc, emissive: wc.clone().multiplyScalar(S.preset === 'warm' ? 0.1 : 0.05), normalMap: tex('painted_plaster_wall_nor_gl', false, 2), normalScale: new THREE.Vector2(0.35, 0.35), roughnessMap: tex('painted_plaster_wall_rough', false, 2), roughness: 1 });
 }
 
 // ---------- materials ----------
@@ -373,7 +385,7 @@ function camTo(kind) {
   const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
   const dist = Math.max(hgt / (2 * Math.tan(fov / 2)), span / (2 * Math.tan(fov / 2) * asp)) * (view.clientWidth < 800 ? 1.08 : 1.3) + sz.z * 0.35;
-  if (kind === 'card') { const f = fitCard(camera.aspect, 0.06, 0.06); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); controls.target.copy(f.tg); controls.update(); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); return; }
+  if (kind === 'card') { const f = fitCard(camera.aspect, 0.13, 0.05); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); controls.target.copy(f.tg); controls.update(); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); return; }
   camera.fov = 35; camera.updateProjectionMatrix();
   camera.position.copy(c).addScaledVector(dir, dist); controls.target.copy(c); camera.up.set(0, 1, 0); controls.update();
   document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind));
@@ -531,6 +543,7 @@ function fillGeneral() {
 }
 $('rodC').onchange = e => { S.rod = e.target.value; rebuild(); };
 $('metal').onchange = e => { S.metal = e.target.value; rebuild(); };
+$('wallTone').onchange = e => { if (e.target.value) { S.wall = e.target.value; $('wall').value = S.wall; rebuild(); } e.target.value = ''; };
 $('wall').oninput = e => { S.wall = e.target.value; rebuild(); };
 $('floor').onchange = e => { S.floor = e.target.value; rebuild(); };
 $('postH').onchange = e => { if (e.target.value !== 'custom') { S.postH = +e.target.value; $('postHc').value = S.postH; fix(); } };
@@ -592,6 +605,7 @@ Object.entries(DMB).forEach(([id, k]) => $(id).onclick = () => { S.dm[k] = !S.dm
 $('dAll').onclick = () => { S.dm = { t: true, s: true, v: true, c: true }; rebuild(); };
 $('dNone').onclick = () => { S.dm = { t: false, s: false, v: false, c: false }; rebuild(); };
 const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textContent = '', 3000); };
+$('shareBtn').onclick = async () => { const u = location.origin + location.pathname + '?cfg=' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); try { await navigator.clipboard.writeText(u); msg('Ссылка скопирована'); } catch (e) { prompt('Ссылка на конфигурацию', u); } };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = v; cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo(lastCam); msg('Конфигурация загружена'); };
 $('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = defaults(); cur = { w: 0, s: 0 }; fillGeneral(); cardUI(); rebuild(); renderSec(); camTo('front'); };
@@ -601,6 +615,6 @@ $('cAuto').onclick = () => { S.card.size = overall(); S.card.panel = specData().
 ['cTitle', 'cTOn', 'cSize', 'cSOn', 'cPanel', 'cPOn', 'cPos', 'cNote', 'cNOn', 'cDims'].forEach(id => $(id).onchange = cardRead);
 $('decor').onchange = e => { S.decor = e.target.checked; rebuild(); };
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
-$('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#e8d3bd'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
-fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); camTo(S.layout === 'straight' ? 'front' : 'iso');
+$('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
+fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : S.layout === 'straight' ? 'front' : 'iso');
 const _x=0;window.__gs = { get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, camTo, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
