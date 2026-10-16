@@ -21,3 +21,4 @@ input[type=range]{width:100%}.row2{display:grid;grid-template-columns:1fr 1fr;ga
 .file input{display:none}.hide{display:none}.foot{font-size:11px;color:#888}
 @media(max-width:800px){#app{flex-direction:column}#viewWrap{flex:none;height:58vh}#panel{width:auto;border-left:0;border-top:1px solid #ddd;flex:1}
 button{padding:7px 9px;font-size:13px}}
+input[type=text],textarea{display:block;width:100%;font:inherit;font-size:14px;padding:7px;border:1px solid #ccc;border-radius:8px;margin:3px 0 10px}

@@ -19,7 +19,7 @@ function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    layout: 'straight', metal: 'white', wall: '#ece7df', floor: 'oak', postH: 1920, railTop: 210, dims: true, dm: { h: true, v: true, c: false },
+    layout: 'straight', metal: 'white', wall: '#e8d3bd', floor: 'oak', preset: 'warm', view: 'all', card: null, postH: 1920, railTop: 210, dims: true, dm: { h: true, v: true, c: false },
     walls: [
       { gap: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), it('basket', 40, 75, 85), it('pull', 40, 50, 181)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('rail', 30, 100)])] },
       { gap: 45, sections: [sec(60, [it('metal', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('ldsp', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)])] },
@@ -27,7 +27,7 @@ function defaults() {
     ]
   };
 }
-let S = load('gs_auto') || defaults(); if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.dm) S.dm = { h: true, v: true, c: false }; S.dims = true;
+let S = load('gs_auto') || defaults(); if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.view) S.view = 'all'; if (!S.preset) S.preset = 'none'; if (!S.dm) S.dm = { h: true, v: true, c: false }; S.dims = true;
 let cur = { w: 0, s: 0 };
 function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v && v.walls ? v : null; } catch (e) { return null; } }
 
@@ -45,7 +45,7 @@ scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 100);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08;
-scene.add(new THREE.HemisphereLight(0xffffff, 0xd8cfc2, 0.6));
+const hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc2, 0.6); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 1.6);
 sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 6; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.01;
 const sc = sun.shadow.camera; sc.left = -5; sc.right = 5; sc.top = 5; sc.bottom = -5; sc.near = 0.5; sc.far = 20;
@@ -71,7 +71,7 @@ function tex(name, srgb, rep) {
 }
 function floorMat() {
   const [n, rep] = FLOORS[S.floor];
-  return new THREE.MeshStandardMaterial({ map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1 });
+  return new THREE.MeshStandardMaterial({ color: S.preset === 'warm' ? 0xfff0dc : 0xffffff, map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1 });
 }
 function wallMat() {
   return new THREE.MeshStandardMaterial({ color: S.wall, normalMap: tex('painted_plaster_wall_nor_gl', false, 2), normalScale: new THREE.Vector2(0.35, 0.35), roughnessMap: tex('painted_plaster_wall_rough', false, 2), roughness: 1 });
@@ -114,10 +114,10 @@ function buildWall(wi) {
   const total = wallWidth(wi), railY = S.railTop * 10 * MM, Z0 = 0.03;
   const rl = (total + 40) * MM;
   M.railTex.repeat.set(rl / 0.032, 1);
-  g.add(box(rl, 0.03, 0.03, total * MM / 2, railY - 0.015, 0.015, M.rail));
+  { const rb = box(rl, 0.03, 0.03, total * MM / 2, railY - 0.015, 0.015, M.rail); rb.userData.frame = true; g.add(rb); }
   const pb = postBottom() * MM, pt = (S.railTop * 10 - 10) * MM;
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
-  xs.forEach(x => g.add(box(0.025, pt - pb, 0.018, x, (pt + pb) / 2, Z0 + 0.009, M.post)));
+  xs.forEach(x => { const pm = box(0.025, pt - pb, 0.018, x, (pt + pb) / 2, Z0 + 0.009, M.post); pm.userData.frame = true; g.add(pm); });
   W.sections.forEach((s, si) => s.items.forEach(item => buildItem(g, item, xs[si], xs[si + 1])));
   return g;
 }
@@ -265,12 +265,14 @@ function rebuild() {
     g.updateMatrixWorld(true);
     labels.forEach(([p, t]) => { const sp = labelSprite(t, true); sp.position.copy(dg.localToWorld(p.clone())); sp.userData.parentWall = g; dimsG.add(sp); });
   });
+  model.traverse(o => { if (o.isMesh && o !== catcher && !o.userData.dims) { const f = !!o.userData.frame; o.visible = S.view === 'all' || (S.view === 'frame' ? f : !f); } });
+  applyLights();
   applyModelXf();
   setDims(true);
   bbox = new THREE.Box3();
   model.children.forEach(c => { if (c !== catcher) bbox.expandByObject(c); });
   const c = bbox.getCenter(new THREE.Vector3());
-  sun.position.set(c.x + 2.5, 4.5, 5); sun.target.position.copy(c);
+  sun.position.set(c.x + 2.5, 4.5, 5); sun.target.position.copy(c); applyLights();
   catcher.visible = !!photo && !$('showRoom').checked;
   room.visible = !photo || $('showRoom').checked;
   summary(); localStorage.setItem('gs_auto', JSON.stringify(S));
@@ -311,6 +313,26 @@ $('photo').onchange = e => {
 $('photoOff').onclick = () => { photo = null; photoImg = null; $('photoBg').style.backgroundImage = ''; $('photoCtl').classList.add('hide'); $('photo').value = ''; setBg(); rebuild(); };
 ['mx', 'my', 'ms', 'mr'].forEach(id => $(id).oninput = applyModelXf);
 $('showRoom').onchange = () => { setBg(); rebuild(); };
+function goboTex() {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  g.fillStyle = '#000'; g.fillRect(0, 0, 512, 512);
+  g.fillStyle = '#fff'; g.filter = 'blur(6px)';
+  [[60, 50, 180, 190], [272, 50, 180, 190], [60, 262, 180, 190], [272, 262, 180, 190]].forEach(([x, y, w, h]) => g.fillRect(x, y, w, h));
+  g.fillStyle = '#000'; g.filter = 'blur(10px)';
+  for (let i = 0; i < 26; i++) { const x = 20 + Math.random() * 200, y = 260 + Math.random() * 240; g.save(); g.translate(x, y); g.rotate(Math.random() * 3); g.beginPath(); g.ellipse(0, 0, 26, 9, 0, 0, 7); g.fill(); g.restore(); }
+  g.fillRect(110, 300, 6, 220);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const gobo = new THREE.SpotLight(0xffd9a8, 0); gobo.map = goboTex(); gobo.castShadow = true; gobo.shadow.mapSize.set(1024, 1024); gobo.shadow.radius = 4;
+gobo.angle = 0.55; gobo.penumbra = 0.5; gobo.decay = 0; scene.add(gobo, gobo.target);
+function applyLights() {
+  const c = bbox.getCenter(new THREE.Vector3()); const warm = S.preset === 'warm';
+  if (warm) {
+    sun.color.set(0xffe2bb); sun.intensity = 1.2; sun.position.set(c.x - 3.5, 3.6, 3.2);
+    gobo.intensity = 6; gobo.position.set(c.x - 3.2, 2.6, 2.8); gobo.target.position.set(c.x + 0.6, 1.2, 0);
+    renderer.toneMappingExposure = 0.95; hemi.color.set(0xffe8cc); hemi.groundColor.set(0xd9b48a); hemi.intensity = 0.75; fill.color.set(0xffdcb4); fill.intensity = 0.5; fill.position.set(c.x + 3, 2.2, 4);
+  } else { sun.color.set(0xffffff); sun.intensity = 1.6; gobo.intensity = 0; renderer.toneMappingExposure = 1.0; hemi.color.set(0xffffff); hemi.groundColor.set(0xd8cfc2); hemi.intensity = 0.6; fill.color.set(0xfff4e6); fill.intensity = 0.35; fill.position.set(-3, 2, 4); }
+}
 function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(0xe9e6e0); }
 
 // ---------- export ----------
@@ -326,32 +348,91 @@ $('pngBtn').onclick = async () => {
   out.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'garderob-titan.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
 };
 
+// ---------- marketplace card ----------
+function cardDefaults() { return { title: 'Наполнение для каркаса', tOn: true, size: '', sOn: true, panel: '', pOn: true, pos: 'auto', note: 'Для монтажа необходимо приобрести\nКАРКАС', nOn: true, dims: false }; }
+function cardUI() {
+  if (!S.card) S.card = cardDefaults(); const C = S.card;
+  if (!C.size) C.size = overall(); if (!C.panel) C.panel = specData().cardLines.join('\n');
+  $('cTitle').value = C.title; $('cTOn').checked = C.tOn; $('cSize').value = C.size; $('cSOn').checked = C.sOn; $('cPanel').value = C.panel; $('cPOn').checked = C.pOn; $('cPos').value = C.pos; $('cNote').value = C.note; $('cNOn').checked = C.nOn; $('cDims').checked = C.dims;
+}
+function cardRead() { const C = S.card; C.title = $('cTitle').value; C.tOn = $('cTOn').checked; C.size = $('cSize').value; C.sOn = $('cSOn').checked; C.panel = $('cPanel').value; C.pOn = $('cPOn').checked; C.pos = $('cPos').value; C.note = $('cNote').value; C.nOn = $('cNOn').checked; C.dims = $('cDims').checked; localStorage.setItem('gs_auto', JSON.stringify(S)); }
+function makeCard() {
+  cardRead(); const C = S.card, CW = 900, CH = 1200, top = C.tOn || C.sOn ? 230 : 40, bot = C.nOn ? 190 : 40;
+  const sv = { pos: camera.position.clone(), tg: controls.target.clone(), pr: renderer.getPixelRatio() };
+  const dimsWas = dimsG.visible; if (!C.dims) setDims(false);
+  renderer.setPixelRatio(2); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix();
+  // fit model into the free area between texts
+  const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
+  const dir = (lastCam === 'front' ? V(0, 0.05, 1) : V(0.9, 0.18, 1)).normalize(), fov = camera.fov * Math.PI / 180;
+  const free = (CH - top - bot) / CH, span = Math.max(sz.x, sz.z) * 1.05, dist = Math.max(sz.y / (2 * Math.tan(fov / 2) * free), span / (2 * Math.tan(fov / 2) * camera.aspect * 0.92)) * 1.08 + sz.z * 0.3;
+  const shiftY = ((top - bot) / 2 / CH) * 2 * Math.tan(fov / 2) * dist;
+  const tg = c.clone().add(V(0, shiftY, 0)); camera.position.copy(tg).addScaledVector(dir, dist); camera.lookAt(tg);
+  renderer.render(scene, camera);
+  const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
+  g.drawImage(renderer.domElement, 0, 0, CW, CH);
+  // occupancy: projected boxes of visible meshes
+  const rects = []; model.traverse(o => { if (o.isMesh && o.visible && o !== catcher && !o.userData.dims) { const b = new THREE.Box3().setFromObject(o); if (b.isEmpty()) return; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (let i = 0; i < 8; i++) { const p = V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).project(camera); const X = (p.x + 1) / 2 * CW, Y = (1 - p.y) / 2 * CH; x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); } rects.push([x0, y0, x1, y1]); } });
+  const serif = 'Georgia, "Times New Roman", "PT Serif", serif', ink = '#231c16';
+  const rule = (y, x0, x1) => { g.strokeStyle = 'rgba(35,28,22,0.7)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); };
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillStyle = ink;
+  if (C.tOn) { let fs = 66; g.font = `500 ${fs}px ${serif}`; while (g.measureText(C.title).width > CW - 80 && fs > 30) { fs -= 2; g.font = `500 ${fs}px ${serif}`; } g.fillText(C.title, CW / 2, 112); }
+  if (C.sOn) { g.font = `400 40px ${serif}`; const w = g.measureText(C.size).width; g.fillText(C.size, CW / 2, 182); rule(170, CW / 2 - w / 2 - 110, CW / 2 - w / 2 - 25); rule(170, CW / 2 + w / 2 + 25, CW / 2 + w / 2 + 110); }
+  if (C.nOn) { const L = C.note.split('\n').filter(Boolean), last = L.pop() || ''; g.font = `400 32px ${serif}`; L.forEach((t, i) => g.fillText(t, CW / 2, CH - 118 + (i - L.length + 1) * 38)); g.font = `700 50px ${serif}`; const w = g.measureText(last).width; g.fillText(last, CW / 2, CH - 52); rule(CH - 68, CW / 2 - w / 2 - 140, CW / 2 - w / 2 - 25); rule(CH - 68, CW / 2 + w / 2 + 25, CW / 2 + w / 2 + 140); }
+  if (C.pOn && C.panel.trim()) {
+    const lines = C.panel.split('\n').filter(Boolean); g.font = `400 25px ${serif}`;
+    const pw = Math.min(CW - 80, Math.max(330, ...lines.map(t => g.measureText(t).width + 64))), ph = 104 + lines.length * 40;
+    const yT = top + 20, yB = CH - bot - ph - 20, yM = (top + CH - bot - ph) / 2;
+    const cand = { tl: [40, yT], tr: [CW - pw - 40, yT], bl: [40, yB], br: [CW - pw - 40, yB], cr: [CW - pw - 40, yM] };
+    const ov = ([x, y]) => rects.reduce((a, [x0, y0, x1, y1]) => a + Math.max(0, Math.min(x + pw, x1) - Math.max(x, x0)) * Math.max(0, Math.min(y + ph, y1) - Math.max(y, y0)), 0);
+    let key = C.pos; if (key === 'auto') key = Object.keys(cand).sort((a, b) => ov(cand[a]) - ov(cand[b]))[0];
+    const [px, py] = cand[key];
+    g.save(); g.beginPath(); g.roundRect(px, py, pw, ph, 22); g.clip(); g.filter = 'blur(8px)'; g.drawImage(out, 0, 0); g.filter = 'none';
+    g.fillStyle = 'rgba(255,247,238,0.62)'; g.fillRect(px, py, pw, ph); g.restore();
+    g.fillStyle = ink; g.font = `500 29px ${serif}`; g.textAlign = 'center'; g.fillText('КОМПЛЕКТАЦИЯ', px + pw / 2, py + 52); rule(py + 68, px + 40, px + pw - 40);
+    g.textAlign = 'left'; g.font = `400 25px ${serif}`; lines.forEach((t, i) => g.fillText(t, px + 32, py + 112 + i * 40));
+  }
+  // restore
+  renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); controls.target.copy(sv.tg); controls.update(); if (dimsWas) setDims(true);
+  return out;
+}
+
 // ---------- spec / summary ----------
 function nearest(arr, v) { return arr.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a); }
 function railCombo(len) { const L = [1560, 1260, 1000, 700, 520], res = []; let rest = len; while (rest > 0) { const fit = L.slice().reverse().find(l => l >= rest); if (fit) { res.push(fit); break; } res.push(1560); rest -= 1560; } return res; }
-function summary() {
-  const spec = {}; const add = (k, n = 1) => spec[k] = (spec[k] || 0) + n;
-  let html = '';
+function specData() {
+  const frame = {}, fill = {}, card = {}, brk = new Set();
+  const add = (o, k, n = 1) => o[k] = (o[k] || 0) + n;
+  const walls = [];
   wallsActive().forEach(wi => {
-    const W = S.walls[wi], tot = wallWidth(wi);
-    const rails = railCombo(tot + 40); rails.forEach(r => add(`Рельс несущий ${r} мм`));
-    add(`Стойка ${S.postH} мм`, W.sections.length + 1);
-    W.sections.forEach(s => s.items.forEach(o => {
-      const w = s.w * 10, d = REAL_DEPTH[o.t][o.d];
-      const br = { 306: 335, 327: 335, 330: 335, 340: 335, 406: 435, 427: 435, 430: 435, 440: 435, 506: 535 }[d] || 435;
-      if (o.t === 'mesh') add(`Полка сетчатая ${nearest([463, 603, 903, 1203], w)}x${d}`);
-      if (o.t === 'metal') add(`Полка металлическая 597x${d}`);
-      if (o.t === 'ldsp') add(`Полка ЛДСП ${nearest([446, 587, 887], w)}x${d}`);
-      if (o.t === 'basket') add(`Корзина стационарная ${nearest([603, 903], w)}x${d}x85`);
-      if (o.t === 'pull') add(`Корзина выдвижная ${nearest([563, 863], w)}x${d}x${o.h || 85}`);
-      if (o.t === 'shoe') add(`Полка для обуви ${nearest([603, 903], w)}x406x77`);
-      if (o.t === 'rail') { add(`Перекладина ${nearest([640, 940, 1240, 2000], w)} мм`); add('Кронштейн для перекладины', 2); add('Кронштейн 335 мм', 2); }
-      else add(`Кронштейн ${br} мм`, 2);
+    const W = S.walls[wi], tot = wallWidth(wi), rails = railCombo(tot + 40);
+    rails.forEach(r => add(frame, `Рельс несущий ${r} мм`)); add(frame, `Стойка ${S.postH} мм`, W.sections.length + 1);
+    W.sections.forEach((s, si) => s.items.forEach(o => {
+      const w = s.w * 10, d = REAL_DEPTH[o.t][o.d], br = { 306: 335, 327: 335, 330: 335, 340: 335, 406: 435, 427: 435, 430: 435, 440: 435, 506: 535 }[d] || 435;
+      const nom = `${s.w}×${o.d} см`;
+      if (o.t === 'mesh') { add(fill, `Полка сетчатая ${nearest([463, 603, 903, 1203], w)}x${d}`); add(card, `Полка ${nom}`); }
+      if (o.t === 'metal') { add(fill, `Полка металлическая 597x${d}`); add(card, `Полка металлическая ${nom}`); }
+      if (o.t === 'ldsp') { add(fill, `Полка ЛДСП ${nearest([446, 587, 887], w)}x${d}`); add(card, `Полка ЛДСП ${nom}`); }
+      if (o.t === 'basket') { add(fill, `Корзина стационарная ${nearest([603, 903], w)}x${d}x85`); add(card, `Корзина ${nom}`); }
+      if (o.t === 'pull') { add(fill, `Корзина выдвижная ${nearest([563, 863], w)}x${d}x${o.h || 85}`); add(card, `Корзина выдвижная ${nom}`); }
+      if (o.t === 'shoe') { add(fill, `Полка для обуви ${nearest([603, 903], w)}x406x77`); add(card, `Полка для обуви ${nom}`); }
+      if (o.t === 'rail') { add(fill, `Перекладина ${nearest([640, 940, 1240, 2000], w)} мм`); add(fill, 'Кронштейн для перекладины', 2); add(card, 'Штанга'); }
+      else [si, si + 1].forEach(p => { const k = `${wi}:${p}:${o.y}`; if (!brk.has(k)) { brk.add(k); add(fill, `Кронштейн ${br} мм`); add(card, 'Кронштейн для полки'); } });
     }));
-    html += `<b>${WALLNAMES[wi]}:</b> ${cm(tot)} см, секций ${W.sections.length}, рельс ${rails.join(' + ')} мм<br>`;
+    walls.push(`<b>${WALLNAMES[wi]}:</b> ${cm(tot)} см, секций ${W.sections.length}, рельс ${rails.join(' + ')} мм`);
   });
-  html += '<details><summary>Спецификация элементов</summary>' + Object.entries(spec).map(([k, v]) => `${k} — ${v} шт`).join('<br>') + '</details>';
-  $('summary').innerHTML = html;
+  const ck = Object.keys(card).sort((a, b) => (a.startsWith('Кронштейн') - b.startsWith('Кронштейн')) || (a.startsWith('Штанга') - b.startsWith('Штанга')) || b.localeCompare(a));
+  return { frame, fill, walls, cardLines: ck.map(k => `${k} — ${card[k]} шт`) };
+}
+function overall() {
+  const W = Math.round(wallWidth(0) / 10 + 2.5);
+  let maxD = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => maxD = Math.max(maxD, o.d)));
+  let D = maxD + 5;
+  if (S.layout !== 'straight') { const w = [1, 2].filter(i => wallsActive().includes(i)).map(i => S.walls[i].gap + wallWidth(i) / 10 + 2.5); D = Math.round(Math.max(D, ...w)); }
+  return `${W} × ${D} × ${S.railTop} см`;
+}
+function summary() {
+  const d = specData(), li = o => Object.entries(o).map(([k, v]) => `${k} — ${v} шт`).join('<br>');
+  $('summary').innerHTML = d.walls.join('<br>') + `<br>Габарит: ${overall()}<details><summary>Каркас</summary>${li(d.frame)}</details><details><summary>Наполнение</summary>${li(d.fill)}</details>`;
 }
 
 // ---------- UI ----------
@@ -364,7 +445,7 @@ function fillGeneral() {
     const l = document.createElement('label'); l.innerHTML = 'Тип гардеробной<select id="layout">' + Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('') + '</select>';
     $('metal').parentNode.before(l); $('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); camTo(S.layout === 'straight' ? 'front' : 'iso'); };
   }
-  $('layout').value = S.layout;
+  $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('preset').value = S.preset || 'none';
 }
 $('metal').onchange = e => { S.metal = e.target.value; rebuild(); };
 $('wall').oninput = e => { S.wall = e.target.value; rebuild(); };
@@ -427,7 +508,12 @@ $('dNone').onclick = () => { S.dm = { h: false, v: false, c: false }; rebuild();
 const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textContent = '', 3000); };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = v; cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo(lastCam); msg('Конфигурация загружена'); };
-$('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = defaults(); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo('front'); };
+$('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = defaults(); cur = { w: 0, s: 0 }; fillGeneral(); cardUI(); rebuild(); renderSec(); camTo('front'); };
 
-fillGeneral(); setBg(); resize(); rebuild(); renderSec(); camTo(S.layout === 'straight' ? 'front' : 'iso');
-const _x=0;window.__gs = { S, camTo, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+$('cardBtn').onclick = () => { const o = makeCard(); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
+$('cAuto').onclick = () => { S.card.size = overall(); S.card.panel = specData().cardLines.join('\n'); cardUI(); cardRead(); };
+['cTitle', 'cTOn', 'cSize', 'cSOn', 'cPanel', 'cPOn', 'cPos', 'cNote', 'cNOn', 'cDims'].forEach(id => $(id).onchange = cardRead);
+$('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
+$('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#e8d3bd'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
+fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); camTo(S.layout === 'straight' ? 'front' : 'iso');
+const _x=0;window.__gs = { get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, camTo, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };

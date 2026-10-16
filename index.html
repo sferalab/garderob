@@ -13,6 +13,8 @@
 </div>
 <div id="panel">
 <div class="grp"><h3>Общие настройки</h3>
+<label>Интерьер<select id="preset"><option value="warm">Теплая солнечная</option><option value="none">Нейтральная студия</option></select></label>
+<label>Показывать<select id="viewMode"><option value="all">Все</option><option value="frame">Только каркас</option><option value="fill">Только наполнение</option></select></label>
 <label>Цвет металла<select id="metal"><option value="white">Белый (RAL 9016)</option><option value="black">Черный (RAL 9005)</option><option value="graphite">Графит</option></select></label>
 <div class="row2"><label>Цвет стены<input type="color" id="wall"></label><label>Пол<select id="floor"><option value="oak">Ламинат дуб</option><option value="walnut">Доска состаренная</option><option value="parquet">Паркет елочкой</option><option value="tile">Мрамор</option><option value="concrete">Бетон</option></select></label></div>
 <div class="row2"><label>Высота стоек, мм<select id="postH"><option>512</option><option>1025</option><option>1156</option><option>1536</option><option>1920</option><option>2304</option><option value="custom">свое значение</option></select></label><label>Свое, мм<input type="number" id="postHc" min="300" max="3000" step="1"></label></div>
@@ -21,6 +23,14 @@
 <div id="summary" class="sum"></div>
 </div>
 <div class="grp"><h3>Секции</h3><div id="secTabs" class="tabs"></div><div id="secEdit"></div></div>
+<div class="grp"><h3>Карточка для маркетплейса 900×1200</h3>
+<label class="chk"><input type="checkbox" id="cTOn"> Заголовок</label><input type="text" id="cTitle">
+<label class="chk"><input type="checkbox" id="cSOn"> Габариты</label><input type="text" id="cSize">
+<label class="chk"><input type="checkbox" id="cPOn"> Панель «КОМПЛЕКТАЦИЯ»</label><textarea id="cPanel" rows="5"></textarea>
+<label>Положение панели<select id="cPos"><option value="auto">Авто (не закрывать гардеробную)</option><option value="tl">Сверху слева</option><option value="tr">Сверху справа</option><option value="bl">Снизу слева</option><option value="br">Снизу справа</option><option value="cr">Справа по центру</option></select></label>
+<label class="chk"><input type="checkbox" id="cNOn"> Нижняя надпись (последняя строка крупно)</label><textarea id="cNote" rows="2"></textarea>
+<label class="chk"><input type="checkbox" id="cDims"> Размерные линии на карточке</label>
+<div class="btns"><button id="cAuto">Заполнить из спецификации</button><button id="cardBtn" class="acc">Скачать карточку</button></div></div>
 <div class="grp" id="photoGrp"><h3>Фото стены клиента</h3>
 <label class="file">Загрузить фото<input type="file" id="photo" accept="image/*"></label>
 <div id="photoCtl" class="hide">
