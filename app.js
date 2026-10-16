@@ -19,7 +19,7 @@ function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    layout: 'straight', metal: 'white', wall: '#ece7df', floor: 'oak', postH: 1920, railTop: 210, dims: true, secDims: true, hdims: false,
+    layout: 'straight', metal: 'white', wall: '#ece7df', floor: 'oak', postH: 1920, railTop: 210, dims: true, dm: { h: true, v: true, c: false },
     walls: [
       { gap: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), it('basket', 40, 75, 85), it('pull', 40, 50, 181)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('rail', 30, 100)])] },
       { gap: 45, sections: [sec(60, [it('metal', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('ldsp', 40, 192), it('rail', 30, 180), it('shoe', 40, 30)])] },
@@ -27,7 +27,7 @@ function defaults() {
     ]
   };
 }
-let S = load('gs_auto') || defaults(); if (!FLOORS[S.floor]) S.floor = 'oak';
+let S = load('gs_auto') || defaults(); if (!FLOORS[S.floor]) S.floor = 'oak'; if (!S.dm) S.dm = { h: true, v: true, c: false }; S.dims = true;
 let cur = { w: 0, s: 0 };
 function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v && v.walls ? v : null; } catch (e) { return null; } }
 
@@ -111,33 +111,38 @@ function wallWidth(w) { return S.walls[w].sections.reduce((a, s) => a + s.w * 10
 
 function buildWall(wi) {
   const W = S.walls[wi], g = new THREE.Group(); g.userData.wi = wi;
-  const total = wallWidth(wi), railY = S.railTop * 10 * MM, Z0 = 0.01;
+  const total = wallWidth(wi), railY = S.railTop * 10 * MM, Z0 = 0.03;
   const rl = (total + 40) * MM;
   M.railTex.repeat.set(rl / 0.032, 1);
-  g.add(box(rl, 0.045, 0.01, total * MM / 2, railY - 0.0225, 0.005, M.rail));
+  g.add(box(rl, 0.03, 0.03, total * MM / 2, railY - 0.015, 0.015, M.rail));
   const pb = postBottom() * MM, pt = (S.railTop * 10 - 10) * MM;
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
-  xs.forEach(x => g.add(box(0.027, pt - pb, 0.023, x, (pt + pb) / 2, Z0 + 0.0115, M.post)));
+  xs.forEach(x => g.add(box(0.025, pt - pb, 0.018, x, (pt + pb) / 2, Z0 + 0.009, M.post)));
   W.sections.forEach((s, si) => s.items.forEach(item => buildItem(g, item, xs[si], xs[si + 1])));
   return g;
 }
+const BRG = {};
 function bracket(g, x, y, L) {
-  // tapered bracket: vertical part on post and arm
-  g.add(box(0.004, 0.03, L, x, y - 0.015, 0.021 + L / 2, M.metal));
-  g.add(box(0.004, 0.006, L, x, y - 0.003, 0.021 + L / 2, M.metal));
+  const k = L.toFixed(3);
+  if (!BRG[k]) { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(L, 0); sh.lineTo(L, -0.008); sh.lineTo(0.03, -0.045); sh.lineTo(0, -0.048); sh.lineTo(0, 0);
+    const ge = new THREE.ExtrudeGeometry(sh, { depth: 0.003, bevelEnabled: false }); ge.rotateY(-Math.PI / 2); ge.translate(-0.0015, 0, 0); BRG[k] = ge; }
+  const m = new THREE.Mesh(BRG[k], M.metal); m.position.set(x, y - 0.003, 0.048); m.castShadow = m.receiveShadow = true; g.add(m);
+  g.add(box(0.016, 0.003, L, x, y - 0.0015, 0.048 + L / 2, M.metal));
 }
 function buildItem(g, item, x0, x1) {
-  const y = item.y * 10 * MM, dep = (REAL_DEPTH[item.t][item.d] || 400) * MM, z0 = 0.035, zf = z0 + dep;
+  const y = item.y * 10 * MM, dep = (REAL_DEPTH[item.t][item.d] || 400) * MM, z0 = 0.052, zf = z0 + dep;
   const a = x0 + 0.006, b = x1 - 0.006, L = b - a;
   const brL = dep + 0.03;
   if (item.t !== 'rail') { bracket(g, x0, y, brL); bracket(g, x1, y, brL); }
   if (item.t === 'mesh') {
-    const r = []; const n = Math.max(2, Math.round(L / 0.025));
-    for (let i = 0; i <= n; i++) { const x = a + L * i / n; r.push([V(x, y, z0), V(x, y, zf), 0.0018]); r.push([V(x, y, zf), V(x, y - 0.03, zf + 0.004), 0.0018]); }
-    r.push([V(a, y, z0), V(b, y, z0), 0.003]); r.push([V(a, y - 0.004, z0 + dep * 0.5), V(b, y - 0.004, z0 + dep * 0.5), 0.0025]);
-    r.push([V(a, y, zf), V(b, y, zf), 0.003]); r.push([V(a, y - 0.03, zf + 0.004), V(b, y - 0.03, zf + 0.004), 0.003]);
-    r.push([V(a, y - 0.004, z0 + dep * 0.22), V(b, y - 0.004, z0 + dep * 0.22), 0.002]); r.push([V(a, y - 0.004, z0 + dep * 0.78), V(b, y - 0.004, z0 + dep * 0.78), 0.002]);
+    const r = []; const n = Math.max(2, Math.round(L / 0.03)), wr = 0.0022;
+    for (let i = 0; i <= n; i++) { const x = a + L * i / n; r.push([V(x, y, z0), V(x, y, zf), wr]); }
+    [0, 0.25, 0.5, 0.75].forEach(t => r.push([V(a, y - 0.005, z0 + dep * t + 0.01), V(b, y - 0.005, z0 + dep * t + 0.01), 0.0024]));
+    r.push([V(a, y, z0), V(b, y, z0), 0.003]);
     g.add(rods(r, M.metal));
+    // front lip frame 28 mm
+    g.add(box(L, 0.028, 0.004, (a + b) / 2, y - 0.012, zf + 0.002, M.metal));
+    g.add(box(L, 0.004, 0.012, (a + b) / 2, y + 0.001, zf - 0.004, M.metal));
   } else if (item.t === 'metal') {
     g.add(box(L, 0.002, dep, (a + b) / 2, y - 0.001, z0 + dep / 2, M.metal));
     g.add(box(L, 0.03, 0.002, (a + b) / 2, y - 0.015, zf, M.metal));
@@ -164,9 +169,9 @@ function buildItem(g, item, x0, x1) {
     g.add(rods(r, M.metal));
   } else if (item.t === 'rail') {
     const arm = 0.335, zr = 0.3, ty = y + 0.06;
-    [x0, x1].forEach(x => g.add(box(0.004, 0.025, arm, x, ty - 0.012, 0.021 + arm / 2, M.metal)));
+    [x0, x1].forEach(x => g.add(box(0.004, 0.025, arm, x, ty - 0.012, 0.048 + arm / 2, M.metal)));
     [a + 0.01, b - 0.01].forEach(x => g.add(box(0.03, 0.065, 0.004, x, y + 0.025, zr, M.chrome)));
-    const rr = rods([[V(a, y, zr), V(b, y, zr), 0.0125]], M.chrome); rr.scale.set(1, 1, 1); g.add(rr);
+    const rr = rods([[V(a, y, zr), V(b, y, zr), 0.0125]], M.chrome); rr.geometry = new THREE.CylinderGeometry(1, 1, 1, 24, 1).translate(0, 0.5, 0); rr.scale.set(1, 1, 1); g.add(rr);
   }
 }
 
@@ -205,35 +210,44 @@ function labelSprite(text, small) {
 }
 const LINE2 = new THREE.LineBasicMaterial({ color: 0x777777, transparent: true, opacity: 0.7 });
 function segs(g, pts, mat = LINE) { const geo = new THREE.BufferGeometry().setFromPoints(pts); const l = new THREE.LineSegments(geo, mat); l.renderOrder = 9; g.add(l); }
-function dimH(g, labels, xa, xb, y, z, text, ext) {
-  const t = 0.012, p = [V(xa, y, z), V(xb, y, z)];
-  [xa, xb].forEach(x => p.push(V(x, y - ext, z), V(x, y + 0.025, z), V(x - t, y - t, z), V(x + t, y + t, z)));
-  segs(g, p); labels.push([V((xa + xb) / 2, y, z), text]);
+function dimH(g, labels, xa, xb, y, z, text, yPart) {
+  const t = 0.014, gap = 0.02, p = [V(xa, y, z), V(xb, y, z)];
+  [xa, xb].forEach(x => p.push(V(x, yPart + gap, z), V(x, y + 0.02, z), V(x, y - t, z), V(x, y + t, z)));
+  segs(g, p); labels.push([V((xa + xb) / 2, y + 0.04, z), text]);
 }
-function dimV(g, labels, x, ya, yb, z, text, ext) {
-  const t = 0.012, p = [V(x, ya, z), V(x, yb, z)];
-  [ya, yb].forEach(y => p.push(V(x - 0.025, y, z), V(x + ext, y, z), V(x - t, y - t, z), V(x + t, y + t, z)));
-  segs(g, p); labels.push([V(x, (ya + yb) / 2, z), text]);
+function dimV(g, labels, x, ya, yb, z, text, xPart) {
+  const t = 0.014, gap = 0.02, sg = Math.sign(x - xPart) || 1, p = [V(x, ya, z), V(x, yb, z)];
+  [ya, yb].forEach(y => p.push(V(xPart + sg * gap, y, z), V(x + sg * 0.02, y, z), V(x - t, y, z), V(x + t, y, z)));
+  segs(g, p); labels.push([V(x + sg * 0.05, (ya + yb) / 2, z), text]);
 }
 const cm = mm => String(Math.round(mm / 10 * 10) / 10).replace('.', ',');
+function itemTop(o) { return o.y * 10 * MM + (o.t === 'rail' ? 0.0125 : 0); }
+function itemBot(o) { const y = o.y * 10 * MM; return o.t === 'basket' || o.t === 'pull' ? y - (o.h || 85) * MM : o.t === 'shoe' ? y - 0.11 : o.t === 'rail' ? y - 0.0125 : y - 0.028; }
 function buildDims(g, wi) {
-  const labels = [], W = S.walls[wi], z = 0.004, railY = S.railTop * 10 * MM;
+  const labels = [], W = S.walls[wi], z = 0.004, railY = S.railTop * 10 * MM, D = S.dm || {};
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
-  const tot = xs[xs.length - 1], sec2 = S.secDims !== false;
-  const yTot = railY + (sec2 ? 0.2 : 0.12);
-  if (sec2) W.sections.forEach((s, i) => dimH(g, labels, xs[i], xs[i + 1], railY + 0.09, z, cm(s.w * 10), 0.06));
-  dimH(g, labels, 0, tot, yTot, z, cm(tot / MM), yTot - railY - 0.02);
-  // overall height at the free side of the wall
-  const left = wi === 0 && S.layout === 'straight', sgn = left ? -1 : 1, xb = left ? 0 : tot;
-  const xH = xb + sgn * (sec2 ? 0.22 : 0.13);
-  dimV(g, labels, xH, 0, railY, z, cm(railY / MM), -sgn * (Math.abs(xH - xb) - 0.03));
-  if (sec2) { const pb = postBottom() * MM, pt = (S.railTop * 10 - 10) * MM, xP = xb + sgn * 0.11; dimV(g, labels, xP, pb, pt, z, cm(S.postH), -sgn * 0.08); }
-  if (S.hdims) W.sections.forEach((s, i) => {
-    const x = xs[i] + 0.06, zz = 0.5, ys = [...new Set(s.items.map(o => o.y))].sort((a, b) => a - b);
-    const p = []; if (!ys.length) return; const top = ys[ys.length - 1] * 10 * MM;
-    p.push(V(x, 0, zz), V(x, top, zz));
-    ys.forEach(yc => { const y = yc * 10 * MM; p.push(V(x - 0.012, y - 0.012, zz), V(x + 0.012, y + 0.012, zz), V(x - 0.02, y, zz), V(x + 0.02, y, zz)); labels.push([V(x + 0.075, y + 0.03, zz), cm(yc * 10)]); });
-    segs(g, p, LINE2);
+  const tot = xs[xs.length - 1];
+  if (D.h) {
+    W.sections.forEach((s, i) => { if (s.items.some(o => o.t !== 'rail')) dimH(g, labels, xs[i] + 0.006, xs[i + 1] - 0.006, railY + 0.09, z, cm((s.w * 10) - 12), railY); });
+    W.sections.forEach((s, i) => dimH(g, labels, xs[i], xs[i + 1], railY + 0.19, z, cm(s.w * 10), railY));
+    dimH(g, labels, -0.0125, tot + 0.0125, railY + 0.29, z, cm(tot / MM + 25), railY);
+  }
+  if (D.v) {
+    const left = wi === 0 && S.layout === 'straight', sg = left ? -1 : 1, xb = left ? -0.0125 : tot + 0.0125;
+    const pb = postBottom() * MM, pt = (S.railTop * 10 - 10) * MM;
+    dimV(g, labels, xb + sg * 0.12, pb, pt, z, cm(S.postH), xb);
+    dimV(g, labels, xb + sg * 0.27, 0, railY, z, cm(railY / MM), xb);
+  }
+  if (D.c) W.sections.forEach((s, i) => {
+    const its = s.items.slice().sort((a, b) => itemBot(a) - itemBot(b)); if (!its.length) return;
+    const x = xs[i] + Math.min(0.1, (xs[i + 1] - xs[i]) * 0.2), zz = 0.52, t = 0.012, p = [];
+    const pts = [0]; its.forEach(o => pts.push(itemBot(o), itemTop(o))); pts.push(railY);
+    for (let k = 0; k < pts.length - 1; k += 2) {
+      const ya = pts[k], yb = pts[k + 1]; if (yb - ya < 0.005) continue;
+      p.push(V(x, ya, zz), V(x, yb, zz), V(x - t, ya, zz), V(x + t, ya, zz), V(x - t, yb, zz), V(x + t, yb, zz));
+      labels.push([V(x + 0.05, (ya + yb) / 2, zz), cm((yb - ya) / MM)]);
+    }
+    segs(g, p);
   });
   return labels;
 }
@@ -252,7 +266,7 @@ function rebuild() {
     labels.forEach(([p, t]) => { const sp = labelSprite(t, true); sp.position.copy(dg.localToWorld(p.clone())); sp.userData.parentWall = g; dimsG.add(sp); });
   });
   applyModelXf();
-  setDims(S.dims);
+  setDims(true);
   bbox = new THREE.Box3();
   model.children.forEach(c => { if (c !== catcher) bbox.expandByObject(c); });
   const c = bbox.getCenter(new THREE.Vector3());
@@ -263,7 +277,7 @@ function rebuild() {
 }
 function setDims(on) {
   S.dims = on; dimsG.visible = on; model.traverse(o => { if (o.userData.dims) o.visible = on; });
-  $('dimBtn').classList.toggle('on', on); $('secBtn').classList.toggle('on', S.secDims !== false); $('hBtn').classList.toggle('on', !!S.hdims);
+  Object.entries(DMB).forEach(([id, k]) => $(id).classList.toggle('on', !!S.dm[k]));
 }
 function applyModelXf() {
   if (!photo) { model.position.set(0, 0, 0); model.scale.setScalar(1); model.rotation.y = 0; dimsG.position.set(0, 0, 0); dimsG.scale.setScalar(1); dimsG.rotation.y = 0; return; }
@@ -301,7 +315,7 @@ function setBg() { scene.background = photo && !$('showRoom').checked ? null : n
 
 // ---------- export ----------
 $('pngBtn').onclick = async () => {
-  const hide = S.dims && !$('pngDims').checked; if (hide) setDims(false);
+  const hide = false;
   const w = view.clientWidth, h = view.clientHeight, k = Math.max(2, Math.ceil(3000 / Math.max(w, h)));
   renderer.setPixelRatio(k); renderer.setSize(w, h, false); renderer.render(scene, camera);
   const W = renderer.domElement.width, H = renderer.domElement.height;
@@ -406,13 +420,14 @@ function renderSec() {
 
 let lastCam = 'front';
 document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => { lastCam = b.dataset.cam; camTo(lastCam); });
-$('secBtn').onclick = () => { S.secDims = S.secDims === false; rebuild(); };
-$('hBtn').onclick = () => { S.hdims = !S.hdims; rebuild(); };
-$('dimBtn').onclick = () => { setDims(!S.dims); localStorage.setItem('gs_auto', JSON.stringify(S)); };
+const DMB = { dH: 'h', dV: 'v', dC: 'c' };
+Object.entries(DMB).forEach(([id, k]) => $(id).onclick = () => { S.dm[k] = !S.dm[k]; rebuild(); });
+$('dAll').onclick = () => { S.dm = { h: true, v: true, c: true }; rebuild(); };
+$('dNone').onclick = () => { S.dm = { h: false, v: false, c: false }; rebuild(); };
 const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textContent = '', 3000); };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = v; cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo(lastCam); msg('Конфигурация загружена'); };
 $('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = defaults(); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo('front'); };
 
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); camTo(S.layout === 'straight' ? 'front' : 'iso');
-window.__gs = { S, camTo, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+const _x=0;window.__gs = { S, camTo, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
