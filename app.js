@@ -8,7 +8,7 @@ const $ = id => document.getElementById(id);
 const MM = 0.001;
 const METAL = { white: 0xf7f9fc, black: 0x202124, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
-const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.8, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.85, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.85, f: 16 }, top: { dx: 0, len: 0.15, o: 0.8, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.95, f: 5 }, none: { o: 0 } };
+const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 } };
 const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
@@ -223,7 +223,7 @@ function makeMats() {
   }[S.metal] || {};
   const G = grainTex();
   M.metal = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 6, 6), normalScale: new THREE.Vector2(0.22, 0.22), roughnessMap: rep(G.rough, 6, 6) });
-  M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: Math.max(0.36, PB.roughness || 0.3) });
+  M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
   const dark = S.metal === 'black', pt = slotTex(false, dark).clone(); pt.needsUpdate = true; pt.repeat.set(1, S.postH / 32);
   // uprights: crisp perforation as color + bump relief, powder grain in the roughness
   M.post = new THREE.MeshPhysicalMaterial({ ...PB, map: pt, bumpMap: pt, bumpScale: 2.2, roughnessMap: rep(G.rough, 1, S.postH / 60) });
@@ -264,7 +264,7 @@ function postBottom() { return S.railTop * 10 - 10 - S.postH; } // mm
 function wallsActive() { return S.layout === 'straight' ? [0] : S.layout === 'L' ? [0, 1] : S.layout === 'Lr' ? [0, 2] : [0, 1, 2]; }
 function wallWidth(w) { return S.walls[w].sections.reduce((a, s) => a + s.w * 10, 0); }
 function wallsBuilt() { return wallsActive().filter(wi => !S.walls[wi].off); }
-const ZB = 0.003, ZI = 0.004, XIN = 0.0235; // shelves sit flush on the wall between the uprights // bracket base and back of the filling, m from the wall
+const ZB = 0.003, ZI = 0.004, XIN = 0; // shelves sit flush on the wall between the uprights // bracket base and back of the filling, m from the wall
 // room frame per layout: x of the left side wall, start of the main wall, x of the right side wall
 // every wall keeps its own shift from its corner (Lr: the main wall is measured from the right corner)
 function frame() {
@@ -1628,7 +1628,7 @@ function snap34() {
   renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   if (photoImg && !$('showRoom').checked) { const s = Math.max(CW / photoImg.width, CH / photoImg.height), iw = photoImg.width * s, ih = photoImg.height * s; g.drawImage(photoImg, (CW - iw) / 2, (CH - ih) / 2, iw, ih); }
-  g.drawImage(renderer.domElement, 0, 0, CW, CH);
+  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH);
   sun.shadow.mapSize.set(sm, sm); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q); if (orb.on) applyCam();
   return out;
@@ -1678,3 +1678,23 @@ renderDeco(); setBg(); rebuild(); renderSec();
   $('lensBtn').onclick = e => { e.stopPropagation(); draw(); const r = $('lensBtn').getBoundingClientRect(); pop.style.top = (r.bottom + 6) + 'px'; pop.style.right = Math.max(6, innerWidth - r.right - 40) + 'px'; pop.classList.toggle('hide'); };
   document.addEventListener('pointerdown', e => { if (!pop.contains(e.target) && e.target !== $('lensBtn') && !$('lensBtn').contains(e.target)) pop.classList.add('hide'); }); }
 lensUI();
+// «Эффект»: a per-camera photo look (no blur); live as CSS filter + overlays, baked into 📷 by pixels
+const FXP = { std: { b: 1.02, c: 1.03, s: 1.04, w: 0.03, l: 0, v: 0.2 }, int: { b: 1.08, c: 0.92, s: 1.03, w: 0.035, l: 0.04, v: 0 }, por: { b: 1.0, c: 1.16, s: 1.06, w: 0, l: 0, v: 0.32 }, top3: { b: 1.04, c: 1.03, s: 0.9, w: -0.035, l: 0, v: 0.06 } };
+const fxOn = () => localStorage.getItem('gs_fx') === '1';
+function fxUI() { const on = fxOn(), p = FXP[camK()] || FXP.std, el = renderer.domElement; $('fxBtn').classList.toggle('on', on);
+  el.style.filter = on ? `brightness(${p.b + p.l}) contrast(${p.c}) saturate(${p.s})` : '';
+  let ov = document.getElementById('fxOv'); if (!ov) { ov = document.createElement('div'); ov.id = 'fxOv'; el.parentNode.insertBefore(ov, el.nextSibling); }
+  const tint = p.w > 0 ? `rgba(255,170,90,${p.w * 3})` : `rgba(120,170,255,${-p.w * 3})`;
+  ov.style.cssText = on ? `position:absolute;left:${el.offsetLeft}px;top:${el.offsetTop}px;width:${el.clientWidth}px;height:${el.clientHeight}px;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,${p.v}) 100%), linear-gradient(${tint},${tint});mix-blend-mode:normal` : 'display:none';
+  if (on && p.w) ov.style.background = `radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,${p.v}) 100%), linear-gradient(${p.w > 0 ? 'rgba(255,190,120,' + p.w * 1.6 + ')' : 'rgba(150,190,255,' + (-p.w * 1.6) + ')'},rgba(0,0,0,0))`; }
+function fxBake(g, W, H) { if (!fxOn()) return; const p = FXP[camK()] || FXP.std, im = g.getImageData(0, 0, W, H), d = im.data, cx = W / 2, cy = H / 2, R2 = cx * cx + cy * cy;
+  for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i += 4) { let r = d[i] / 255, gg = d[i + 1] / 255, b = d[i + 2] / 255;
+    r = r * p.b + p.l * (1 - r); gg = gg * p.b + p.l * (1 - gg); b = b * p.b + p.l * (1 - b); r = (r - 0.5) * p.c + 0.5; gg = (gg - 0.5) * p.c + 0.5; b = (b - 0.5) * p.c + 0.5;
+    const L = 0.299 * r + 0.587 * gg + 0.114 * b; r = L + (r - L) * p.s; gg = L + (gg - L) * p.s; b = L + (b - L) * p.s; r += p.w; b -= p.w;
+    if (p.v) { const q = ((x - cx) * (x - cx) + (y - cy) * (y - cy)) / R2, k = 1 - p.v * Math.max(0, (q - 0.3) / 0.7); r *= k; gg *= k; b *= k; }
+    d[i] = r * 255; d[i + 1] = gg * 255; d[i + 2] = b * 255; }
+  g.putImageData(im, 0, 0); }
+$('fxBtn').onclick = () => { localStorage.setItem('gs_fx', fxOn() ? '0' : '1'); fxUI(); msg('Эффект: ' + (fxOn() ? 'вкл' : 'выкл')); };
+addEventListener('resize', () => setTimeout(fxUI, 50)); fxUI();
+{ const o = lensUI; lensUI = function () { o(); try { fxUI(); } catch (e) {} }; }
+
