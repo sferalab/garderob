@@ -120,3 +120,43 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 .cpstrip i{position:absolute;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px #0006;pointer-events:none}
 #finBtns button,#floorBtns button{min-width:0}
 .hide{display:none!important}.ico svg{width:54px;height:36px}@media(max-width:800px){.ico svg{width:46px;height:31px}}
+/* ================= v8 ================= */
+#floatBar{gap:4px;padding:4px 5px;flex-wrap:nowrap}
+#floatBar .rnd{width:38px;height:38px;font-size:19px;border-radius:50%}
+#floatBar #delBtn{font-size:17px}
+#floatBar #camBtn{font-size:18px;background:#2b2b2b;border-color:#2b2b2b}
+@media(max-width:430px){#floatBar{gap:3px;padding:3px 4px}#floatBar button{padding:6px 6px;font-size:11.5px}#floatBar .rnd{width:34px;height:34px;font-size:17px}#floatBar #delBtn{font-size:15px}}
+@media(max-width:370px){#floatBar button{padding:5px 5px;font-size:11px}#floatBar .rnd{width:31px;height:31px;font-size:15px}}
+#topbar>#sndBtn{margin-left:auto;padding:5px 7px;display:flex;align-items:center;justify-content:center;color:#2b2b2b}
+#topbar>#sndBtn+#moreBtn{margin-left:0}
+#sndBtn svg{width:21px;height:21px;display:block}#sndBtn .mx{display:none}#sndBtn.off .w1,#sndBtn.off .w2{display:none}#sndBtn.off .mx{display:inline}#sndBtn.off{color:#9a958e}
+#wallsPop{position:absolute;right:8px;bottom:58px;z-index:7;background:#fff;border-radius:14px;box-shadow:0 8px 28px #0003;padding:10px 12px;width:min(300px,92%);font-size:13px;display:flex;flex-direction:column;gap:6px}
+#wallsPop.hide{display:none}#wallsPop>button{text-align:left;padding:10px 12px;border-radius:10px;font-size:13.5px}
+#dragTipL{position:absolute;z-index:5;background:#2b2b2b;color:#fff;font-size:13px;font-weight:600;padding:4px 8px;border-radius:6px;pointer-events:none;white-space:nowrap;line-height:1.35}
+.offbox{background:#f8f4ee;border:1px solid #e2d6c6;border-radius:14px;padding:14px;margin:10px 0}.offbox .acc{margin-top:8px}
+.item .ld{display:flex;align-items:center;gap:8px;margin:6px 0 2px}.item .ld>span{font-size:12px;color:#77706a;min-width:62px}.item .ld .sz{margin:0;gap:4px;flex-wrap:wrap}.item .ld .sz button{min-width:40px;padding:5px 8px;font-size:12.5px}
+.gapl{display:block;margin:6px 0 10px}#posGap2{margin-bottom:12px}#posGap2:empty{display:none}
+.angbox:empty{display:none}.angbox{margin:10px 0 14px}
+/* Оформление: more air */
+#viewGrp .szlab{margin-top:20px;margin-bottom:8px}
+#viewGrp .sub{margin-top:22px;padding-top:14px}
+#viewGrp .sub.light{border:1px solid #ece6dd;background:#fbf9f6;border-radius:16px;padding:12px 14px 14px;margin-top:6px}
+#viewGrp .sub.light .szlab:first-of-type{margin-top:8px}
+#viewGrp label{margin:12px 0}
+#viewGrp .sz{gap:6px}
+#viewGrp #decoTabs{margin:22px 0 6px}
+.swrow{display:flex;gap:28px;flex-wrap:wrap;margin-top:6px}
+.sws{display:flex;gap:14px}
+.sws button{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;color:#555;min-width:0}
+.sws button i{width:44px;height:44px;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px #0002,0 1px 4px #0002}
+.sws button.on i{box-shadow:inset 0 0 0 1px #0002,0 0 0 3px #fff,0 0 0 5px #2b2b2b}
+.sws button.on span{color:#111;font-weight:700}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:10px;margin:10px 0 4px}
+.tiles button{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11.5px;line-height:1.2;color:#555;text-align:center;min-width:0}
+.tiles button i{width:100%;aspect-ratio:1/1;border-radius:12px;display:block;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px #0002}
+.tiles button.on i{box-shadow:inset 0 0 0 1px #0002,0 0 0 2px #fff,0 0 0 4px #2b2b2b}.tiles button.on span{color:#111;font-weight:700}
+#rugBox .sz{margin:6px 0}
+.plrow{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:10px;margin:4px 0}.plrow.sel{background:#f1eee9}.plrow span{min-width:120px;font-size:13px}.plrow input{flex:1}
+#plantBtns button,#openBtns button{min-width:0}
+@media(max-width:430px){#floatBar{gap:2px;padding:3px}#floatBar button{padding:5px 5px;font-size:11px;letter-spacing:-.1px}#floatBar .rnd{width:33px;height:33px;font-size:16px}#floatBar #delBtn{font-size:14px}}
+@media(max-width:370px){#floatBar button{padding:4px 4px;font-size:10.5px}#floatBar .rnd{width:30px;height:30px;font-size:14px}}
