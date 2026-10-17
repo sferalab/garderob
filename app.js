@@ -8,6 +8,7 @@ const $ = id => document.getElementById(id);
 const MM = 0.001;
 const METAL = { white: 0xf7f9fc, black: 0x202124, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
+const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.8, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.85, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.85, f: 16 }, top: { dx: 0, len: 0.15, o: 0.8, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.95, f: 5 }, none: { o: 0 } };
 const FLOORS = { oak: ['herringbone_parquet', 1.5, 0xffffff, null, 1, 1.5], lam: ['laminate_floor_02', 2.0, 0xfffaf3, null, 0, 1.5], lamD: ['wood_floor_worn', 3.0, 0x7d6656, null, 0, 2.8], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
@@ -34,7 +35,7 @@ function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    v4: 1, v5: 1, v7: 1, v8: 1, layout: 'L', metal: 'white', wall: '#a9a49c', wallFin: 'paint', wallVar: { paint: 'matte', plaster: 'koroed', paper: 'linen' }, floor: 'oak', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 213, plants: [], dims: false, dm: { o: false, s: false, h: false, g: false, sd: false }, dimC: 'white', dimStyle: 'bold', studio: false, rug: null, room: { shOn: true, shP: 'soft', winL: 'off', glareM: 'soft', glare: 0.3, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true, extra: 250 },
+    __fresh: true, v4: 1, v5: 1, v7: 1, v8: 1, layout: 'L', metal: 'white', wall: '#a9a49c', wallFin: 'paint', wallVar: { paint: 'matte', plaster: 'koroed', paper: 'linen' }, floor: 'oak', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 213, plants: [], dims: false, dm: { o: false, s: false, h: false, g: false, sd: false }, dimC: 'white', dimStyle: 'bold', studio: false, rug: null, room: { shOn: true, shP: 'soft', winL: 'off', glareM: 'soft', glare: 0.3, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true, extra: 250 },
     walls: [
       { gap: 0, gapR: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), Object.assign(it('pull', 40, 75, 181), { v: 'mesh' }), Object.assign(it('pull', 40, 52, 181), { v: 'mesh' })])] },
       { gap: 50, sections: [sec(60, [it('mesh', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)])] },
@@ -187,10 +188,11 @@ function aoGrad(k) { // soft quadratic falloff, alpha along u (u=0 darkest)
 // strip of AO on a plane: len along v, width w; u runs from the joint into the surface
 function aoStrip(parent, len, w, k, place) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, len), aoGrad(k)); place(m); parent.add(m); return m; }
 let CONTACT;
-function contactMat() {
-  if (!CONTACT) { const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(0,0,0,0.55)'); gr.addColorStop(0.35, 'rgba(0,0,0,0.22)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 64);
-    const m = g.getImageData(0, 0, 128, 64); for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const k = Math.min(1, Math.min(x, 127 - x) / 18); m.data[(y * 128 + x) * 4 + 3] *= k; } g.putImageData(m, 0, 0); CONTACT = new THREE.CanvasTexture(c); }
-  return new THREE.MeshBasicMaterial({ map: CONTACT, transparent: true, depthWrite: false, opacity: 0.6, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+const CONTACTS = {};
+function contactMat(f = 18, op = 0.6) {
+  CONTACT = CONTACTS[f]; if (!CONTACT) { const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(0,0,0,0.62)'); gr.addColorStop(0.3, 'rgba(0,0,0,0.42)'); gr.addColorStop(0.65, 'rgba(0,0,0,0.14)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 64);
+    const m = g.getImageData(0, 0, 128, 64); for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const k = Math.min(1, Math.min(x, 127 - x) / f); m.data[(y * 128 + x) * 4 + 3] *= k; } g.putImageData(m, 0, 0); CONTACT = CONTACTS[f] = new THREE.CanvasTexture(c); }
+  return new THREE.MeshBasicMaterial({ map: CONTACT, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 }
 
 // ---------- materials ----------
@@ -224,7 +226,8 @@ function makeMats() {
   // uprights: crisp perforation as color + bump relief, powder grain in the roughness
   M.post = new THREE.MeshPhysicalMaterial({ ...PB, map: pt, bumpMap: pt, bumpScale: 2.2, roughnessMap: rep(G.rough, 1, S.postH / 60) });
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
-  M.rail = new THREE.MeshPhysicalMaterial({ ...PB, map: rt, bumpMap: rt, bumpScale: 2, roughnessMap: rep(G.rough, 30, 1) });
+  // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
+  M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
   M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xeef1f4, metalness: 0.9, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.04, emissive: new THREE.Color(0x5a5e63), envMapIntensity: 2.0 * Math.max(0.6, gm) });
   M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
@@ -277,9 +280,9 @@ function railSpan(wi) {
 function buildWall(wi) {
   const W = S.walls[wi], g = new THREE.Group(); g.userData.wi = wi;
   const total = wallWidth(wi), railY = S.railTop * 10 * MM, [ra, rb] = railSpan(wi), rl = rb - ra, rc = (ra + rb) / 2;
-  const rt = M.railTex.clone(); rt.needsUpdate = true; rt.repeat.set(rl / 0.032, 1); const rm = M.rail.clone(); rm.map = rt; rm.bumpMap = rt;
+  const rm = M.rail.clone();
   // load-bearing rail 60 x 16 (visual), same on every wall: back plate, returns, rounded front lips, end caps
-  { const H = 0.06, D = 0.016;
+  { const H = 0.068, D = 0.014;
     const parts = [box(rl, H, 0.004, rc, railY - H / 2, 0.002, rm), box(rl, 0.0045, D, rc, railY - 0.00225, D / 2, M.metal), box(rl, 0.0045, D, rc, railY - H + 0.00225, D / 2, M.metal), box(0.004, H, D, ra + 0.002, railY - H / 2, D / 2, M.metal), box(0.004, H, D, rb - 0.002, railY - H / 2, D / 2, M.metal)];
     const lip = (h, y) => { const m = new THREE.Mesh(new RoundedBoxGeometry(rl, h, 0.0056, 2, 0.0022), M.metal); m.position.set(rc, y, D - 0.0026); m.castShadow = m.receiveShadow = true; return m; };
     parts.push(lip(0.022, railY - 0.011), lip(0.014, railY - H + 0.007));
@@ -291,7 +294,8 @@ function buildWall(wi) {
     const hk = new THREE.Mesh(new RoundedBoxGeometry(0.05, 0.034, 0.03, 2, 0.004), M.metal); hk.position.set(x, pt - 0.012, 0.021); hk.castShadow = true; hk.userData.frame = true; g.add(hk);
     const cap = new THREE.Mesh(new RoundedBoxGeometry(0.048, 0.014, 0.044, 2, 0.004), M.plastic); cap.position.set(x, pb + 0.007, 0.027); cap.userData.frame = true; g.add(cap); });
   W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si], xs[si + 1], s);
-    if (item.t !== 'rail') { const ch = isBasket(item.t) ? (item.h || 85) * MM + 0.08 : 0.11, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si], ch), contactMat()); cs.position.set((xs[si] + xs[si + 1]) / 2, itemTop(item) - ch / 2 + 0.005, 0.0012); cs.userData.contact = true; ig.add(cs); } }));
+    // baked shadow tight on the wall under/behind the item: 5-15 cm, soft edge; presets only tilt it a little; never leaves the item's own wall
+    const B = SHB[S.room.shP] || SHB.soft; if (B.o > 0) { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.012 : itemTop(item)) - ch / 2 + 0.005, 0.0012); cs.userData.contact = true; ig.add(cs); } }));
   // soft contact shade on the floor under and just in front of the wall (the only shadow in Студия)
   if (false) { const fs = new THREE.Mesh(new THREE.PlaneGeometry(0.75, total * MM + 0.14), aoGrad(S.studio ? 0.36 : 0.12)); fs.rotation.x = -Math.PI / 2; fs.rotation.z = Math.PI / 2; fs.scale.x = -1; fs.position.set(total * MM / 2, 0.0025, 0.375); fs.userData.contact = fs.userData.keep = true; g.add(fs); }
   return g;
@@ -707,6 +711,8 @@ function restoreHist(j) { histLock = true; setTimeout(() => { renderDeco(); setB
 function undo() { clearTimeout(histT); if (HIST.length < 2) return; RED.push(HIST.pop()); restoreHist(HIST[HIST.length - 1]); }
 function redo() { if (!RED.length) return; const j = RED.pop(); HIST.push(j); restoreHist(j); }
 function rebuild() {
+  // fresh start / reset: corner shifts sit on the red dot (no shelves crossing in the corner)
+  if (S.__fresh) { delete S.__fresh; if (S.layout !== 'straight') gapKeys().forEach(([k]) => gapSet(k, Math.min(300, optGap(k)))); }
   S.walls.forEach(w => w.sections.forEach(syncLinks));
   S.walls.forEach((w, wi) => { if (w.postL) Object.keys(w.postL).forEach(k => { if (+k > w.sections.length) delete w.postL[k]; }); w.sections.forEach((sc, si) => { const lo = secLo(wi, si); sc.items.forEach(o => { const drop = o.y - itemBot(o) * 100; if (o.y - drop < lo - 3 + 0.01) o.y = Math.min(S.railTop - 4, Math.ceil(lo - 3 + drop)); }); }); });
   makeMats();
@@ -783,7 +789,8 @@ function syncFromCam(kind) {
   orb.T.copy(T); orb.az = Math.atan2(p.x - T.x, p.z - T.z); orb.R = Math.max(0.5, Math.hypot(p.x - T.x, p.z - T.z)); orb.h = p.y; applyCam();
 }
 function applyCam(cam = camera) {
-  const o = orb; o.h = Math.max(0.05, Math.min(o.T.y + o.R * 4, Math.max(o.h, o.T.y - o.R * 3)));
+  const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
+  o.h = Math.max(0.05, Math.min(o.T.y + o.R * 4, Math.max(o.h, o.T.y - o.R * 3)));
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 0.42);
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
@@ -793,8 +800,9 @@ function applyCam(cam = camera) {
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
   el.addEventListener('contextmenu', e => e.preventDefault());
-  el.addEventListener('pointerdown', e => { if (!orb.on) return; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
-  const end = e => { P.delete(e.pointerId); last = null; pinch = null; };
+  el.addEventListener('pointerdown', e => { if (!orb.on) return; orb.snapAz = false; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
+  // straight and U: a near-frontal view settles exactly frontal, so the ceiling and floor edges read level
+  const end = e => { P.delete(e.pointerId); last = null; pinch = null; if (!P.size && (S.layout === 'straight' || S.layout === 'U') && Math.abs(orb.az) < 0.16) orb.snapAz = true; };
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   el.addEventListener('pointermove', e => {
     if (!orb.on || !P.has(e.pointerId)) return; const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
@@ -888,7 +896,7 @@ function applyGlareShadow() {
   const R = S.room || {}, c = bbox.getCenter(new THREE.Vector3()), P = SHP[R.shP] || SHP.soft, ST = !!S.studio && !photo, gmode = R.glareM || 'soft';
   if (R.glow === 'left' || R.glow === 'right') { const sx = R.glow === 'left' ? -1 : 1; glow.intensity = 1.6; glow.position.set(c.x + sx * 3, 2.4, 2.6); glow.target.position.set(c.x + sx * 0.6, 1.5, 0); } else glow.intensity = 0;
   const on = R.shP !== 'none' && !S.sun;
-  sun.castShadow = on || (!!photo && !$('showRoom').checked);
+  sun.castShadow = !!photo && !$('showRoom').checked; // shelf shadows are baked on the wall (SHB)
   if (P.el != null && !S.sun) {
     const az = P.az * Math.PI / 180, el = P.el * Math.PI / 180, D = 7;
     sun.position.set(c.x + D * Math.sin(az) * Math.cos(el), c.y + D * Math.sin(el), c.z + D * Math.cos(az) * Math.cos(el)); sun.target.position.copy(c);
@@ -1289,7 +1297,7 @@ function itemGroups(wi, si, idxs) { const out = []; model.traverse(o => { const 
     const dy = ny - drag.y0; drag.o.y = ny; drag.linked.forEach((p, k) => p.y = drag.ly0[k] + dy);
     drag.gs.forEach(g => g.position.y = dy / 100);
     if (dimsOn() && !drag.t) drag.t = setTimeout(() => { if (drag) { drag.t = 0; rebuildDims(); } }, 60);
-    tip.textContent = `от пола ${ny} см${drag.snap === ny ? ' · вровень' : ''}`; tip.style.left = (e.clientX - r.left + 14) + 'px'; tip.style.top = (e.clientY - r.top - 34) + 'px'; nbTip(drag, e, r);
+    tip.textContent = `от пола ${ny} см${drag.snap === ny ? ' · вровень' : ''}`; nbTip(drag, e, r); placeTips(drag, e, r);
   }, true);
   const up = e => { if (!drag) return; e.stopImmediatePropagation(); clearTimeout(drag.t); const tap = !drag.moved && performance.now() - drag.t0 < 600; drag = null; tip.classList.add('hide'); $('dragTipL').classList.add('hide'); if (tap && e.type === 'pointerup') return handleTap(e); rebuild(); renderSec(); };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true);
@@ -1558,11 +1566,24 @@ $('cornC').oninput = e => { S.room.cornColor = e.target.value; rebuild(); };
 { const o = $('ceilT').onchange; $('ceilT').onchange = e => { o(e); renderDeco(); }; }
 { const o = $('layout').onchange; $('layout').onchange = e => { o(e); renderAng(); renderWallsPop(); }; }
 // neighbour distances while dragging: left of the finger, «от пола» on the right
+// both hints sit right beside the dragged item on screen, clamped inside the view
+const _tb = new THREE.Box3(), _tv = new THREE.Vector3();
+function placeTips(d, e, r) {
+  const T = $('dragTip'), L = $('dragTipL'), ii = S.walls[d.wi].sections[d.si].items.indexOf(d.o); let g = null;
+  model.traverse(o => { const f = o.userData.ref; if (f && f.wi === d.wi && f.si === d.si && f.ii === ii) g = o; });
+  let x0 = e.clientX - r.left - 40, x1 = e.clientX - r.left + 40, yc = e.clientY - r.top;
+  if (g) { _tb.makeEmpty(); g.traverse(m => { if (m.isMesh && !m.userData.contact) _tb.expandByObject(m); }); if (!_tb.isEmpty()) { x0 = 1e9; x1 = -1e9; let y0 = 1e9, y1 = -1e9;
+    for (let i = 0; i < 8; i++) { _tv.set(i & 1 ? _tb.max.x : _tb.min.x, i & 2 ? _tb.max.y : _tb.min.y, i & 4 ? _tb.max.z : _tb.min.z).project(camera); const sx = (_tv.x + 1) / 2 * r.width, sy = (1 - _tv.y) / 2 * r.height; x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy); }
+    yc = (y0 + y1) / 2; } }
+  const cl = (v, w) => Math.max(4, Math.min(r.width - w - 4, v)), ch = (v, h) => Math.max(4, Math.min(r.height - h - 4, v));
+  const tw = T.offsetWidth || 120, th = T.offsetHeight || 26, lw = L.offsetWidth || 90, lh = L.offsetHeight || 40;
+  T.style.left = cl(x1 + 8, tw) + 'px'; T.style.top = ch(yc - th / 2, th) + 'px'; L.style.right = 'auto'; L.style.left = cl(x0 - 8 - lw, lw) + 'px'; L.style.top = ch(yc - lh / 2, lh) + 'px';
+}
 function nbTip(d, e, r) {
   const L = $('dragTipL'), sc = S.walls[d.wi].sections[d.si], o = d.o, me = new Set([o, ...d.linked]); let up = null, dn = null; const t = itemTop(o), b0 = itemBot(o);
   sc.items.forEach(p => { if (me.has(p)) return; const pb = itemBot(p), pt = itemTop(p); if (pb >= t - 0.005) up = up == null ? pb - t : Math.min(up, pb - t); else if (pt <= b0 + 0.005) dn = dn == null ? b0 - pt : Math.min(dn, b0 - pt); });
   L.innerHTML = (up != null ? `<div>↑ ${Math.round(up * 100)} см</div>` : '') + (dn != null ? `<div>↓ ${Math.round(dn * 100)} см</div>` : '');
-  L.classList.toggle('hide', up == null && dn == null); L.style.right = (r.width - (e.clientX - r.left) + 22) + 'px'; L.style.top = (e.clientY - r.top - 34) + 'px';
+  L.classList.toggle('hide', up == null && dn == null); 
 }
 // ---- «Стены ▾»: clear or restore the construction on each wall (the room wall stays)
 function renderWallsPop() {
