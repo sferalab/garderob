@@ -177,3 +177,5 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 #lensBtn svg{width:21px;height:21px;display:block}#lensBtn .l2{display:none}#lensBtn.on .l2{display:inline}#lensBtn.on{background:#2b2b2b;color:#fff;border-color:#2b2b2b}
 #lensBtn.on{background:#efe7da;color:#2b2b2b;border-color:#d9cdb8}
 @media (max-width:430px){#mirrorBtn .mtx{display:none}#mirrorBtn{padding-left:10px;padding-right:10px}}
+#camPop{position:fixed;z-index:50;background:#fff;border-radius:14px;box-shadow:0 8px 30px #0003;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:150px}
+#camPop.hide{display:none}#camPop button{text-align:left;padding:9px 12px;border-radius:10px;border:1px solid #e6dfd4;background:#fff;font-size:14px}#camPop button.on{background:#2b2b2b;color:#fff;border-color:#2b2b2b}

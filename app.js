@@ -9,7 +9,7 @@ const MM = 0.001;
 const METAL = { white: 0xf7f9fc, black: 0x202124, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.8, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.85, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.85, f: 16 }, top: { dx: 0, len: 0.15, o: 0.8, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.95, f: 5 }, none: { o: 0 } };
-const FLOORS = { oak: ['herringbone_parquet', 1.5, 0xffffff, null, 1, 1.5], lam: ['laminate_floor_02', 2.0, 0xfffaf3, null, 0, 1.5], lamD: ['wood_floor_worn', 3.0, 0x7d6656, null, 0, 2.8], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
+const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
   basket: 'Корзина стационарная', pull: 'Корзина выдвижная', rail: 'Штанга для вешалок', shoe: 'Полка для обуви', trouser: 'Брючница выдвижная'
@@ -85,7 +85,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserv
 const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 3 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
 renderer.setPixelRatio(PR);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = CAMEXP();
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 view.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
@@ -264,7 +264,7 @@ function postBottom() { return S.railTop * 10 - 10 - S.postH; } // mm
 function wallsActive() { return S.layout === 'straight' ? [0] : S.layout === 'L' ? [0, 1] : S.layout === 'Lr' ? [0, 2] : [0, 1, 2]; }
 function wallWidth(w) { return S.walls[w].sections.reduce((a, s) => a + s.w * 10, 0); }
 function wallsBuilt() { return wallsActive().filter(wi => !S.walls[wi].off); }
-const ZB = 0.044, ZI = 0.046; // bracket base and back of the filling, m from the wall
+const ZB = 0.003, ZI = 0.004, XIN = 0.0235; // shelves sit flush on the wall between the uprights // bracket base and back of the filling, m from the wall
 // room frame per layout: x of the left side wall, start of the main wall, x of the right side wall
 // every wall keeps its own shift from its corner (Lr: the main wall is measured from the right corner)
 function frame() {
@@ -295,9 +295,9 @@ function buildWall(wi) {
   xs.forEach((x, pi) => { const pb = pt - postLen(wi, pi) * MM, sel = selPost && selPost.wi === wi && selPost.i === pi, pm = new THREE.Mesh(new RoundedBoxGeometry(0.046, pt - pb, 0.042, 3, 0.0065), sel ? M.post.clone() : M.post); if (sel) { pm.material.emissive.set(0x2f7bff); pm.material.emissiveIntensity = 0.6; } pm.userData.post = { wi, i: pi }; pm.position.set(x, (pt + pb) / 2, 0.0225); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm);
     const hk = new THREE.Mesh(new RoundedBoxGeometry(0.05, 0.034, 0.03, 2, 0.004), M.metal); hk.position.set(x, pt - 0.012, 0.0165); hk.castShadow = true; hk.userData.frame = true; g.add(hk);
     const cap = new THREE.Mesh(new RoundedBoxGeometry(0.048, 0.014, 0.044, 2, 0.004), M.plastic); cap.position.set(x, pb + 0.007, 0.0225); cap.userData.frame = true; g.add(cap); });
-  W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si], xs[si + 1], s);
+  W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si] + XIN, xs[si + 1] - XIN, s);
     // baked shadow tight on the wall under/behind the item: 5-15 cm, soft edge; presets only tilt it a little; never leaves the item's own wall
-    const B = SHB[S.room.shP] || SHB.soft; if (B.o > 0) { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) - 0.014) - ch / 2, 0.0012); cs.userData.contact = true; ig.add(cs); } }));
+    const B = SHB[S.room.shP] || SHB.soft; if (B.o > 0 && item.t !== 'rail') { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) - 0.014) - ch / 2, 0.0012); cs.userData.contact = true; ig.add(cs); } }));
   // soft contact shade on the floor under and just in front of the wall (the only shadow in Студия)
   if (false) { const fs = new THREE.Mesh(new THREE.PlaneGeometry(0.75, total * MM + 0.14), aoGrad(S.studio ? 0.36 : 0.12)); fs.rotation.x = -Math.PI / 2; fs.rotation.z = Math.PI / 2; fs.scale.x = -1; fs.position.set(total * MM / 2, 0.0025, 0.375); fs.userData.contact = fs.userData.keep = true; g.add(fs); }
   return g;
@@ -328,8 +328,8 @@ function buildItem(g, item, x0, x1, sec) {
   if (item.t !== 'rail') { bracket(g, x0, y, brL); bracket(g, x1, y, brL); }
   if (item.t === 'mesh') {
     // cross wires lie on the bracket flanges, side rims sit right over them; heavy front lip and rolled top rim
-    const r = [], ea = x0 + 0.005, eb = x1 - 0.005, Lw = eb - ea, n = Math.max(2, Math.round(Lw / 0.015));
-    for (let t = 0; t <= 1.001; t += 0.125) { const z = z0 + 0.005 + (dep - 0.01) * t; r.push([V(x0 - 0.007, y + 0.0035, z), V(x1 + 0.007, y + 0.0035, z), 0.0035]); }
+    const r = [], ea = x0 + 0.005, eb = x1 - 0.005, Lw = eb - ea, n = Math.max(2, Math.round(Lw / 0.026));
+    for (let t = 0; t <= 1.001; t += 0.2) { const z = z0 + 0.005 + (dep - 0.01) * t; r.push([V(x0 - 0.007, y + 0.0035, z), V(x1 + 0.007, y + 0.0035, z), 0.0035]); }
     for (let i = 1; i < n; i++) { const x = ea + Lw * i / n; r.push([V(x, y + 0.0095, z0), V(x, y + 0.0095, zf), 0.003]); }
     [ea, eb].forEach(x => r.push([V(x, y + 0.0065, z0), V(x, y + 0.0065, zf), 0.0065]));
     r.push([V(ea, y + 0.0095, z0), V(eb, y + 0.0095, z0), 0.005]);
@@ -395,8 +395,8 @@ function effGap(wi) { return Math.max(0, Math.min(300, S.walls[wi].gap || 0)); }
 function effGapR() { return Math.max(0, Math.min(300, S.walls[0].gapR || 0)); }
 const maxDep = wis => { let d = 0; wis.forEach(k => S.walls[k] && !S.walls[k].off && S.walls[k].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10)))); return d; };
 // shift at which the shelves of the two walls in that corner stop overlapping
-function optGap(key) { const act = wallsActive(); const other = key === '0' ? (S.layout === 'Lr' ? [2] : [1]) : key === '0r' ? [2] : [0]; return Math.ceil(maxDep(other.filter(k => act.includes(k))) + 5.5); }
-function minGap() { return Math.ceil(maxDep([0]) + 5.5); }
+function optGap(key) { const act = wallsActive(); const other = key === '0' ? (S.layout === 'Lr' ? [2] : [1]) : key === '0r' ? [2] : [0]; return Math.ceil(maxDep(other.filter(k => act.includes(k))) + 1.5); }
+function minGap() { return Math.ceil(maxDep([0]) + 1.5); }
 function placeWall(g, wi) {
   const F = frame();
   if (wi === 0) { g.position.x = F.x0; return; }
@@ -824,15 +824,28 @@ function applyCam(cam = camera) {
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
-const LENSF = () => localStorage.getItem('gs_lens') === 'tele' ? 17 : 28;
-function lensUI() { const t = localStorage.getItem('gs_lens') === 'tele', b = document.getElementById('lensBtn'); if (!b) return; b.classList.toggle('on', t); b.title = 'Камера: ' + (t ? 'Крупная' : 'Обычная'); }
+function camK() { const k = localStorage.getItem('gs_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'std'; }
+var CAMS = [['std', 'Стандарт'], ['int', 'Интерьер'], ['por', 'Портрет'], ['top3', 'Сверху 3/4']];
+const LENSF = () => 28;
+function CAMEXP() { return { int: 1.1, por: 1.03 }[camK()] || 1.0; }
+// interior-photographer cameras: own lens, height and viewpoint; verticals stay vertical (level camera + lens shift)
+function camPhoto(k) {
+  const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3()), sg = S.layout === 'Lr' ? -1 : 1, corner = S.layout === 'L' || S.layout === 'Lr', asp = camera.aspect;
+  const P = { int: { fov: 52, az: corner ? 0.66 : 0.3, h: 1.45, k: 0.8 }, por: { fov: 13, az: corner ? 0.5 : 0, h: c.y + 0.05, k: 1.04 }, top3: { fov: 32, az: corner ? 0.68 : 0.35, el: 0.5, k: 1.1 } }[k];
+  camera.fov = P.fov; camera.updateProjectionMatrix(); const f = P.fov * Math.PI / 180, t = Math.tan(f / 2);
+  const span = Math.max(sz.x, 1) * Math.cos(P.az * 0.6) + sz.z * Math.sin(P.az), dist = Math.max(sz.y * 1.12 / (2 * t), (span * 1.1 + 0.2) / (2 * t * asp)) * P.k + sz.z * 0.4;
+  const dir = V(sg * Math.sin(P.az), 0, Math.cos(P.az)); camera.position.copy(c).addScaledVector(dir, dist); camera.position.y = P.el ? c.y + dist * Math.sin(P.el) : P.h;
+  controls.target.copy(c); camera.up.set(0, 1, 0); controls.update(); syncFromCam('nice'); applyLights();
+}
+function lensUI() { const k = camK(), b = document.getElementById('lensBtn'); if (!b) return; b.classList.toggle('on', k !== 'std'); b.title = 'Камера: ' + CAMS.find(c => c[0] === k)[1]; }
 function camTo(kind) {
+  if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
   const sg = S.layout === 'Lr' ? -1 : 1, flat = kind === 'nice' && (S.layout === 'straight' || S.layout === 'U'), dir = kind === 'front' || flat ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? V(sg * 0.85, 0.14, 1) : V(0, 1, 0.35);
   dir.normalize();
   camera.fov = kind === 'top' ? 35 : LENSF(); const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
-  const dist = flat ? (Math.max(hgt * 1.3 / (2 * Math.tan(fov / 2)), (sz.x * 1.22 + 0.7) / (2 * Math.tan(fov / 2) * asp)) + sz.z * 0.5) * (S.layout === 'U' ? 1.22 : 1) : Math.max(hgt / (2 * Math.tan(fov / 2)), span / (2 * Math.tan(fov / 2) * asp)) * (view.clientWidth < 800 ? 1.55 : 1.75) * (kind === 'nice' ? 1.12 : 1) * (LENSF() < 20 ? 0.9 : 1) + sz.z * 0.35;
+  const dist = flat ? (Math.max(hgt * 1.3 / (2 * Math.tan(fov / 2)), (sz.x * 1.22 + 0.7) / (2 * Math.tan(fov / 2) * asp)) + sz.z * 0.5) * (S.layout === 'U' ? 1.22 : 1) : Math.max(hgt / (2 * Math.tan(fov / 2)), span / (2 * Math.tan(fov / 2) * asp)) * (view.clientWidth < 800 ? 1.55 : 1.75) * (kind === 'nice' ? 1.12 : 1) + sz.z * 0.35;
   if (kind === 'card') { const f = fitCard(camera.aspect, 0.13, 0.05); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); controls.target.copy(f.tg); controls.update(); syncFromCam('card'); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); return; }
   camera.fov = kind === 'top' ? 35 : LENSF(); camera.updateProjectionMatrix();
   camera.position.copy(c).addScaledVector(dir, dist); controls.target.copy(c); camera.up.set(0, 1, 0); controls.update(); syncFromCam(kind);
@@ -881,12 +894,12 @@ function applyLights() {
   const c = bbox.getCenter(new THREE.Vector3()); const warm = S.preset === 'warm';
   if (warm && !S.sun) {
     sun.color.set(0xfff1e0); sun.intensity = 0.55; sun.position.set(c.x + 1, 4.5, 4); sun.shadow.radius = 8; gobo.intensity = 0;
-    renderer.toneMappingExposure = 1.0; hemi.color.set(0xfff4e8); hemi.groundColor.set(0xeed6b8); hemi.intensity = 1.35; fill.color.set(0xfff0e0); fill.intensity = 0.9; fill.position.set(c.x - 0.5, 1.8, 5); sideFill.intensity = 0.35; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
+    renderer.toneMappingExposure = CAMEXP(); hemi.color.set(0xfff4e8); hemi.groundColor.set(0xeed6b8); hemi.intensity = 1.35; fill.color.set(0xfff0e0); fill.intensity = 0.9; fill.position.set(c.x - 0.5, 1.8, 5); sideFill.intensity = 0.35; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
   } else if (warm) {
     sun.color.set(0xffe4c0); sun.intensity = 0.9; sun.position.set(c.x - 1.6, 3.4, 4.2); sun.shadow.radius = 3;
     gobo.color.set(0xffcf94); gobo.intensity = 9; gobo.position.set(c.x - 1.4, 3.3, 3.0); gobo.target.position.set(c.x + 0.4, 1.5, 0);
-    renderer.toneMappingExposure = 1.0; hemi.color.set(0xfff0dd); hemi.groundColor.set(0xe8c49c); hemi.intensity = 1.0; fill.color.set(0xffe2c2); fill.intensity = 0.45; fill.position.set(c.x + 3, 2.2, 4); sideFill.intensity = 2.0; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
-  } else { sun.color.set(0xffffff); sun.intensity = 1.6; gobo.intensity = 0; renderer.toneMappingExposure = 1.0; hemi.color.set(0xffffff); hemi.groundColor.set(0xd8cfc2); sideFill.intensity = 0; hemi.intensity = 0.6; fill.color.set(0xfff4e6); fill.intensity = 0.35; fill.position.set(-3, 2, 4); }
+    renderer.toneMappingExposure = CAMEXP(); hemi.color.set(0xfff0dd); hemi.groundColor.set(0xe8c49c); hemi.intensity = 1.0; fill.color.set(0xffe2c2); fill.intensity = 0.45; fill.position.set(c.x + 3, 2.2, 4); sideFill.intensity = 2.0; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
+  } else { sun.color.set(0xffffff); sun.intensity = 1.6; gobo.intensity = 0; renderer.toneMappingExposure = CAMEXP(); hemi.color.set(0xffffff); hemi.groundColor.set(0xd8cfc2); sideFill.intensity = 0; hemi.intensity = 0.6; fill.color.set(0xfff4e6); fill.intensity = 0.35; fill.position.set(-3, 2, 4); }
 }
 const glow = new THREE.SpotLight(0xfff0dc, 0, 0, 0.9, 1, 0); scene.add(glow, glow.target);
 const rim = new THREE.DirectionalLight(0xdfe7ff, 0); scene.add(rim, rim.target); // edge light so black RAL 9005 reads in detail
@@ -903,7 +916,7 @@ function applyGlareShadow() {
   const R = S.room || {}, c = bbox.getCenter(new THREE.Vector3()), P = SHP[R.shP] || SHP.soft, ST = !!S.studio && !photo, gmode = R.glareM || 'soft';
   if (R.glow === 'left' || R.glow === 'right') { const sx = R.glow === 'left' ? -1 : 1; glow.intensity = 1.6; glow.position.set(c.x + sx * 3, 2.4, 2.6); glow.target.position.set(c.x + sx * 0.6, 1.5, 0); } else glow.intensity = 0;
   const on = R.shP !== 'none' && !S.sun;
-  sun.castShadow = !!photo && !$('showRoom').checked; // shelf shadows are baked on the wall (SHB)
+  sun.castShadow = !!photo && !$('showRoom').checked; gobo.castShadow = gobo.intensity > 0 && sun.castShadow; // shelf shadows are baked on the wall (SHB)
   if (P.el != null && !S.sun) {
     const az = P.az * Math.PI / 180, el = P.el * Math.PI / 180, D = 7;
     sun.position.set(c.x + D * Math.sin(az) * Math.cos(el), c.y + D * Math.sin(el), c.z + D * Math.cos(az) * Math.cos(el)); sun.target.position.copy(c);
@@ -1659,5 +1672,9 @@ document.addEventListener('click', e => { const b = e.target.closest && e.target
   tick(muted ? 'muted' : bright ? 'bright' : 'soft'); if (muted || bright) lightHaptic(); }, true);
 renderDeco(); setBg(); rebuild(); renderSec();
 // lens toggle in the top bar
-$('lensBtn').onclick = () => { const t = localStorage.getItem('gs_lens') !== 'tele'; localStorage.setItem('gs_lens', t ? 'tele' : 'wide'); lensUI(); msg('Камера: ' + (t ? 'Крупная' : 'Обычная')); $('niceBtn').click(); };
+{ const pop = document.createElement('div'); pop.id = 'camPop'; pop.className = 'hide'; document.body.appendChild(pop);
+  const draw = () => { pop.innerHTML = '<div class="szlab">Камера</div>' + CAMS.map(([k, t]) => `<button data-cs="${k}" class="${camK() === k ? 'on' : ''}">${t}</button>`).join('');
+    pop.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { localStorage.setItem('gs_cam', b.dataset.cs); lensUI(); pop.classList.add('hide'); applyLights(); $('niceBtn').click(); }); };
+  $('lensBtn').onclick = e => { e.stopPropagation(); draw(); const r = $('lensBtn').getBoundingClientRect(); pop.style.top = (r.bottom + 6) + 'px'; pop.style.right = Math.max(6, innerWidth - r.right - 40) + 'px'; pop.classList.toggle('hide'); };
+  document.addEventListener('pointerdown', e => { if (!pop.contains(e.target) && e.target !== $('lensBtn') && !$('lensBtn').contains(e.target)) pop.classList.add('hide'); }); }
 lensUI();
