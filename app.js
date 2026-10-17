@@ -279,7 +279,7 @@ function buildWall(wi) {
   const total = wallWidth(wi), railY = S.railTop * 10 * MM, [ra, rb] = railSpan(wi), rl = rb - ra, rc = (ra + rb) / 2;
   const rt = M.railTex.clone(); rt.needsUpdate = true; rt.repeat.set(rl / 0.032, 1); const rm = M.rail.clone(); rm.map = rt; rm.bumpMap = rt;
   // load-bearing rail 60 x 16 (visual), same on every wall: back plate, returns, rounded front lips, end caps
-  { const H = 0.048, D = 0.014;
+  { const H = 0.06, D = 0.016;
     const parts = [box(rl, H, 0.004, rc, railY - H / 2, 0.002, rm), box(rl, 0.0045, D, rc, railY - 0.00225, D / 2, M.metal), box(rl, 0.0045, D, rc, railY - H + 0.00225, D / 2, M.metal), box(0.004, H, D, ra + 0.002, railY - H / 2, D / 2, M.metal), box(0.004, H, D, rb - 0.002, railY - H / 2, D / 2, M.metal)];
     const lip = (h, y) => { const m = new THREE.Mesh(new RoundedBoxGeometry(rl, h, 0.0056, 2, 0.0022), M.metal); m.position.set(rc, y, D - 0.0026); m.castShadow = m.receiveShadow = true; return m; };
     parts.push(lip(0.022, railY - 0.011), lip(0.014, railY - H + 0.007));
@@ -287,9 +287,9 @@ function buildWall(wi) {
   const pt = (S.railTop * 10 - 10) * MM;
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   // uprights (catalog 32 x 34 mm, drawn about 1.5x heavier so they read in photos) with hook head and end cap
-  xs.forEach((x, pi) => { const pb = pt - postLen(wi, pi) * MM, sel = selPost && selPost.wi === wi && selPost.i === pi, pm = new THREE.Mesh(new RoundedBoxGeometry(0.036, pt - pb, 0.034, 3, 0.005), sel ? M.post.clone() : M.post); if (sel) { pm.material.emissive.set(0x2f7bff); pm.material.emissiveIntensity = 0.6; } pm.userData.post = { wi, i: pi }; pm.position.set(x, (pt + pb) / 2, 0.024); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm);
-    const hk = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.028, 0.026, 2, 0.0035), M.metal); hk.position.set(x, pt - 0.011, 0.02); hk.castShadow = true; hk.userData.frame = true; g.add(hk);
-    const cap = new THREE.Mesh(new RoundedBoxGeometry(0.038, 0.012, 0.036, 2, 0.0035), M.plastic); cap.position.set(x, pb + 0.006, 0.024); cap.userData.frame = true; g.add(cap); });
+  xs.forEach((x, pi) => { const pb = pt - postLen(wi, pi) * MM, sel = selPost && selPost.wi === wi && selPost.i === pi, pm = new THREE.Mesh(new RoundedBoxGeometry(0.046, pt - pb, 0.042, 3, 0.0065), sel ? M.post.clone() : M.post); if (sel) { pm.material.emissive.set(0x2f7bff); pm.material.emissiveIntensity = 0.6; } pm.userData.post = { wi, i: pi }; pm.position.set(x, (pt + pb) / 2, 0.027); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm);
+    const hk = new THREE.Mesh(new RoundedBoxGeometry(0.05, 0.034, 0.03, 2, 0.004), M.metal); hk.position.set(x, pt - 0.012, 0.021); hk.castShadow = true; hk.userData.frame = true; g.add(hk);
+    const cap = new THREE.Mesh(new RoundedBoxGeometry(0.048, 0.014, 0.044, 2, 0.004), M.plastic); cap.position.set(x, pb + 0.007, 0.027); cap.userData.frame = true; g.add(cap); });
   W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si], xs[si + 1], s);
     if (item.t !== 'rail') { const ch = isBasket(item.t) ? (item.h || 85) * MM + 0.08 : 0.11, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si], ch), contactMat()); cs.position.set((xs[si] + xs[si + 1]) / 2, itemTop(item) - ch / 2 + 0.005, 0.0012); cs.userData.contact = true; ig.add(cs); } }));
   // soft contact shade on the floor under and just in front of the wall (the only shadow in Студия)
@@ -301,7 +301,7 @@ const BRG = {};
 function bracket(g, x, y, L) {
   const k = L.toFixed(3);
   if (!BRG[k]) { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(L, 0); sh.lineTo(L, -0.016); sh.lineTo(0.06, -0.082); sh.lineTo(0, -0.088); sh.lineTo(0, 0);
-    const ge = new THREE.ExtrudeGeometry(sh, { depth: 0.005, bevelEnabled: true, bevelThickness: 0.0011, bevelSize: 0.001, bevelSegments: 2 }); ge.rotateY(-Math.PI / 2); ge.translate(0.0025, 0, 0); BRG[k] = ge; }
+    const ge = new THREE.ExtrudeGeometry(sh, { depth: 0.0065, bevelEnabled: true, bevelThickness: 0.0013, bevelSize: 0.0012, bevelSegments: 2 }); ge.rotateY(-Math.PI / 2); ge.translate(0.00325, 0, 0); BRG[k] = ge; }
   const m = new THREE.Mesh(BRG[k], M.metal); m.position.set(x, y - 0.0012, ZB); m.castShadow = m.receiveShadow = true; g.add(m);
   g.add(box(0.03, 0.005, L, x, y - 0.0025, ZB + L / 2, M.metal));
   g.add(box(0.016, 0.02, 0.01, x, y - 0.01, ZB + L - 0.005, M.metal));
@@ -381,7 +381,7 @@ function buildItem(g, item, x0, x1, sec) {
     if (!sh) { bracket(g, x0, by, 0.355); bracket(g, x1, by, 0.355); }
     const ca = x0 + 0.004, cb = x1 - 0.004;
     [x0, x1].forEach(x => rodHolder(g, x, by, y, zr));
-    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.0135]], M.rod); rr.geometry = ROD_G; g.add(rr);
+    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.017]], M.rod); rr.geometry = ROD_G; g.add(rr);
   }
 }
 
