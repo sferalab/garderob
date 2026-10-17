@@ -15,7 +15,8 @@
 </div>
 <div id="hint">Мышь: левая кнопка — поворот и высота, правая — сдвиг, колесо — масштаб. Палец: поворот, двумя — сдвиг и масштаб. Потяните полку, чтобы поднять или опустить</div>
 <div id="dragTip" class="hide"></div>
-<div id="floatBar"><button id="undoBtn" title="Ctrl+Z">↶ Отменить</button><button id="redoBtn" title="Ctrl+Y">↷ Повторить</button><button id="niceBtn" class="acc">Красивый ракурс</button><button id="resetBtn" class="danger">⟲ Сброс</button></div>
+<div id="postPop" class="hide"></div>
+<div id="floatBar"><button id="undoBtn" title="Ctrl+Z">↶ Отменить</button><button id="redoBtn" title="Ctrl+Y">↷ Повторить</button><button id="dimBtn">📏 Размеры</button><button id="niceBtn" class="acc">Красивый ракурс</button><button id="resetBtn" class="danger">⟲ Сброс</button></div>
 </div>
 <div id="panel">
 <div class="grp"><h3>1. Каркас</h3>
@@ -35,7 +36,7 @@
 </div>
 <div class="grp"><h3>2. Наполнение</h3><div id="secTabs"></div><div id="secEdit"></div>
 <p class="foot">Стойки и верхняя направляющая ставятся автоматически. Нажмите на секцию в 3D, чтобы открыть ее наполнение.</p></div>
-<div class="grp" id="viewGrp"><h3>3. Оформление</h3><div id="toolsDock"></div><div class="szlab">Показывать</div><div class="sz" id="szV"></div><div class="szlab">Фон студии</div><div class="sw" id="bgSw"></div><div class="szlab">Цвет размеров</div><div class="sz" id="dimColBtns"><button data-dc="#ffffff">Белый</button><button data-dc="#1e1e1e">Черный</button><input type="color" id="dimCol" title="Свой цвет"><button id="dimEye">Пипетка</button></div>
+<div class="grp" id="viewGrp"><h3>3. Оформление</h3><div id="toolsDock"></div><div class="szlab">Показывать</div><div class="sz" id="szV"></div><div class="szlab">Фон студии</div><div class="sw" id="bgSw"></div><div class="szlab">Цвет размеров</div><div class="sz" id="dimColBtns"><button id="dimAuto">Авто</button><button data-dc="#ffffff">Белый</button><button data-dc="#1e1e1e">Черный</button><input type="color" id="dimCol" title="Свой цвет"><button id="dimEye">Пипетка</button></div>
 <label>Интерьер<select id="preset"><option value="warm">Теплая солнечная</option><option value="none">Нейтральная студия</option></select></label>
 <div class="row2"><label>Цвет металла<select id="metal"><option value="white">Белый (RAL 9016)</option><option value="black">Черный (RAL 9005)</option><option value="silver">Серебристый (RAL 9006)</option><option value="graphite">Графит</option></select></label><label>Цвет штанги<select id="rodC"><option value="chrome">Хром</option><option value="white">Белая</option><option value="black">Черная</option></select></label></div>
 <label>Пол<select id="floor"><option value="oak">Дуб</option><option value="lam">Светлый ламинат</option><option value="tile">Плитка</option><option value="carpet">Ковролин</option></select></label>
@@ -44,7 +45,7 @@
 <label class="chk"><input type="checkbox" id="sunT"> Солнце и тени от окна</label>
 <label>Мягкий блик от окна<select id="glowS"><option value="none">Нет</option><option value="left">Слева</option><option value="right">Справа</option></select></label>
 <div class="sub"><h4>Стены, плинтус, свет</h4><label>Цвет стен<input type="color" id="wall"><div class="sw" id="swatches"></div><button class="mini" id="eyeBtn" type="button">Пипетка</button><select id="wallTone"><option value="">Готовые тона…</option><option value="#ecdcc8">Светло-бежевый (как на карточке)</option><option value="#e8d3bd">Теплый бежевый</option><option value="#f2efe9">Молочный</option><option value="#dcd9d3">Светло-серый</option></select></label>
-<div class="row2"><label class="chk"><input type="checkbox" id="skirtT"> Плинтус</label><label>Цвет плинтуса<input type="color" id="skirtC"></label></div>
+<div class="row2"><label class="chk"><input type="checkbox" id="skirtT"> Плинтус</label><label class="chk"><input type="checkbox" id="cornT"> Потолочный плинтус</label><label>Цвет плинтуса<input type="color" id="skirtC"></label></div>
 <label class="chk"><input type="checkbox" id="lampT"> Точечные светильники в потолке</label></div>
 <div class="sub"><h4>Тень от гардеробной</h4><label class="chk"><input type="checkbox" id="shOnT"> Показывать тень</label>
 <label>Направление: <b id="shAngV"></b><input type="range" id="shAng" min="-70" max="70" step="1"></label>

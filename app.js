@@ -15,13 +15,14 @@ const TYPES = {
 const DEPTHS = { mesh: [30, 40, 50], metal: [30, 40], ldsp: [30, 40], basket: [30, 40], pull: [30, 40], rail: [30], shoe: [40], trouser: [30, 40] };
 const REAL_DEPTH = { mesh: { 30: 306, 40: 406, 50: 506 }, metal: { 30: 327, 40: 427 }, ldsp: { 30: 330, 40: 430 }, basket: { 30: 340, 40: 440 }, pull: { 30: 340, 40: 440 }, rail: { 30: 300 }, shoe: { 40: 406 }, trouser: { 30: 340, 40: 440 } };
 const LAYOUTS = { straight: 'Прямая (одна стена)', L: 'Угловая, угол слева', Lr: 'Угловая, угол справа', U: 'П-образная' };
-const CATS = { shelf: 'Полка', rod: 'Штанга', basket: 'Корзина', trouser: 'Брючница' };
+const CATS = { shelf: 'Полка', rod: 'Штанга', combo: 'Штанга с полкой', basket: 'Корзина', trouser: 'Брючница' };
+const rowCat = o => o.g ? 'combo' : catOf(o.t);
 const catOf = t => t === 'rail' ? 'rod' : t === 'basket' || t === 'pull' ? 'basket' : t === 'trouser' ? 'trouser' : 'shelf';
-const VARS = { shelf: [['mesh', 'Сетчатая'], ['metal', 'Металлическая'], ['ldsp', 'ЛДСП'], ['shoe', 'Для обуви']], rod: [['rail', 'Штанга на фланцах']], basket: [['pull|mesh', 'Сетчатая выдвижная'], ['basket|mesh', 'Стационарная'], ['pull|fine', 'Мелкосетчатая'], ['pull|perf', 'Перфорированная'], ['basket|perf', 'Перфор. стационарная']], trouser: [['trouser', 'Выдвижная']] };
+const VARS = { shelf: [['mesh', 'Сетчатая'], ['metal', 'Металлическая'], ['ldsp', 'ЛДСП'], ['shoe', 'Для обуви']], rod: [['rail', 'Штанга на кронштейнах']], combo: [['mesh', 'Сетчатая полка + штанга'], ['metal', 'Металлическая полка + штанга'], ['ldsp', 'Полка ЛДСП + штанга']], basket: [['pull|mesh', 'Сетчатая выдвижная'], ['basket|mesh', 'Стационарная'], ['pull|fine', 'Мелкосетчатая'], ['pull|perf', 'Перфорированная'], ['basket|perf', 'Перфор. стационарная']], trouser: [['trouser', 'Выдвижная']] };
 const isBasket = t => t === 'basket' || t === 'pull';
 const perfOf = o => (o.v || (S.basketStyle === 'plastic' ? 'perf' : 'mesh')) === 'perf';
 const fineOf = o => o.v === 'fine';
-const WALLNAMES = ['Основная стена', 'Боковая стена', 'Боковая стена справа'];
+const WALLNAMES = ['Основная стена', 'Вторая стена', 'Вторая стена'];
 
 function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
@@ -36,7 +37,7 @@ function defaults() {
   };
 }
 const ROOMDEF = { extra: 0, ceiling: false, ceilH: 275, skirting: true, lamps: false, glare: 0.3, shadow: 0.5, angle: 90, skirtColor: '#ffffff', lampType: 'spot', glow: 'none', shOn: true, shAng: 20, shBlur: 4, shDist: 0.12, shadow: 0.55 };
-function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40; S.walls.forEach(w => { if (w.sections.length > 6) w.sections.length = 6; }); return S; }
+function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40; return S; }
 function setTemplate(t) {
   const m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y }), sh = y => ({ t: 'shoe', d: 40, y }), pu = (y, h) => ({ t: 'pull', d: 40, y, h });
   const A = () => ({ w: 90, items: [m(192), rl(180), m(40)] }), B = () => ({ w: 90, items: [m(192), m(152), m(112), m(72), m(32)] }), C = () => ({ w: 60, items: [m(192), m(150), pu(95, 181), pu(70, 181), sh(30)] }), D = () => ({ w: 90, items: [m(192), rl(180), rl(100)] });
@@ -190,6 +191,9 @@ function box(w, h, d, x, y, z, mat) { const b = new THREE.Mesh(BOX, mat); b.scal
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // ---------- build ----------
+function postLen(wi, i) { const L = S.walls[wi].postL; return (L && L[i]) || S.postH; }
+function secLo(wi, si) { return Math.ceil((S.railTop * 10 - 10 - Math.min(postLen(wi, si), postLen(wi, si + 1))) / 10) + 3; }
+let selPost = null;
 function postBottom() { return S.railTop * 10 - 10 - S.postH; } // mm
 function wallsActive() { return S.layout === 'straight' ? [0] : S.layout === 'L' ? [0, 1] : S.layout === 'Lr' ? [0, 2] : [0, 1, 2]; }
 function wallWidth(w) { return S.walls[w].sections.reduce((a, s) => a + s.w * 10, 0); }
@@ -204,11 +208,11 @@ function buildWall(wi) {
   const pb = postBottom() * MM, pt = (S.railTop * 10 - 10) * MM;
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   // uprights 32 x 34 mm (seller data), metal 1.8 mm with hook head and floor-side end cap
-  xs.forEach(x => { const pm = new THREE.Mesh(new RoundedBoxGeometry(0.032, pt - pb, 0.034, 2, 0.004), M.post); pm.position.set(x, (pt + pb) / 2, 0.028); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm);
+  xs.forEach((x, pi) => { const pb = pt - postLen(wi, pi) * MM, sel = selPost && selPost.wi === wi && selPost.i === pi, pm = new THREE.Mesh(new RoundedBoxGeometry(0.032, pt - pb, 0.034, 2, 0.004), sel ? M.post.clone() : M.post); if (sel) { pm.material.emissive.set(0x2f7bff); pm.material.emissiveIntensity = 0.6; } pm.userData.post = { wi, i: pi }; pm.position.set(x, (pt + pb) / 2, 0.028); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm);
     const hk = box(0.036, 0.03, 0.03, x, pt - 0.012, 0.026, M.metal); hk.userData.frame = true; g.add(hk);
     const cap = box(0.034, 0.012, 0.036, x, pb + 0.006, 0.028, M.plastic); cap.userData.frame = true; g.add(cap); });
   W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si], xs[si + 1], s);
-    const ch = isBasket(item.t) ? (item.h || 85) * MM + 0.08 : 0.11, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si], ch), contactMat()); cs.position.set((xs[si] + xs[si + 1]) / 2, itemTop(item) - ch / 2 + 0.005, 0.0012); cs.userData.contact = true; ig.add(cs);
+    if (item.t !== 'rail') { const ch = isBasket(item.t) ? (item.h || 85) * MM + 0.08 : 0.11, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si], ch), contactMat()); cs.position.set((xs[si] + xs[si + 1]) / 2, itemTop(item) - ch / 2 + 0.005, 0.0012); cs.userData.contact = true; ig.add(cs); }
     if (isBasket(item.t) || item.t === 'trouser' || item.t === 'shoe') { const fl = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si], 0.02), contactMat()); fl.visible = false; ig.add(fl); } }));
   return g;
 }
@@ -296,7 +300,8 @@ function buildItem(g, item, x0, x1, sec) {
   }
 }
 
-function effGap(wi) { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.max(wi > 0 && S.layout !== 'straight' ? minGap() : 0, S.walls[wi].gap || 0); }
+function effGap(wi) { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.max(0, S.walls[wi].gap || 0); }
+function optGap(wi) { let d = 0; (wi === 0 ? [1, 2].filter(i => wallsActive().includes(i)) : [0]).forEach(k => S.walls[k].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10)))); return Math.ceil(d + 5.5); }
 function minGap() { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.ceil(d + 5.5); }
 function placeWall(g, wi, backW) {
   const g0 = effGap(0) * 10 * MM;
@@ -310,7 +315,7 @@ let ROOMB = null;
 function buildRoom(backW) {
   room.clear();
   const floorM = floorMat(), wallM = wallMat(), CH = (S.room.ceilH || 275) / 100;
-  const RX = (S.room.extra || 0) / 100, g0 = effGap(0) * 10 * MM, cr = S.layout === 'U' || S.layout === 'Lr', cl = S.layout !== 'Lr';
+  const RX = (S.room.extra || 0) / 100, g0 = effGap(0) * 10 * MM, cr = S.layout === 'U' || S.layout === 'Lr', cl = S.layout === 'L' || S.layout === 'U';
   const left = cl ? -0.02 : -2.5 - RX, right = cr ? g0 + backW + 0.02 + (S.layout === 'U' ? RX : 0) : g0 + backW + 2.5 + RX;
   ROOMB = { l: cl && !photo ? left : -1e9, r: cr && !photo ? right : 1e9 };
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), floorM); fl.rotation.x = -Math.PI / 2; fl.position.set(backW / 2, 0, 5); fl.receiveShadow = true; room.add(fl);
@@ -321,7 +326,7 @@ function buildRoom(backW) {
   const side = x => { const L = x === left, pv = new THREE.Group(); pv.position.set(x, 0, 0); pv.rotation.y = L ? -dA : dA;
     plane(6 + RX * 2, CH, 0, CH / 2, 3 + RX, L ? Math.PI / 2 : -Math.PI / 2, pv);
     if (S.room.skirting !== false) { pv.add(box(0.016, 0.08, 6 + RX * 2, L ? 0.008 : -0.008, 0.04, 3 + RX, skM)); pv.add(box(0.022, 0.012, 6 + RX * 2, L ? 0.011 : -0.011, 0.074, 3 + RX, skM)); }
-    if (S.room.ceiling) { const cg = new THREE.Group(); cornice(6 + RX * 2, 0, 3 + RX, L ? Math.PI / 2 : -Math.PI / 2, cg); cg.children[0].position.set(0, CH, 3 + RX); pv.add(cg); } room.add(pv); };
+    if (S.room.ceiling && S.room.cornice) { const cg = new THREE.Group(); cornice(6 + RX * 2, 0, 3 + RX, L ? Math.PI / 2 : -Math.PI / 2, cg); cg.children[0].position.set(0, CH, 3 + RX); pv.add(cg); } room.add(pv); };
   if (cl) side(left); if (cr) side(right);
   // gentle ambient occlusion: wall/floor joints, corners, ceiling joint
   { const k = 0.16, W = right - left, cx = (left + right) / 2;
@@ -337,7 +342,7 @@ function buildRoom(backW) {
     if (cl) corner(left, true); if (cr) corner(right, false); }
   if (S.room.skirting !== false) { room.add(box(right - left, 0.08, 0.016, (left + right) / 2, 0.04, 0.008, skM)); room.add(box(right - left, 0.012, 0.022, (left + right) / 2, 0.074, 0.011, skM)); }
   if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xfbfbf9, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set((left + right) / 2, CH, 39.9); room.add(ce);
-    cornice(right - left, (left + right) / 2, 0, 0, room); }
+    if (S.room.cornice) cornice(right - left, (left + right) / 2, 0, 0, room); }
   if (S.room.lamps) { const n = Math.max(2, Math.round((right - left) / 1.2)); for (let i = 0; i < n; i++) { const x = left + (right - left) * (i + 0.5) / n; const d = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.008, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2dc, emissiveIntensity: 1.5 })); d.position.set(x, CH - 0.004, 0.9); room.add(d); const pl = new THREE.PointLight(0xffe9cc, 1.0, 0, 2); pl.position.set(x, CH - 0.12, 0.9); room.add(pl); } }
   if (!catcher) { catcher = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.25 })); catcher.rotation.x = -Math.PI / 2; catcher.receiveShadow = true; model.add(catcher); }
 }
@@ -368,6 +373,7 @@ function buildDecor() {
 }
 
 // ---------- dimensions ----------
+function dimColOf(wi) { if (S.dimManual) return S.walls[wi].dimColor || '#2a2a2a'; const c = new THREE.Color(S.wall); c.convertLinearToSRGB(); return (c.r * 0.3 + c.g * 0.59 + c.b * 0.11) < 0.78 ? '#ffffff' : '#222222'; }
 const LINE = new THREE.LineBasicMaterial({ color: 0x2a2a2a });
 function labelSprite(text, small, col = '#222') {
   const c = document.createElement('canvas'), g = c.getContext('2d'), fs = 44;
@@ -396,7 +402,7 @@ const cm = mm => String(Math.round(mm / 10 * 10) / 10).replace('.', ',');
 function itemTop(o) { return o.y * 10 * MM + (o.t === 'rail' ? 0.0125 : 0); }
 function itemBot(o) { const y = o.y * 10 * MM; return o.t === 'basket' || o.t === 'pull' ? y - (o.h || 85) * MM : o.t === 'trouser' ? y - 0.1 : o.t === 'shoe' ? y - 0.11 : o.t === 'rail' ? y - 0.0125 : y - 0.028; }
 function buildDims(g, wi) {
-  curLine = new THREE.LineBasicMaterial({ color: S.walls[wi].dimColor || '#2a2a2a' });
+  curLine = new THREE.LineBasicMaterial({ color: dimColOf(wi) });
   const labels = [], W = S.walls[wi], z = 0.004, railY = S.railTop * 10 * MM, D = S.dm || {};
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   const tot = xs[xs.length - 1];
@@ -434,6 +440,8 @@ function restoreHist(j) { histLock = true; S = migrate(JSON.parse(j)); fillGener
 function undo() { clearTimeout(histT); if (HIST.length < 2) return; RED.push(HIST.pop()); restoreHist(HIST[HIST.length - 1]); }
 function redo() { if (!RED.length) return; const j = RED.pop(); HIST.push(j); restoreHist(j); }
 function rebuild() {
+  S.walls.forEach(w => w.sections.forEach(syncLinks));
+  S.walls.forEach((w, wi) => { if (w.postL) Object.keys(w.postL).forEach(k => { if (+k > w.sections.length) delete w.postL[k]; }); w.sections.forEach((sc, si) => { const lo = secLo(wi, si); sc.items.forEach(o => { const drop = o.y - itemBot(o) * 100; if (o.y - drop < lo - 3 + 0.01) o.y = Math.min(S.railTop - 4, Math.ceil(lo - 3 + drop)); }); }); });
   makeMats();
   const keep = catcher; model.clear(); if (keep) model.add(keep); dimsG.clear();
   const backW = wallWidth(0) * MM;
@@ -443,7 +451,7 @@ function rebuild() {
     if (wi > 0) { const d = ((S.room.angle || 90) - 90) * Math.PI / 180, cx = wi === 1 ? -0.02 : effGap(0) / 100 + backW + 0.02, pv = new THREE.Group(); pv.position.set(cx, 0, 0); pv.rotation.y = wi === 1 ? -d : d; g.position.x -= cx; pv.add(g); model.add(pv); pv.updateMatrixWorld(true); } else model.add(g);
     const dg = new THREE.Group(); const labels = buildDims(dg, wi); g.add(dg); dg.userData.dims = true;
     g.updateMatrixWorld(true);
-    labels.forEach(([p, t]) => { const sp = labelSprite(t, true, S.walls[wi].dimColor || '#222'); sp.position.copy(dg.localToWorld(p.clone())); sp.userData.parentWall = g; dimsG.add(sp); });
+    labels.forEach(([p, t]) => { const sp = labelSprite(t, true, dimColOf(wi)); sp.position.copy(dg.localToWorld(p.clone())); sp.userData.parentWall = g; dimsG.add(sp); });
   });
   model.traverse(o => { if (o.isMesh && o !== catcher && !o.userData.dims) { const f = !!o.userData.frame; o.visible = S.view === 'all' || (S.view === 'frame' ? f : !f); } });
   buildDecor();
@@ -462,6 +470,7 @@ function rebuild() {
 function setDims(on) {
   S.dims = on; dimsG.visible = on; model.traverse(o => { if (o.userData.dims) o.visible = on; });
   Object.entries(DMB).forEach(([id, k]) => $(id).classList.toggle('on', !!S.dm[k]));
+  if ($('dimBtn')) $('dimBtn').classList.toggle('on', !!(S.dm.t || S.dm.s || S.dm.v || S.dm.c));
 }
 function applyModelXf() {
   if (!photo) { model.position.set(0, 0, 0); model.scale.setScalar(1); model.rotation.y = 0; dimsG.position.set(0, 0, 0); dimsG.scale.setScalar(1); dimsG.rotation.y = 0; return; }
@@ -543,11 +552,11 @@ function applyCam(cam = camera) {
 
 function camTo(kind) {
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
-  const sg = S.layout === 'Lr' ? -1 : 1, dir = kind === 'front' ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? (S.layout === 'straight' ? V(0.45, 0.12, 1) : S.layout === 'U' ? V(0, 0.12, 1) : V(sg * 0.85, 0.14, 1)) : V(0, 1, 0.35);
+  const sg = S.layout === 'Lr' ? -1 : 1, dir = kind === 'front' ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? (S.layout === 'straight' ? V(0.22, 0.1, 1) : S.layout === 'U' ? V(0, 0.12, 1) : V(sg * 0.85, 0.14, 1)) : V(0, 1, 0.35);
   dir.normalize();
   camera.fov = kind === 'top' ? 35 : 28; const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
-  const dist = Math.max(hgt / (2 * Math.tan(fov / 2)), span / (2 * Math.tan(fov / 2) * asp)) * (view.clientWidth < 800 ? 1.32 : 1.5) + sz.z * 0.35;
+  const dist = Math.max(hgt / (2 * Math.tan(fov / 2)), span / (2 * Math.tan(fov / 2) * asp)) * (view.clientWidth < 800 ? 1.55 : 1.75) + sz.z * 0.35;
   if (kind === 'card') { const f = fitCard(camera.aspect, 0.13, 0.05); camera.fov = f.fov; camera.updateProjectionMatrix(); camera.position.copy(f.pos); controls.target.copy(f.tg); controls.update(); syncFromCam('card'); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); return; }
   camera.fov = kind === 'top' ? 35 : 28; camera.updateProjectionMatrix();
   camera.position.copy(c).addScaledVector(dir, dist); controls.target.copy(c); camera.up.set(0, 1, 0); controls.update(); syncFromCam(kind);
@@ -696,7 +705,7 @@ function specData() {
   const walls = [];
   wallsActive().forEach(wi => {
     const W = S.walls[wi], tot = wallWidth(wi), rails = railCombo(tot + 40);
-    rails.forEach(r => add(frame, `Рельс несущий ${r} мм`)); add(frame, `Стойка ${S.postH} мм`, W.sections.length + 1);
+    rails.forEach(r => add(frame, `Рельс несущий ${r} мм`)); for (let i = 0; i <= W.sections.length; i++) add(frame, `Стойка ${postLen(wi, i)} мм`);
     W.sections.forEach((s, si) => s.items.forEach(o => {
       const w = s.w * 10, d = REAL_DEPTH[o.t][o.d], br = { 306: 335, 327: 335, 330: 335, 340: 335, 406: 435, 427: 435, 430: 435, 440: 435, 506: 535 }[d] || 435;
       const nom = `${s.w}×${o.d} см`;
@@ -769,6 +778,7 @@ function fix() { if (S.postH > S.railTop * 10) S.railTop = Math.ceil(S.postH / 1
 const ICO = {
   shelf: '<svg viewBox="0 0 48 32"><rect x="4" y="12" width="40" height="4" rx="1"/><path d="M6 16v6M42 16v6" stroke-width="3"/><path d="M8 12v-2M14 12v-2M20 12v-2M26 12v-2M32 12v-2M38 12v-2" stroke-width="1.5"/></svg>',
   rod: '<svg viewBox="0 0 48 32"><path d="M6 6v12M42 6v12" stroke-width="3"/><rect x="5" y="15" width="38" height="4" rx="2"/><path d="M16 19l-6 9h12zM32 19l-6 9h12z" stroke-width="1.5" fill="none"/></svg>',
+  combo: '<svg viewBox="0 0 48 32"><rect x="4" y="5" width="40" height="4" rx="1"/><path d="M6 9v4M42 9v4" stroke-width="3"/><path d="M10 9v8M38 9v8" stroke-width="2"/><rect x="8" y="16" width="32" height="3.5" rx="1.7"/><path d="M18 20l-5 8h10zM30 20l-5 8h10z" stroke-width="1.3" fill="none"/></svg>',
   basket: '<svg viewBox="0 0 48 32"><path d="M6 8h36v18H6z" fill="none" stroke-width="2.5"/><path d="M12 8v18M18 8v18M24 8v18M30 8v18M36 8v18M6 14h36M6 20h36" stroke-width="1.2"/></svg>',
   trouser: '<svg viewBox="0 0 48 32"><path d="M4 8h40" stroke-width="3"/><path d="M8 8v4h32V8" fill="none" stroke-width="1.5"/><path d="M12 12v14M18 12v14M24 12v14M30 12v14M36 12v14" stroke-width="2.5"/></svg>'
 };
@@ -777,35 +787,41 @@ const BK = [['pull|mesh', 'Сетчатая выдвижная', '<path d="M4 6h
   ['pull|fine', 'Мелкосетчатая', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M8 6v20M12 6v20M16 6v20M20 6v20M24 6v20M28 6v20M32 6v20M36 6v20M40 6v20M4 10h40M4 14h40M4 18h40M4 22h40" stroke-width="0.8"/>'],
   ['pull|perf', 'Перфорированная', '<rect x="4" y="6" width="40" height="20" rx="2" fill="none" stroke-width="2.5"/><g stroke-width="2.6" stroke-linecap="round"><path d="M10 11v4M16 11v4M22 11v4M28 11v4M34 11v4M40 11v4M10 18v4M16 18v4M22 18v4M28 18v4M34 18v4M40 18v4"/></g>']];
 function presetItems(t) {
-  const top = S.railTop - 18, lo = Math.ceil(postBottom() / 10) + 10, mid = Math.round((top + lo) / 2), M_ = y => it('mesh', S.depth || 40, y), R_ = y => it('rail', 30, y), B_ = y => Object.assign(it('pull', 40, y, 181), { v: 'mesh' });
-  const T = { shelves: () => { const a = []; for (let y = top; y >= lo; y -= 36) a.push(M_(y)); return a; }, rod: () => [M_(top), R_(top - 12), M_(lo + 20)], two: () => [M_(top), R_(top - 12), M_(mid), R_(mid - 12)], baskets: () => [M_(top), M_(top - 38), M_(top - 76), B_(lo + 70), B_(lo + 45), B_(lo + 20)], shoes: () => [M_(top), M_(top - 38), M_(top - 76), it('shoe', 40, lo + 50), it('shoe', 40, lo + 25)] };
-  return T[t]().map(o => (o.y = clampY(o.y), o));
+  const top = S.railTop - 18, lo = Math.ceil(postBottom() / 10) + 10, mid = Math.round((top + lo) / 2), M_ = y => it('mesh', S.depth || 40, y), R_ = y => it('rail', 30, y), C_ = y => { const [a, b] = newItem('combo'); a.y = y; return [a, b]; }, B_ = y => Object.assign(it('pull', 40, y, 181), { v: 'mesh' });
+  const T = { shelves: () => { const a = []; for (let y = top; y >= lo; y -= 36) a.push(M_(y)); return a; }, rod: () => [...C_(top), M_(lo + 20)], two: () => [...C_(top), ...C_(mid)], baskets: () => [M_(top), M_(top - 38), M_(top - 76), B_(lo + 70), B_(lo + 45), B_(lo + 20)], shoes: () => [M_(top), M_(top - 38), M_(top - 76), it('shoe', 40, lo + 50), it('shoe', 40, lo + 25)] };
+  const r = { items: T[t]().map(o => (o.y = clampY(o.y), o)) }; syncLinks(r); return r.items;
 }
-function spread(sec) {
-  const ord = sec.items.slice().sort((a, b) => b.y - a.y), n = ord.length; if (!n) return;
-  const lo = Math.ceil(postBottom() / 10) + 3, top = clampY(S.railTop - 18), last = ord[n - 1], bot = clampY(lo + 6 + (isBasket(last.t) ? (last.h || 85) / 10 : last.t === 'trouser' ? 10 : 2));
-  ord.forEach((o, i) => o.y = n === 1 ? top : Math.round(top - (top - bot) * i / (n - 1)));
+function syncLinks(sec) { sec.items = sec.items.filter(o => !o.lk || sec.items.some(p => p.g === o.lk)); sec.items.forEach(o => { if (o.lk) { const p = sec.items.find(q => q.g === o.lk); o.y = clampY(p.y - 12); } }); }
+function newItem(c) {
+  S.q = (S.q || 0) + 1;
+  if (c === 'combo') { const g = 'g' + S.q, sh = it('mesh', S.depth || 40, 100), r = it('rail', 30, 88); sh.g = g; sh.q = S.q; r.lk = g; return [sh, r]; }
+  const [t, v] = (c === 'basket' ? (S.bKind || 'pull|mesh') : VARS[c][0][0]).split('|'); const o = it(t, 40, 100); o.q = S.q; o.d = DEPTHS[t].includes(S.depth) ? S.depth : DEPTHS[t].includes(40) ? 40 : DEPTHS[t][0]; if (isBasket(t)) { o.h = 85; o.v = v; } return [o];
 }
-function newItem(c) { const [t, v] = (c === 'basket' ? (S.bKind || 'pull|mesh') : VARS[c][0][0]).split('|'); const o = it(t, 40, 100); o.d = DEPTHS[t].includes(S.depth) ? S.depth : DEPTHS[t].includes(40) ? 40 : DEPTHS[t][0]; if (isBasket(t)) { o.h = 85; o.v = v; } return o; }
+// new item always strictly below the current lowest item
 function appendItem(sec, c) {
-  const lo = Math.ceil(postBottom() / 10) + 3, o = newItem(c), ys = sec.items.map(p => p.y), low = sec.items.slice().sort((a, b) => a.y - b.y)[0];
-  const step = c === 'rod' ? (low && catOf(low.t) === 'shelf' ? 12 : 40) : c === 'basket' ? (low && isBasket(low.t) ? (low.h || 85) / 10 + 4 : 25) : c === 'trouser' ? 20 : 36;
-  let y = ys.length ? Math.min(...ys) - step : S.railTop - 18; o.y = y; sec.items.push(o);
-  if (itemBot(o) * 100 < lo) spread(sec); else o.y = clampY(y);
-  return sec.items.length - 1;
+  const os = newItem(c), main = os[0], lowY = sec.items.length ? Math.min(...sec.items.map(p => p.y)) : null, lowBot = sec.items.length ? Math.min(...sec.items.map(p => itemBot(p) * 100)) : null;
+  const top = c === 'rod' ? 2 : 1, step = c === 'rod' ? 14 : c === 'basket' ? 6 : c === 'trouser' ? 6 : c === 'combo' ? 30 : 32;
+  let y = lowY == null ? S.railTop - 18 - (c === 'rod' ? 12 : 0) : Math.floor(Math.min(lowY - step, lowBot - top - (c === 'shelf' || c === 'combo' ? 26 : 2)));
+  main.y = clampY(y); sec.items.push(...os); syncLinks(sec);
+  return sec.items.indexOf(main);
 }
+function removeItem(sec, i) { const o = sec.items[i]; sec.items.splice(i, 1); if (o && o.g) sec.items = sec.items.filter(p => p.lk !== o.g); }
+function secHint(wi) { const sc = S.walls[wi].sections, g = {}; sc.forEach(x => g[x.w] = (g[x.w] || 0) + 1); const word = n => n % 10 === 1 && n % 100 !== 11 ? 'секция' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'секции' : 'секций'; return Object.entries(g).map(([w, n]) => `${n} ${word(n)} по ${w} см`).join(' + ') + ` = ${Math.round(wallWidth(wi) / 10)} см`; }
 function renderSizes() {
   const W = S.walls[cur.w], tot = Math.round(wallWidth(cur.w) / 10), n = W.sections.length, sw = W.sections[0] ? W.sections[0].w : 90, same = W.sections.every(x => x.w === sw);
   const btn = (v, on, attr, label) => `<button ${attr}="${v}" class="${on ? 'on' : ''}">${label ?? v}</button>`;
   const WS = [90, 120, 150, 180, 240, 270, 300, 360];
-  $('wallSz').innerHTML = wallsActive().map(wi => { const t = Math.round(wallWidth(wi) / 10), nn = S.walls[wi].sections.length, nm = wi === 0 ? 'Основная стена' : 'Боковая стена' + (S.layout === 'U' ? (wi === 1 ? ' (левая)' : ' (правая)') : '');
-    return `<div class="wallblk"><div class="wallh">${nm}</div><div class="szlab">Ширина стены, см</div><div class="sz">${WS.map(v => `<button data-ww="${wi}:${v}" class="${v === t ? 'on' : ''}">${v}</button>`).join('')}<button data-wown="${wi}" class="${WS.includes(t) ? '' : 'on'}">Свой размер${WS.includes(t) ? '' : ': ' + t}</button></div>
+  const AW = wallsActive(), tabs = AW.length > 1 ? '<div class="wtabs">' + AW.map(wi => `<button data-wt="${wi}" class="${wi === cur.w ? 'on' : ''}">${wi === 0 ? 'Основная стена' : AW.length > 2 ? (wi === 1 ? 'Левая стена' : 'Правая стена') : 'Вторая стена'}</button>`).join('') + '</div>' : '';
+  $('wallSz').innerHTML = tabs + [cur.w].map(wi => { const t = Math.round(wallWidth(wi) / 10), nn = S.walls[wi].sections.length, nm = AW.length > 1 ? '' : 'Стена';
+    return `<div class="wallblk"><div class="szlab">Ширина конструкции (верхний рельс), см</div><div class="sz">${WS.map(v => `<button data-ww="${wi}:${v}" class="${v === t ? 'on' : ''}">${v}</button>`).join('')}<button data-wown="${wi}" class="${WS.includes(t) ? '' : 'on'}">Свой размер${WS.includes(t) ? '' : ': ' + t}</button></div>
     <div class="own hide" id="wown${wi}"><input type="range" data-wr="${wi}" min="40" max="720" step="1" value="${t}"><input type="number" data-wf="${wi}" min="40" max="720" step="1" value="${t}"></div>
-    <div class="szlab">Количество секций</div><div class="sz">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div></div>`; }).join('');
-  const setW = (wi, v, live) => { const sc = S.walls[wi].sections, n = sc.length || 1, w = Math.max(20, Math.min(200, Math.round(v / n))), ws = live ? w : nearest([45, 60, 90, 120], w); sc.forEach(x => x.w = ws); if (!live && ws !== w) msg(`Ширина секций подобрана по каталогу: ${ws} см`); clearTimeout(dimT); dimT = setTimeout(() => { rebuild(); if (!live) renderSec(); }, live ? 40 : 0); };
-  const setN = (wi, n) => { const sc = S.walls[wi].sections, base = sc[sc.length - 1] || { w: 90, items: [] }; while (sc.length < n) sc.push(JSON.parse(JSON.stringify(base))); sc.length = n; cur.w = wi; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); };
+    <div class="szlab">Количество секций</div><div class="sz">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}<input type="number" class="nfree" data-wnf="${wi}" min="1" max="20" value="${nn}" title="Любое количество"></div><p class="foot">${secHint(wi)}</p></div>`; }).join('');
+  const setW = (wi, v, live) => { const sc = S.walls[wi].sections, n = sc.length || 1, w = Math.max(20, Math.min(200, Math.round(v / n))), ws = live ? w : nearest([45, 60, 90, 120], w); sc.forEach(x => x.w = ws); clearTimeout(dimT); dimT = setTimeout(() => { rebuild(); if (!live) renderSec(); }, live ? 40 : 0); };
+  const setN = (wi, n) => { const sc = S.walls[wi].sections, tot = wallWidth(wi) / 10, base = sc[sc.length - 1] || { w: 90, items: [] }; while (sc.length < n) sc.push(JSON.parse(JSON.stringify(base))); sc.length = n; const w = nearest([45, 60, 90, 120], tot / n); sc.forEach(x => x.w = w); cur.w = wi; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); };
   document.querySelectorAll('[data-ww]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.ww.split(':').map(Number); setW(wi, v); });
   document.querySelectorAll('[data-wn]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.wn.split(':').map(Number); setN(wi, v); });
+  document.querySelectorAll('[data-wt]').forEach(b => b.onclick = () => { cur = { w: +b.dataset.wt, s: 0, it: -1 }; renderSec(); rebuild(); });
+  document.querySelectorAll('[data-wnf]').forEach(el => el.onchange = () => setN(+el.dataset.wnf, Math.max(1, Math.min(20, Math.round(+el.value) || 1))));
   document.querySelectorAll('[data-wown]').forEach(b => b.onclick = () => $('wown' + b.dataset.wown).classList.toggle('hide'));
   document.querySelectorAll('[data-wr]').forEach(el => { el.oninput = () => { el.nextElementSibling.value = el.value; setW(+el.dataset.wr, +el.value, true); }; el.onchange = () => setW(+el.dataset.wr, +el.value); });
   document.querySelectorAll('[data-wf]').forEach(el => el.onchange = () => setW(+el.dataset.wf, +el.value || 90));
@@ -818,7 +834,7 @@ function renderSizes() {
   $('rS').value = $('fS').value = sw;
   const Q = (sel, f) => document.querySelectorAll(sel).forEach(b => b.onclick = () => f(b));
   Q('[data-zs]', b => { W.sections.forEach(x => x.w = +b.dataset.zs); rebuild(); renderSec(); });
-  Q('[data-zh]', b => { const lift = liftCm(); S.postH = +b.dataset.zh; S.railTop = Math.round(lift + S.postH / 10 + 1); fix(); });
+  Q('[data-zh]', b => { const lift = liftCm(); S.walls.forEach(w => delete w.postL); S.postH = +b.dataset.zh; S.railTop = Math.round(lift + S.postH / 10 + 1); fix(); });
   Q('[data-zd]', b => setDepth(+b.dataset.zd));
   Q('[data-zv]', b => { S.view = b.dataset.zv; $('viewMode').value = S.view; rebuild(); renderSizes(); });
   Q('[data-own]', b => $(b.dataset.own).classList.toggle('hide'));
@@ -832,23 +848,22 @@ function renderSec() {
   $('secTabs').innerHTML = h;
   $('secTabs').querySelectorAll('[data-w]').forEach(b => b.onclick = () => { cur = { w: +b.dataset.w, s: 0, it: -1 }; renderSec(); rebuild(); });
   $('secTabs').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { cur.s = +b.dataset.s; cur.it = -1; renderSec(); rebuild(); });
-  $('posGap').innerHTML = act.map(wi => { const eg = effGap(wi); return `<label>Сдвиг от угла (${wi === 0 ? 'основная стена' : 'боковая стена'}): <b data-gv="${wi}">${eg}</b> см<span class="own"><input type="range" data-gr="${wi}" min="${wi > 0 ? minGap() : 0}" max="300" step="1" value="${eg}"><input type="number" data-gf="${wi}" min="0" max="300" step="1" value="${eg}"></span></label>`; }).join('') + '<div id="gapWarn" class="sum" style="color:#b0552a"></div>';
-  const warn = () => { const m = minGap(), bad = S.layout !== 'straight' && act.some(wi => wi > 0 && S.walls[wi].gap < m); $('gapWarn').textContent = bad ? `Полки боковой стены пересекутся с полками основной. Нужен сдвиг от ${m} см.` : ''; };
-  let tmr; const setGap = (wi, v, live) => { const Wg = S.walls[wi]; Wg.gap = Math.max(wi > 0 && S.layout !== 'straight' ? minGap() : 0, Math.min(300, Math.round(v))); document.querySelector(`[data-gv="${wi}"]`).textContent = Wg.gap; document.querySelector(`[data-gr="${wi}"]`).value = Wg.gap; document.querySelector(`[data-gf="${wi}"]`).value = Wg.gap; warn(); clearTimeout(tmr); tmr = setTimeout(rebuild, live ? 30 : 0); };
+  $('posGap').innerHTML = [cur.w].map(wi => { const eg = effGap(wi), og = Math.min(300, optGap(wi)), sh = act.length > 1; return `<label>Сдвиг от угла: <b data-gv="${wi}">${eg}</b> см<span class="own"><span class="rng"><input type="range" data-gr="${wi}" min="0" max="300" step="1" value="${eg}">${sh ? `<i class="opt" style="left:calc(${og / 300} * (100% - 18px) + 9px)" title="Без пересечения полок: ${og} см"></i>` : ''}</span><input type="number" data-gf="${wi}" min="0" max="300" step="1" value="${eg}"></span></label>`; }).join('') + (act.length > 1 ? '<p class="foot"><i class="opt inl"></i> красная точка — положение, при котором полки двух стен не пересекаются (достаточно для одной из стен)</p>' : '');
+  let tmr; const setGap = (wi, v, live) => { const Wg = S.walls[wi]; Wg.gap = Math.max(0, Math.min(300, Math.round(v))); document.querySelector(`[data-gv="${wi}"]`).textContent = Wg.gap; document.querySelector(`[data-gr="${wi}"]`).value = Wg.gap; document.querySelector(`[data-gf="${wi}"]`).value = Wg.gap; clearTimeout(tmr); tmr = setTimeout(rebuild, live ? 30 : 0); };
   document.querySelectorAll('[data-gr]').forEach(el => el.oninput = () => setGap(+el.dataset.gr, +el.value, true));
-  document.querySelectorAll('[data-gf]').forEach(el => el.onchange = () => setGap(+el.dataset.gf, +el.value || 0)); warn();
+  document.querySelectorAll('[data-gf]').forEach(el => el.onchange = () => setGap(+el.dataset.gf, +el.value || 0));
   renderSizes();
   const s = W.sections[cur.s], lo = Math.ceil(postBottom() / 10) + 3, hi = S.railTop - 4;
-  const cnt = c => s.items.filter(o => catOf(o.t) === c).length;
+  const cnt = c => s.items.filter(o => !o.lk && rowCat(o) === c).length;
   let e = `<div class="fillhead"><b>Наполнение секции ${cur.s + 1}</b><span class="sz small">${[45, 60, 90, 120].map(v => `<button data-pw="${v}" class="${s.w === v ? 'on' : ''}">${v} см</button>`).join('')}</span></div>`;
   if (s.items.length && ![45, 60, 90, 120].includes(s.w)) e += `<div class="wtxt">Ширины ${s.w} см нет в каталоге. Подходят: 45, 60, 90, 120 см</div>`;
   e += '<div class="icons">' + Object.keys(CATS).map(c => `<div class="ico"><button class="big" data-app="${c}" title="Добавить ниже последнего">${ICO[c]}<span>${CATS[c]}</span></button><div class="cnt"><button data-dec="${c}">−</button><b>${cnt(c)}</b><button data-inc="${c}">+</button></div></div>`).join('') + '</div>';
   e += '<div class="szlab">Тип корзины</div><div class="btiles">' + BK.map(([k, t, svg]) => `<button data-bk="${k}" class="${(S.bKind || 'pull|mesh') === k ? 'on' : ''}"><svg viewBox="0 0 48 32">${svg}</svg><span>${t}</span></button>`).join('') + '</div>';
   e += '<div class="chips">' + [['shelves', 'Только полки'], ['rod', 'Штанга + полки'], ['two', 'Две штанги'], ['baskets', 'Полки + корзины'], ['shoes', 'Полки + обувь']].map(([k, t]) => `<button data-pre="${k}">${t}</button>`).join('') + '<button data-empty="1">Очистить</button></div>';
-  const ord = s.items.map((o, i) => [o, i]).sort((a, b) => b[0].y - a[0].y), coll = collisions(s);
+  const ord = s.items.map((o, i) => [o, i]).filter(p => !p[0].lk).sort((a, b) => b[0].y - a[0].y), coll = collisions(s);
   if (!s.items.length) e += '<p class="sum">Секция пустая. Нажимайте на значки выше: каждый новый элемент встает ниже предыдущего.</p>';
   ord.forEach(([o, i], k) => {
-    const c = catOf(o.t), vv = c === 'basket' ? o.t + '|' + (o.v || 'mesh') : o.t;
+    const c = rowCat(o), vv = c === 'basket' ? o.t + '|' + (o.v || 'mesh') : o.t;
     e += `<div class="item${coll.has(i) ? ' warn' : ''}${cur.it === i ? ' sel' : ''}" data-row="${i}"><div class="top"><b class="num">${k + 1}</b><span class="mico">${ICO[c]}</span><select data-i="${i}" data-k="var">${VARS[c].map(([kk, v]) => `<option value="${kk}" ${kk === vv ? 'selected' : ''}>${v}</option>`).join('')}</select>
     <select data-i="${i}" data-k="d" class="dsel">${DEPTHS[o.t].map(d => `<option value="${d}" ${d === o.d ? 'selected' : ''}>${d} см</option>`).join('')}</select>
     ${isBasket(o.t) ? `<select data-i="${i}" data-k="h" class="dsel">${[85, 181, 285].map(v => `<option value="${v}" ${v === (o.h || 85) ? 'selected' : ''}>${v} мм</option>`).join('')}</select>` : ''}
@@ -860,8 +875,8 @@ function renderSec() {
   const E = $('secEdit'), go = () => { rebuild(); renderSec(); };
   E.querySelectorAll('[data-pw]').forEach(b => b.onclick = () => { s.w = +b.dataset.pw; go(); });
   E.querySelectorAll('[data-app]').forEach(b => b.onclick = () => { cur.it = appendItem(s, b.dataset.app); go(); });
-  E.querySelectorAll('[data-inc]').forEach(b => b.onclick = () => { s.items.push(newItem(b.dataset.inc)); spread(s); cur.it = s.items.length - 1; go(); });
-  E.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => { const c = b.dataset.dec, l = s.items.map((o, i) => [o, i]).filter(p => catOf(p[0].t) === c).sort((a, b) => a[0].y - b[0].y)[0]; if (!l) return; s.items.splice(l[1], 1); spread(s); cur.it = -1; go(); });
+  E.querySelectorAll('[data-inc]').forEach(b => b.onclick = () => { cur.it = appendItem(s, b.dataset.inc); go(); });
+  E.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => { const c = b.dataset.dec, l = s.items.map((o, i) => [o, i]).filter(p => !p[0].lk && rowCat(p[0]) === c).sort((a, b) => ((b[0].q || 0) - (a[0].q || 0)) || (a[0].y - b[0].y))[0]; if (!l) return; removeItem(s, l[1]); cur.it = -1; go(); });
   E.querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { S.bKind = b.dataset.bk; const o = s.items[cur.it]; if (o && isBasket(o.t)) { const [t, v] = S.bKind.split('|'); o.t = t; o.v = v; } go(); });
   E.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => { s.items = presetItems(b.dataset.pre); cur.it = -1; go(); });
   E.querySelector('[data-empty]').onclick = () => { s.items = []; cur.it = -1; go(); };
@@ -877,7 +892,7 @@ function renderSec() {
     };
   });
   E.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { const i = +b.dataset.sw, k = ord.findIndex(p => p[1] === i), j = ord[k + +b.dataset.dir]; if (!j) return; const o = s.items[i], p = j[0], t = o.y; o.y = p.y; p.y = t; cur.it = i; go(); });
-  E.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { s.items.splice(+b.dataset.del, 1); cur.it = -1; go(); });
+  E.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { removeItem(s, +b.dataset.del); cur.it = -1; go(); });
 }
 
 let lastCam = 'front';
@@ -895,7 +910,7 @@ function fillDims() {
 }
 let dimT;
 const later = (fn, live) => { clearTimeout(dimT); dimT = setTimeout(fn, live ? 40 : 0); };
-function setWidth(v, live) { const secs = S.walls[cur.w].sections, n = secs.length, w = Math.max(20, Math.min(200, Math.round(Math.max(40, Math.min(720, v)) / n))), ws = live ? w : nearest([45, 60, 90, 120], w); secs.forEach(s => s.w = ws); if (!live && ws !== w) msg(`Ширина секций подобрана по каталогу: ${ws} см`); $('fW').value = $('rW').value = (live ? w : ws) * n; later(() => { rebuild(); if (!live) renderSec(); }, live); }
+function setWidth(v, live) { const secs = S.walls[cur.w].sections, n = secs.length, w = Math.max(20, Math.min(200, Math.round(Math.max(40, Math.min(720, v)) / n))), ws = live ? w : nearest([45, 60, 90, 120], w); secs.forEach(s => s.w = ws);  $('fW').value = $('rW').value = (live ? w : ws) * n; later(() => { rebuild(); if (!live) renderSec(); }, live); }
 function setHeight(v, live) { const lift = liftCm(); S.postH = Math.max(500, Math.min(3000, Math.round(v) * 10)); S.railTop = lift + S.postH / 10 + 1; S.walls.forEach(w => w.sections.forEach(s => s.items.forEach(o => o.y = clampY(o.y)))); $('fH').value = $('rH').value = Math.round(S.postH / 10); later(() => { fillDims(); rebuild(); if (!live) renderSec(); }, live); }
 function setDepth(v, live) { const d = [30, 40, 50].reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a); S.depth = d; S.walls.forEach(w => w.sections.forEach(s => s.items.forEach(o => { const D = DEPTHS[o.t]; o.d = D.reduce((a, b) => Math.abs(b - d) < Math.abs(a - d) ? b : a); }))); $('fD').value = $('rD').value = d; later(() => { rebuild(); if (!live) renderSec(); }, live); }
 function setLift(v, live) { const d = Math.round(v) - liftCm(); if (!d) return; S.railTop += d; S.walls.forEach(w => w.sections.forEach(s => s.items.forEach(o => o.y += d))); $('liftV').textContent = liftCm(); $('railTop').value = S.railTop; later(() => { rebuild(); if (!live) renderSec(); }, live); }
@@ -934,6 +949,14 @@ function renderTpl() {
 $('tplBtn').onclick = () => $('tplPop').classList.toggle('hide');
 $('tplSave').onclick = () => { const n = prompt('Название шаблона', 'Мой шаблон ' + (tpls().length + 1)); if (!n || !n.trim()) return; const a = tpls(); a.push({ name: n.trim(), cfg: JSON.parse(JSON.stringify(S)) }); saveT(a); renderTpl(); msg('Шаблон сохранен'); };
 renderTpl();
+// ---------- snap guide ----------
+const snapLine = new THREE.Mesh(new THREE.BoxGeometry(1, 0.004, 0.004), new THREE.MeshBasicMaterial({ color: 0xe0242b, depthTest: false, transparent: true, opacity: 0.9, toneMapped: false })); snapLine.renderOrder = 20; snapLine.visible = false; scene.add(snapLine);
+let snapT = 0;
+function showSnap(y) { const b = meshBox(); snapLine.scale.x = Math.max(0.5, b.max.x - b.min.x + 0.4); snapLine.position.set((b.min.x + b.max.x) / 2, y / 100, 0.06); snapLine.visible = true; snapLine.scale.y = snapLine.scale.z = 3; clearTimeout(snapT); snapT = setTimeout(() => { snapLine.scale.y = snapLine.scale.z = 1; }, 140); }
+function hideSnap() { snapLine.visible = false; }
+// tiny haptic tick: Android vibrate, iOS 17.4+ Safari via hidden switch checkbox
+const hapEl = (() => { const l = document.createElement('label'); l.style.cssText = 'position:fixed;left:-99px;top:0;width:1px;height:1px;overflow:hidden;opacity:0'; l.innerHTML = '<input type="checkbox" switch>'; document.body.appendChild(l); return l; })();
+function haptic() { try { if (navigator.vibrate) { navigator.vibrate(10); return; } hapEl.click(); } catch (er) {} }
 // ---------- drag items vertically ----------
 {
   const el = renderer.domElement, rc = new THREE.Raycaster(), tip = $('dragTip');
@@ -943,17 +966,22 @@ renderTpl();
     if (!orb.on || e.button !== 0) return;
     const r = el.getBoundingClientRect(), p = new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     rc.setFromCamera(p, camera); const hit = rc.intersectObjects(model.children, true).find(h => h.object.visible && h.object !== catcher && findRef(h.object));
-    if (!hit) return; const g = findRef(hit.object), { wi, si, ii } = g.userData.ref, o = S.walls[wi].sections[si].items[ii];
+    if (!hit || hit.object.userData.contact) return; const g = findRef(hit.object), { wi, si, ii } = g.userData.ref, o = S.walls[wi].sections[si].items[ii];
+    if (!(cur.it === ii && cur.w === wi && cur.s === si)) return; // only a selected item can be dragged; otherwise the finger orbits
     drag = { g, o, y0: o.y, py: e.clientY, unit: hit.distance * Math.tan(camera.fov * Math.PI / 360) * 2 / (el.clientHeight || 600) * 100 * (g.parent ? 1 : 1) };
     drag.wi = wi; drag.si = si; drag.ii = ii; e.stopImmediatePropagation(); el.setPointerCapture(e.pointerId);
     tip.classList.remove('hide'); tip.textContent = `${o.y} см`; tip.style.left = (e.clientX - r.left + 14) + 'px'; tip.style.top = (e.clientY - r.top - 30) + 'px';
   }, true);
   el.addEventListener('pointermove', e => {
     if (!drag) return; e.stopImmediatePropagation(); const r = el.getBoundingClientRect();
-    const ny = clampY(Math.round(drag.y0 + (drag.py - e.clientY) * drag.unit)); drag.g.position.y = (ny - drag.y0) / 100; drag.ny = ny;
-    tip.textContent = `${ny} см от пола`; tip.style.left = (e.clientX - r.left + 14) + 'px'; tip.style.top = (e.clientY - r.top - 30) + 'px';
+    let ny = clampY(Math.round(drag.y0 + (drag.py - e.clientY) * drag.unit));
+    { const raw = ny; let best = null; wallsActive().forEach(wi => S.walls[wi].sections.forEach((sc, si) => { if (wi === drag.wi && si === drag.si) return; sc.items.forEach(p => { if (!p.lk && Math.abs(p.y - raw) <= 1.5 && (best == null || Math.abs(p.y - raw) < Math.abs(best - raw))) best = p.y; }); }));
+      if (best != null && Math.abs(best - ny) < 0.5) { if (drag.snap !== best) { drag.snap = best; haptic(); showSnap(best); } } else if (drag.snap != null) { drag.snap = null; hideSnap(); } }
+    drag.ny = ny;
+    if (dimsOn()) { if (drag.o.y !== ny) { drag.o.y = ny; if (!drag.t) drag.t = setTimeout(() => { drag.t = 0; if (!drag) return; rebuild(); }, 90); } } else drag.g.position.y = (ny - drag.y0) / 100;
+    tip.textContent = `${ny} см от пола${drag.snap === ny ? ' · вровень' : ''}`; tip.style.left = (e.clientX - r.left + 14) + 'px'; tip.style.top = (e.clientY - r.top - 30) + 'px';
   }, true);
-  const up = e => { if (!drag) return; e.stopImmediatePropagation(); if (drag.ny != null) { drag.o.y = drag.ny; cur = { w: drag.wi, s: drag.si, it: drag.ii }; } else { cur = { w: drag.wi, s: drag.si, it: drag.ii }; setTimeout(() => $('secEdit').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } drag = null; tip.classList.add('hide'); rebuild(); renderSec(); };
+  const up = e => { if (!drag) return; e.stopImmediatePropagation(); hideSnap(); if (drag.ny != null) drag.o.y = drag.ny; drag = null; tip.classList.add('hide'); rebuild(); renderSec(); };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true);
 }
 document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => { lastCam = b.dataset.cam; camTo(lastCam); document.querySelector('.tools').classList.remove('open'); });
@@ -966,7 +994,7 @@ const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textConte
 $('shareBtn').onclick = async () => { const u = location.origin + location.pathname + '?cfg=' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); try { await navigator.clipboard.writeText(u); msg('Ссылка скопирована'); } catch (e) { prompt('Ссылка на конфигурацию', u); } };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = migrate(v); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); camTo(lastCam); msg('Конфигурация загружена'); };
-$('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = migrate(defaults()); cur = { w: 0, s: 0 }; fillGeneral(); cardUI(); rebuild(); renderSec(); camTo('front'); };
+$('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); camTo('nice'); if (window.goStep) goStep(0); };
 
 async function fontsFor(C) { const f = { montserrat: 'Montserrat', inter: 'Inter', playfair: 'Playfair Display' }[C.font] || 'Manrope'; await Promise.all([document.fonts.load(`700 60px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load('500 30px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load('800 48px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load(`800 48px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load(`500 30px "${f}"`, 'Наполнение КАРКАС 0123')]).catch(() => {}); }
 $('cardBtn').onclick = async () => { cardRead(); await fontsFor(S.card); const o = makeCard(); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
@@ -990,7 +1018,7 @@ addEventListener('resize', dockTools); dockTools();
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : 'nice');
-const _x=0;window.__gs = { get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
 // ---------- v4 extra controls ----------
 $('rS').oninput = e => { $('fS').value = e.target.value; S.walls[cur.w].sections.forEach(x => x.w = +e.target.value); clearTimeout(dimT); dimT = setTimeout(rebuild, 40); };
@@ -999,22 +1027,30 @@ $('rS').onchange = $('fS').onchange = e => { const v = Math.max(20, Math.min(200
   $('bgSw').innerHTML = BG.map(c => `<button type="button" style="background:${c}" data-bg="${c}" title="${c}"></button>`).join('') + '<input type="color" id="bgC" title="Свой цвет фона">';
   $('bgSw').querySelectorAll('[data-bg]').forEach(b => b.onclick = () => { S.bg = b.dataset.bg; $('bgC').value = S.bg; setBg(); pushHist(); localStorage.setItem('gs_auto', JSON.stringify(S)); });
   $('bgC').value = S.bg || '#e9e6e0'; $('bgC').oninput = e => { S.bg = e.target.value; setBg(); }; setBg(); }
-const setDimCol = c => { S.walls.forEach(w => w.dimColor = c); $('dimCol').value = c; rebuild(); };
+const setDimCol = c => { S.dimManual = true; S.walls.forEach(w => w.dimColor = c); $('dimCol').value = c; rebuild(); };
 document.querySelectorAll('[data-dc]').forEach(b => b.onclick = () => setDimCol(b.dataset.dc));
 $('dimCol').value = S.walls[0].dimColor || '#2a2a2a'; $('dimCol').oninput = e => setDimCol(e.target.value);
 $('dimEye').onclick = async () => { if (!window.EyeDropper) return alert('Пипетка работает в Chrome и Edge на компьютере. Выберите цвет в палитре.'); try { const r = await new EyeDropper().open(); setDimCol(r.sRGBHex); } catch (e) {} };
-// tap on a section in 3D (not on an item) selects it
-{ const el = renderer.domElement, rc = new THREE.Raycaster(); let d0 = null;
-  el.addEventListener('pointerdown', e => { d0 = [e.clientX, e.clientY]; }, true);
+// tap: item -> select (then it can be dragged), wall -> select section, empty -> deselect
+{ const el = renderer.domElement, rc = new THREE.Raycaster(); let d0 = null, multi = 0;
+  el.addEventListener('pointerdown', e => { multi++; d0 = multi === 1 ? [e.clientX, e.clientY, performance.now()] : null; }, true);
+  const end = () => { multi = Math.max(0, multi - 1); };
+  el.addEventListener('pointercancel', () => { end(); d0 = null; }, true);
   el.addEventListener('pointerup', e => {
-    if (!d0 || Math.hypot(e.clientX - d0[0], e.clientY - d0[1]) > 6) return; d0 = null;
+    end(); if (!d0 || Math.hypot(e.clientX - d0[0], e.clientY - d0[1]) > 8 || performance.now() - d0[2] > 600) { d0 = null; return; } d0 = null;
     const r = el.getBoundingClientRect(); rc.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-    const hit = rc.intersectObjects(model.children, true).find(h => h.object.visible && h.object !== catcher); if (!hit) return;
-    let o = hit.object; while (o && o.userData.wi == null) { if (o.userData.ref) return; o = o.parent; } if (!o) return;
+    const hit = rc.intersectObjects(model.children, true).find(h => h.object.visible && h.object !== catcher && !h.object.userData.contact);
+    const prev = cur.it;
+    if (!hit) { if (prev >= 0) { cur.it = -1; rebuild(); renderSec(); } return; }
+    let o = hit.object; while (o && o.userData.wi == null && !o.userData.ref) o = o.parent;
+    if (hit.object.userData.post) { selPost = hit.object.userData.post; cur.it = -1; rebuild(); showPostPop(); return; }
+    if (selPost) { selPost = null; $('postPop').classList.add('hide'); }
+    if (o && o.userData.ref) { const { wi, si, ii } = o.userData.ref; cur = { w: wi, s: si, it: ii }; rebuild(); renderSec(); if (window.goStep) goStep(1); return; }
+    if (!o) { if (prev >= 0) { cur.it = -1; rebuild(); renderSec(); } return; }
     const wi = o.userData.wi, x = o.worldToLocal(hit.point.clone()).x; let acc = 0, si = -1;
     S.walls[wi].sections.forEach((sc, i) => { if (x >= acc - 0.02 && x <= acc + sc.w / 100 + 0.02 && si < 0) si = i; acc += sc.w / 100; });
-    if (si < 0) return; cur = { w: wi, s: si, it: -1 }; renderSec(); rebuild(); $('secEdit').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }); }
+    cur = { w: wi, s: si < 0 ? cur.s : si, it: -1 }; rebuild(); renderSec();
+  }, true); }
 // WB 3:4 snapshot with side air for plaques
 $('wbBtn').onclick = () => {
   const CW = 1800, CH = 2400, sv = { pos: camera.position.clone(), pr: renderer.getPixelRatio(), q: camera.quaternion.clone() }, sm = sun.shadow.mapSize.x;
@@ -1046,3 +1082,20 @@ $('shot2').onclick = () => $('pngBtn').click(); $('wb2').onclick = () => $('wbBt
   // tapping a section in 3D opens step 2
   const sv = Element.prototype.scrollIntoView; $('secEdit').scrollIntoView = function (o) { goStep(1); sv.call(this, o); };
 }
+
+const dimsOn = () => { const d = S.dm || {}; return !!(d.t || d.s || d.v || d.c); };
+const dimBtnUI = () => $('dimBtn').classList.toggle('on', dimsOn());
+$('dimBtn').onclick = () => { const on = !dimsOn(); S.dm = { t: on, s: on, v: on, c: on }; rebuild(); dimBtnUI(); };
+dimBtnUI(); { const rb = window.__gs.rebuild; }
+
+$('dimAuto').onclick = () => { S.dimManual = false; rebuild(); };
+
+function showPostPop() {
+  const p = $('postPop'), { wi, i } = selPost, L = postLen(wi, i);
+  p.innerHTML = `<b>Стойка ${i + 1}${wallsActive().length > 1 ? ' · ' + (wi === 0 ? 'основная стена' : 'вторая стена') : ''}</b><div class="sz">${[512, 1025, 1156, 1536, 1920, 2304].map(v => `<button data-pl="${v}" class="${v === L ? 'on' : ''}">${v}</button>`).join('')}</div><button class="mini" id="postClose">Готово</button>`;
+  p.classList.remove('hide');
+  p.querySelectorAll('[data-pl]').forEach(b => b.onclick = () => { const W = S.walls[wi]; W.postL = W.postL || {}; W.postL[i] = +b.dataset.pl; if (W.postL[i] === S.postH) delete W.postL[i]; rebuild(); renderSec(); showPostPop(); });
+  $('postClose').onclick = () => { selPost = null; p.classList.add('hide'); rebuild(); };
+}
+
+$('cornT').checked = !!S.room.cornice; $('cornT').onchange = e => { S.room.cornice = e.target.checked; rebuild(); };

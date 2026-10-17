@@ -74,3 +74,7 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 #viewWrap{background:#e4e1dc}#view{left:50%;right:auto;transform:translateX(-50%);height:100%;aspect-ratio:3/4;width:auto;max-width:100%;box-shadow:0 0 0 1px #0001}
 #photoBg{left:50%;right:auto;transform:translateX(-50%);height:100%;aspect-ratio:3/4;width:auto}
 @media(max-width:800px){#viewWrap{height:min(133.33vw,64vh)}}
+.rng{position:relative;display:block}.rng input{width:100%}.opt{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#e0242b;box-shadow:0 0 0 2px #fff;pointer-events:none}.opt.inl{position:relative;display:inline-block;top:0;margin:0 4px -1px 0}
+.nfree{width:64px!important;display:inline-block!important;margin:0!important}
+.wtabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:6px;margin:8px 0}.wtabs button{padding:10px 6px;font-weight:600;border-radius:12px}
+#postPop{position:absolute;left:50%;bottom:52px;transform:translateX(-50%);z-index:5;background:#fff;border-radius:12px;padding:8px 10px;box-shadow:0 4px 18px #0003;width:min(360px,92%);font-size:13px}#postPop .sz{margin:6px 0}#postPop .sz button{min-width:0;padding:5px 7px;font-size:12px}
