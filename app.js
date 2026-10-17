@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CATALOG, RULES } from './catalog.js';
 
 const $ = id => document.getElementById(id);
@@ -20,16 +21,16 @@ const VARS = { shelf: [['mesh', 'Сетчатая'], ['metal', 'Металлич
 const isBasket = t => t === 'basket' || t === 'pull';
 const perfOf = o => (o.v || (S.basketStyle === 'plastic' ? 'perf' : 'mesh')) === 'perf';
 const fineOf = o => o.v === 'fine';
-const WALLNAMES = ['Основная стена', 'Левая стена', 'Правая стена'];
+const WALLNAMES = ['Основная стена', 'Боковая стена', 'Боковая стена справа'];
 
 function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    layout: 'L', metal: 'white', wall: '#ecdcc8', floor: 'oak', preset: 'warm', view: 'all', decor: true, card: null, postH: 1920, railTop: 210, dims: true, dm: { t: true, s: true, v: true, c: false },
+    v4: 1, v5: 1, layout: 'L', metal: 'white', wall: '#b3b1ad', wallFin: 'paint', floor: 'oak', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 210, dims: false, dm: { t: false, s: false, v: false, c: false }, room: { shOn: false, glare: 0, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true },
     walls: [
       { gap: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('mesh', 40, 40)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), Object.assign(it('pull', 40, 75, 181), { v: 'mesh' }), Object.assign(it('pull', 40, 52, 181), { v: 'mesh' })])] },
-      { gap: 50, sections: [sec(60, [it('mesh', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('shoe', 40, 35)])] },
+      { gap: 50, sections: [sec(60, [it('mesh', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 180), it('mesh', 40, 40)])] },
       { gap: 50, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 180)]), sec(60, [it('mesh', 40, 192), it('mesh', 40, 140), it('mesh', 40, 90), it('shoe', 40, 30)])] }
     ]
   };
@@ -45,7 +46,7 @@ function setTemplate(t) {
   if (t === 'p6') { S.layout = 'straight'; S.walls[0].sections = [A(), B(), C(), C(), B(), D()]; }
   if (t === 'l23') { S.layout = 'L'; S.walls[0].sections = [A(), B()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[1].sections = [B(), D()]; }
   if (t === 'zero') { S.layout = 'straight'; S.walls[0].sections = [{ w: 90, items: [] }, { w: 90, items: [] }]; }
-  cur = { w: 0, s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); camTo(S.layout === 'straight' ? 'front' : 'iso');
+  cur = { w: 0, s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); camTo('nice');
 }
 function cardPreset() {
   const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
@@ -54,7 +55,7 @@ function cardPreset() {
   S.walls[1].gap = 46; S.walls[1].sections = [{ w: 60, items: [m(190), m(140), m(90), m(42)] }];
   S.card = Object.assign(cardDefaults(), { size: '156 × 110 × 205 см' }); S._cam = 'card'; return S;
 }
-let S = migrate(load('gs_auto') || defaults());
+let S = (() => { const v = load('gs_auto'); return migrate(v && v.v5 ? v : defaults()); })();
 const QS = new URLSearchParams(location.search);
 try {
   if (QS.get('preset') === 'card') S = migrate(cardPreset());
@@ -116,7 +117,7 @@ function carpetTex() {
 function floorMat() {
   const [n, rep, tint] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm';
   if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2 }); }
-  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, clearcoat: S.floor === 'tile' ? 0.6 : 0.25, clearcoatRoughness: 0.35 });
+  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: S.floor === 'tile' ? 0.7 : 0.35, clearcoatRoughness: S.floor === 'tile' ? 0.15 : 0.28, envMapIntensity: 0.9 });
 }
 let PAPER;
 function paperTex() {
@@ -137,6 +138,13 @@ function finishTex(f) {
 }
 function wallMat() { return new THREE.MeshBasicMaterial({ color: new THREE.Color(S.wall), map: finishTex(S.wallFin || 'paint'), toneMapped: false }); }
 function wallShadowMat() { return new THREE.ShadowMaterial({ opacity: 0.06 + 0.4 * (S.room.shadow ?? 0.55), polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); }
+const AOG = {};
+function aoGrad(k) { // soft quadratic falloff, alpha along u (u=0 darkest)
+  if (!AOG[k]) { const c = document.createElement('canvas'); c.width = 256; c.height = 2; const g = c.getContext('2d'), im = g.createImageData(256, 2); for (let x = 0; x < 256; x++) { const t = x / 255, a = Math.pow(1 - t, 2.2) * 255; for (let y = 0; y < 2; y++) { const i = (y * 256 + x) * 4; im.data[i + 3] = a; } } g.putImageData(im, 0, 0); AOG[k] = new THREE.CanvasTexture(c); }
+  return new THREE.MeshBasicMaterial({ map: AOG[k], color: 0x000000, transparent: true, opacity: k, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+}
+// strip of AO on a plane: len along v, width w; u runs from the joint into the surface
+function aoStrip(parent, len, w, k, place) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, len), aoGrad(k)); place(m); parent.add(m); return m; }
 let CONTACT;
 function contactMat() {
   if (!CONTACT) { const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(0,0,0,0.55)'); gr.addColorStop(0.35, 'rgba(0,0,0,0.22)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 64);
@@ -148,9 +156,9 @@ function contactMat() {
 let M = {};
 function makeMats() {
   const col = METAL[S.metal];
-  const pc = { color: col, metalness: S.metal === 'white' ? 0.25 : 0.5, roughness: S.metal === 'black' ? 0.45 : 0.38 };
+  const pc = { color: col, metalness: S.metal === 'silver' ? 0.85 : 0.12, roughness: S.metal === 'silver' ? 0.32 : 0.42 };
   pc.metalness = S.metal === 'silver' ? 0.85 : pc.metalness; pc.roughness = S.metal === 'silver' ? 0.3 : pc.roughness;
-  const pp = { ...pc, clearcoat: 0.35, clearcoatRoughness: 0.25 };
+  const pp = { ...pc, clearcoat: 0.5, clearcoatRoughness: 0.3, specularIntensity: 0.8 };
   M.metal = new THREE.MeshPhysicalMaterial(pp);
   const pt = slotTex(false); pt.repeat.set(1, S.postH / 32);
   M.post = new THREE.MeshPhysicalMaterial({ ...pp, map: pt });
@@ -196,7 +204,7 @@ function buildWall(wi) {
   const pb = postBottom() * MM, pt = (S.railTop * 10 - 10) * MM;
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   // uprights 32 x 34 mm (seller data), metal 1.8 mm with hook head and floor-side end cap
-  xs.forEach(x => { const pm = box(0.032, pt - pb, 0.034, x, (pt + pb) / 2, 0.011 + 0.017, M.post); pm.userData.frame = true; g.add(pm);
+  xs.forEach(x => { const pm = new THREE.Mesh(new RoundedBoxGeometry(0.032, pt - pb, 0.034, 2, 0.004), M.post); pm.position.set(x, (pt + pb) / 2, 0.028); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm);
     const hk = box(0.036, 0.03, 0.03, x, pt - 0.012, 0.026, M.metal); hk.userData.frame = true; g.add(hk);
     const cap = box(0.034, 0.012, 0.036, x, pb + 0.006, 0.028, M.plastic); cap.userData.frame = true; g.add(cap); });
   W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si], xs[si + 1], s);
@@ -288,7 +296,7 @@ function buildItem(g, item, x0, x1, sec) {
   }
 }
 
-function effGap(wi) { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.max(0, S.walls[wi].gap || 0); }
+function effGap(wi) { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.max(wi > 0 && S.layout !== 'straight' ? minGap() : 0, S.walls[wi].gap || 0); }
 function minGap() { let d = 0; S.walls[0].sections.forEach(s => s.items.forEach(o => d = Math.max(d, (REAL_DEPTH[o.t][o.d] || 400) / 10))); return Math.ceil(d + 5.5); }
 function placeWall(g, wi, backW) {
   const g0 = effGap(0) * 10 * MM;
@@ -298,11 +306,13 @@ function placeWall(g, wi, backW) {
   if (wi === 2) { g.rotation.y = Math.PI / 2; g.scale.x = -1; g.scale.z = -1; g.position.set(g0 + backW + 0.02, 0, gap); }
 }
 
+let ROOMB = null;
 function buildRoom(backW) {
   room.clear();
   const floorM = floorMat(), wallM = wallMat(), CH = (S.room.ceilH || 275) / 100;
   const RX = (S.room.extra || 0) / 100, g0 = effGap(0) * 10 * MM, cr = S.layout === 'U' || S.layout === 'Lr', cl = S.layout !== 'Lr';
   const left = cl ? -0.02 : -2.5 - RX, right = cr ? g0 + backW + 0.02 + (S.layout === 'U' ? RX : 0) : g0 + backW + 2.5 + RX;
+  ROOMB = { l: cl && !photo ? left : -1e9, r: cr && !photo ? right : 1e9 };
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), floorM); fl.rotation.x = -Math.PI / 2; fl.position.set(backW / 2, 0, 5); fl.receiveShadow = true; room.add(fl);
   const plane = (w, h, x, y, z, ry, parent) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallM); p.position.set(x, y, z); p.rotation.y = ry; parent.add(p); const q = new THREE.Mesh(p.geometry, wallShadowMat()); q.position.copy(p.position); q.rotation.y = ry; q.receiveShadow = true; parent.add(q); };
   plane(right - left, CH, (left + right) / 2, CH / 2, 0, 0, room);
@@ -313,8 +323,20 @@ function buildRoom(backW) {
     if (S.room.skirting !== false) { pv.add(box(0.016, 0.08, 6 + RX * 2, L ? 0.008 : -0.008, 0.04, 3 + RX, skM)); pv.add(box(0.022, 0.012, 6 + RX * 2, L ? 0.011 : -0.011, 0.074, 3 + RX, skM)); }
     if (S.room.ceiling) { const cg = new THREE.Group(); cornice(6 + RX * 2, 0, 3 + RX, L ? Math.PI / 2 : -Math.PI / 2, cg); cg.children[0].position.set(0, CH, 3 + RX); pv.add(cg); } room.add(pv); };
   if (cl) side(left); if (cr) side(right);
+  // gentle ambient occlusion: wall/floor joints, corners, ceiling joint
+  { const k = 0.16, W = right - left, cx = (left + right) / 2;
+    aoStrip(room, W, 0.35, k, m => { m.position.set(cx, 0.175, 0.002); m.rotation.z = Math.PI / 2; });
+    aoStrip(room, W, 0.45, k * 0.9, m => { m.rotation.x = -Math.PI / 2; m.rotation.z = Math.PI / 2; m.position.set(cx, 0.002, 0.225); m.scale.x = -1; });
+    if (S.room.ceiling) aoStrip(room, W, 0.3, k * 0.7, m => { m.rotation.z = -Math.PI / 2; m.position.set(cx, CH - 0.15, 0.002); });
+    const corner = (x, L) => { const dA = ((S.room.angle || 90) - 90) * Math.PI / 180;
+      aoStrip(room, CH, 0.5, k, m => { m.position.set(L ? x + 0.25 : x - 0.25, CH / 2, 0.002); if (!L) m.scale.x = -1; });
+      const pv = new THREE.Group(); pv.position.set(x, 0, 0); pv.rotation.y = L ? -dA : dA; room.add(pv);
+      aoStrip(pv, CH, 0.5, k, m => { m.rotation.y = L ? Math.PI / 2 : -Math.PI / 2; m.position.set(L ? 0.002 : -0.002, CH / 2, 0.25); if (L) m.scale.x = -1; });
+      aoStrip(pv, 6, 0.35, k, m => { m.rotation.y = L ? Math.PI / 2 : -Math.PI / 2; m.rotation.z = Math.PI / 2; m.position.set(L ? 0.002 : -0.002, 0.175, 3); });
+      aoStrip(pv, 6, 0.45, k * 0.9, m => { m.rotation.x = -Math.PI / 2; m.rotation.z = L ? 0 : Math.PI; m.position.set(L ? 0.225 : -0.225, 0.002, 3); }); };
+    if (cl) corner(left, true); if (cr) corner(right, false); }
   if (S.room.skirting !== false) { room.add(box(right - left, 0.08, 0.016, (left + right) / 2, 0.04, 0.008, skM)); room.add(box(right - left, 0.012, 0.022, (left + right) / 2, 0.074, 0.011, skM)); }
-  if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(right - left + 0.1, 6 + RX * 2), new THREE.MeshBasicMaterial({ color: 0xf6f4ef, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set((left + right) / 2, CH, 3 + RX); room.add(ce);
+  if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xfbfbf9, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set((left + right) / 2, CH, 39.9); room.add(ce);
     cornice(right - left, (left + right) / 2, 0, 0, room); }
   if (S.room.lamps) { const n = Math.max(2, Math.round((right - left) / 1.2)); for (let i = 0; i < n; i++) { const x = left + (right - left) * (i + 0.5) / n; const d = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.008, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2dc, emissiveIntensity: 1.5 })); d.position.set(x, CH - 0.004, 0.9); room.add(d); const pl = new THREE.PointLight(0xffe9cc, 1.0, 0, 2); pl.position.set(x, CH - 0.12, 0.9); room.add(pl); } }
   if (!catcher) { catcher = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.25 })); catcher.rotation.x = -Math.PI / 2; catcher.receiveShadow = true; model.add(catcher); }
@@ -493,6 +515,7 @@ function syncFromCam(kind) {
 function applyCam(cam = camera) {
   const o = orb; o.h = Math.max(0.15, Math.min(o.T.y + o.R * 0.75, Math.max(o.h, o.T.y - o.R * 0.6)));
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
+  if (ROOMB) { cam.position.x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, cam.position.x)); cam.position.z = Math.max(0.4, cam.position.z); }
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   const yN = (o.T.y - o.h) / (o.R * Math.tan(cam.fov * Math.PI / 360));
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
@@ -520,7 +543,7 @@ function applyCam(cam = camera) {
 
 function camTo(kind) {
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
-  const dir = kind === 'front' ? V(0, 0, 1) : kind === 'iso' ? V(S.layout === 'Lr' ? -1 : 1, 0.25, 1.1) : V(0, 1, 0.35);
+  const sg = S.layout === 'Lr' ? -1 : 1, dir = kind === 'front' ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? (S.layout === 'straight' ? V(0.45, 0.12, 1) : S.layout === 'U' ? V(0, 0.12, 1) : V(sg * 0.85, 0.14, 1)) : V(0, 1, 0.35);
   dir.normalize();
   camera.fov = kind === 'top' ? 35 : 28; const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
@@ -589,7 +612,7 @@ function applyGlareShadow() {
   sun.intensity *= 0.3 + 1.4 * sh; hemi.intensity *= 1.3 - 0.6 * sh; if (catcher) catcher.material.opacity = 0.08 + 0.4 * sh;
   scene.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial) o.material.envMapIntensity = o.material.metalness > 0.6 ? 0.4 + gl * 1.6 : 0.7 + gl * 0.8; });
 }
-function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(S.bg || '#e9e6e0'); }
+function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(S.room && S.room.ceiling ? '#fbfbf9' : (S.bg || '#e9e6e0')); }
 
 // ---------- export ----------
 $('pngBtn').onclick = async () => {
@@ -731,7 +754,7 @@ function fillGeneral() {
   $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('sunT').checked = !!S.sun; $('bStyle').value = S.basketStyle || 'mesh'; const R = S.room; $('ceilT').checked = !!R.ceiling; $('skirtT').checked = R.skirting !== false; $('lampT').checked = !!R.lamps; $('glare').value = R.glare; $('glareV').textContent = Math.round(R.glare * 100) + '%'; $('shadow').value = R.shadow; $('shadowV').textContent = Math.round(R.shadow * 100) + '%'; $('roomX').value = R.extra; $('roomV').textContent = R.extra; $('angR').value = R.angle; $('wallFin').value = S.wallFin || 'paint'; $('ceilH').value = R.ceilH; $('ceilV').textContent = R.ceilH; $('angV').textContent = R.angle + '°'; $('skirtC').value = R.skirtColor; $('glowS').value = R.glow; $('shOnT').checked = R.shOn !== false; $('shAng').value = R.shAng; $('shAngV').textContent = R.shAng + '°'; $('shBlur').value = R.shBlur; $('shBlurV').textContent = R.shBlur; $('shDist').value = R.shDist; $('shDistV').textContent = Math.round(R.shDist * 100) + '%'; $('preset').value = S.preset || 'none'; fillDims();
 }
 $('rodC').onchange = e => { S.rod = e.target.value; rebuild(); };
-$('metal').onchange = e => { S.metal = e.target.value; rebuild(); };
+$('metal').onchange = e => { S.metal = e.target.value; const c = new THREE.Color(S.wall), l = c.r * 0.3 + c.g * 0.59 + c.b * 0.11; if ((S.metal === 'white' || S.metal === 'silver') && l > 0.55) S.wall = '#b3b1ad'; else if (S.metal === 'black' && l < 0.35) S.wall = '#e6e2dc'; $('wall').value = S.wall; rebuild(); };
 $('wallTone').onchange = e => { if (e.target.value) { S.wall = e.target.value; $('wall').value = S.wall; rebuild(); } e.target.value = ''; };
 $('wall').oninput = e => { S.wall = e.target.value; rebuild(); };
 $('floor').onchange = e => { S.floor = e.target.value; rebuild(); };
@@ -739,7 +762,7 @@ $('wallFin').onchange = e => { S.wallFin = e.target.value; rebuild(); };
 $('postH').onchange = e => { if (e.target.value !== 'custom') { S.postH = +e.target.value; $('postHc').value = S.postH; fix(); } };
 $('postHc').onchange = e => { S.postH = Math.max(300, Math.min(3000, +e.target.value || 1920)); $('postH').value = 'custom'; fix(); };
 $('railTop').onchange = e => { S.railTop = Math.max(60, Math.min(350, +e.target.value || 210)); fix(); };
-$('nSec').onchange = e => { const n = Math.max(1, Math.min(6, +e.target.value || 1)), secs = S.walls[cur.w].sections; while (secs.length < n) secs.push(JSON.parse(JSON.stringify(secs[secs.length - 1]))); secs.length = n; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); camTo(lastCam); };
+$('nSec').onchange = e => { const n = Math.max(1, Math.min(6, +e.target.value || 1)), secs = S.walls[cur.w].sections; while (secs.length < n) secs.push(JSON.parse(JSON.stringify(secs[secs.length - 1]))); secs.length = n; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); };
 $('allW').onchange = e => { if (e.target.value) { S.walls[cur.w].sections.forEach(s => s.w = +e.target.value); e.target.value = ''; rebuild(); renderSec(); } };
 function fix() { if (S.postH > S.railTop * 10) S.railTop = Math.ceil(S.postH / 10) + 2; $('railTop').value = S.railTop; fillDims(); S.walls.forEach(w => w.sections.forEach(s => s.items.forEach(o => o.y = clampY(o.y)))); rebuild(); renderSec(); }
 
@@ -775,9 +798,17 @@ function renderSizes() {
   const W = S.walls[cur.w], tot = Math.round(wallWidth(cur.w) / 10), n = W.sections.length, sw = W.sections[0] ? W.sections[0].w : 90, same = W.sections.every(x => x.w === sw);
   const btn = (v, on, attr, label) => `<button ${attr}="${v}" class="${on ? 'on' : ''}">${label ?? v}</button>`;
   const WS = [90, 120, 150, 180, 240, 270, 300, 360];
-  $('szW').innerHTML = WS.map(v => btn(v, v === tot, 'data-zw')).join('') + `<button data-own="ownW" class="${WS.includes(tot) ? '' : 'on'}">Свой размер${WS.includes(tot) ? '' : ': ' + tot}</button>`;
-  $('szWnote').textContent = wallsActive().length > 1 ? '(' + WALLNAMES[cur.w] + ')' : '';
-  $('szN').innerHTML = [1, 2, 3, 4, 5, 6].map(v => btn(v, v === n, 'data-zn')).join('');
+  $('wallSz').innerHTML = wallsActive().map(wi => { const t = Math.round(wallWidth(wi) / 10), nn = S.walls[wi].sections.length, nm = wi === 0 ? 'Основная стена' : 'Боковая стена' + (S.layout === 'U' ? (wi === 1 ? ' (левая)' : ' (правая)') : '');
+    return `<div class="wallblk"><div class="wallh">${nm}</div><div class="szlab">Ширина стены, см</div><div class="sz">${WS.map(v => `<button data-ww="${wi}:${v}" class="${v === t ? 'on' : ''}">${v}</button>`).join('')}<button data-wown="${wi}" class="${WS.includes(t) ? '' : 'on'}">Свой размер${WS.includes(t) ? '' : ': ' + t}</button></div>
+    <div class="own hide" id="wown${wi}"><input type="range" data-wr="${wi}" min="40" max="720" step="1" value="${t}"><input type="number" data-wf="${wi}" min="40" max="720" step="1" value="${t}"></div>
+    <div class="szlab">Количество секций</div><div class="sz">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div></div>`; }).join('');
+  const setW = (wi, v, live) => { const sc = S.walls[wi].sections, n = sc.length || 1, w = Math.max(20, Math.min(200, Math.round(v / n))), ws = live ? w : nearest([45, 60, 90, 120], w); sc.forEach(x => x.w = ws); if (!live && ws !== w) msg(`Ширина секций подобрана по каталогу: ${ws} см`); clearTimeout(dimT); dimT = setTimeout(() => { rebuild(); if (!live) renderSec(); }, live ? 40 : 0); };
+  const setN = (wi, n) => { const sc = S.walls[wi].sections, base = sc[sc.length - 1] || { w: 90, items: [] }; while (sc.length < n) sc.push(JSON.parse(JSON.stringify(base))); sc.length = n; cur.w = wi; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); };
+  document.querySelectorAll('[data-ww]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.ww.split(':').map(Number); setW(wi, v); });
+  document.querySelectorAll('[data-wn]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.wn.split(':').map(Number); setN(wi, v); });
+  document.querySelectorAll('[data-wown]').forEach(b => b.onclick = () => $('wown' + b.dataset.wown).classList.toggle('hide'));
+  document.querySelectorAll('[data-wr]').forEach(el => { el.oninput = () => { el.nextElementSibling.value = el.value; setW(+el.dataset.wr, +el.value, true); }; el.onchange = () => setW(+el.dataset.wr, +el.value); });
+  document.querySelectorAll('[data-wf]').forEach(el => el.onchange = () => setW(+el.dataset.wf, +el.value || 90));
   const SS = [[45, '463'], [60, '603'], [90, '903'], [120, '1203']];
   $('szS').innerHTML = SS.map(([v, m]) => btn(v, same && v === sw, 'data-zs', `${v}<small>${m} мм</small>`)).join('') + `<button data-own="ownS" class="${same && SS.some(p => p[0] === sw) ? '' : 'on'}">Свой размер</button>`;
   const HS = [512, 1025, 1156, 1536, 1920, 2304];
@@ -786,8 +817,6 @@ function renderSizes() {
   $('szV').innerHTML = [['all', 'Все'], ['frame', 'Только каркас'], ['fill', 'Только наполнение']].map(([k, t]) => btn(k, (S.view || 'all') === k, 'data-zv', t)).join('');
   $('rS').value = $('fS').value = sw;
   const Q = (sel, f) => document.querySelectorAll(sel).forEach(b => b.onclick = () => f(b));
-  Q('[data-zw]', b => setWidth(+b.dataset.zw));
-  Q('[data-zn]', b => $('nSec').onchange({ target: { value: b.dataset.zn } }));
   Q('[data-zs]', b => { W.sections.forEach(x => x.w = +b.dataset.zs); rebuild(); renderSec(); });
   Q('[data-zh]', b => { const lift = liftCm(); S.postH = +b.dataset.zh; S.railTop = Math.round(lift + S.postH / 10 + 1); fix(); });
   Q('[data-zd]', b => setDepth(+b.dataset.zd));
@@ -803,10 +832,11 @@ function renderSec() {
   $('secTabs').innerHTML = h;
   $('secTabs').querySelectorAll('[data-w]').forEach(b => b.onclick = () => { cur = { w: +b.dataset.w, s: 0, it: -1 }; renderSec(); rebuild(); });
   $('secTabs').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { cur.s = +b.dataset.s; cur.it = -1; renderSec(); rebuild(); });
-  { const eg = effGap(cur.w); $('posGap').innerHTML = `<label>Сдвиг от угла${act.length > 1 ? ' (' + WALLNAMES[cur.w] + ')' : ''}: <b id="gapV">${eg}</b> см<input type="range" id="gapR" min="0" max="300" step="1" value="${eg}"></label><label>Точно, см<input type="number" id="gap" min="0" max="300" step="1" value="${eg}"></label><div id="gapWarn" class="sum" style="color:#b0552a"></div>`; }
-  const warn = () => { const m = minGap(), bad = cur.w > 0 && S.layout !== 'straight' && W.gap < m; $('gapWarn').textContent = bad ? `Полки пересекутся с полками основной стены. Нужно от ${m} см.` : ''; };
-  let tmr; const setGap = (v, live) => { W.gap = Math.max(0, Math.min(300, Math.round(v))); $('gapV').textContent = W.gap; $('gap').value = W.gap; $('gapR').value = W.gap; warn(); clearTimeout(tmr); tmr = setTimeout(rebuild, live ? 30 : 0); };
-  $('gapR').oninput = e => setGap(+e.target.value, true); $('gap').onchange = e => setGap(+e.target.value || 0); warn();
+  $('posGap').innerHTML = act.map(wi => { const eg = effGap(wi); return `<label>Сдвиг от угла (${wi === 0 ? 'основная стена' : 'боковая стена'}): <b data-gv="${wi}">${eg}</b> см<span class="own"><input type="range" data-gr="${wi}" min="${wi > 0 ? minGap() : 0}" max="300" step="1" value="${eg}"><input type="number" data-gf="${wi}" min="0" max="300" step="1" value="${eg}"></span></label>`; }).join('') + '<div id="gapWarn" class="sum" style="color:#b0552a"></div>';
+  const warn = () => { const m = minGap(), bad = S.layout !== 'straight' && act.some(wi => wi > 0 && S.walls[wi].gap < m); $('gapWarn').textContent = bad ? `Полки боковой стены пересекутся с полками основной. Нужен сдвиг от ${m} см.` : ''; };
+  let tmr; const setGap = (wi, v, live) => { const Wg = S.walls[wi]; Wg.gap = Math.max(wi > 0 && S.layout !== 'straight' ? minGap() : 0, Math.min(300, Math.round(v))); document.querySelector(`[data-gv="${wi}"]`).textContent = Wg.gap; document.querySelector(`[data-gr="${wi}"]`).value = Wg.gap; document.querySelector(`[data-gf="${wi}"]`).value = Wg.gap; warn(); clearTimeout(tmr); tmr = setTimeout(rebuild, live ? 30 : 0); };
+  document.querySelectorAll('[data-gr]').forEach(el => el.oninput = () => setGap(+el.dataset.gr, +el.value, true));
+  document.querySelectorAll('[data-gf]').forEach(el => el.onchange = () => setGap(+el.dataset.gf, +el.value || 0)); warn();
   renderSizes();
   const s = W.sections[cur.s], lo = Math.ceil(postBottom() / 10) + 3, hi = S.railTop - 4;
   const cnt = c => s.items.filter(o => catOf(o.t) === c).length;
@@ -872,14 +902,14 @@ function setLift(v, live) { const d = Math.round(v) - liftCm(); if (!d) return; 
 [['W', setWidth], ['H', setHeight], ['D', setDepth]].forEach(([k, f]) => { $('r' + k).oninput = e => f(+e.target.value, true); $('r' + k).onchange = e => f(+e.target.value); $('f' + k).onchange = e => f(+e.target.value || 0); });
 $('lift').oninput = e => setLift(+e.target.value, true); $('lift').onchange = e => setLift(+e.target.value);
 $('layout').innerHTML = Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
-$('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); fillDims(); camTo(S.layout === 'straight' ? 'front' : 'iso'); };
+$('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); fillDims(); };
 function mirror() {
   S.walls[0].sections.reverse();
   if (S.layout !== 'straight') { const t = S.walls[1]; S.walls[1] = S.walls[2]; S.walls[2] = t; if (S.layout === 'U') { S.walls[1].sections.reverse(); S.walls[2].sections.reverse(); } }
   if (S.layout === 'L') S.layout = 'Lr'; else if (S.layout === 'Lr') S.layout = 'L';
   if (S.layout === 'Lr' && cur.w === 1) cur.w = 2; else if (S.layout === 'L' && cur.w === 2) cur.w = 1;
   cur.s = Math.max(0, S.walls[cur.w].sections.length - 1 - cur.s);
-  rebuild(); renderSec(); fillDims(); camTo(lastCam === 'card' ? 'card' : lastCam);
+  rebuild(); renderSec(); fillDims();
 }
 $('mirrorBtn').onclick = mirror;
 function renderCatalog() {
@@ -948,7 +978,7 @@ $('setTpl').onchange = e => { if (e.target.value) setTemplate(e.target.value); e
 $('bStyle').onchange = e => { S.basketStyle = e.target.value; rebuild(); };
 [['ceilT', 'ceiling'], ['skirtT', 'skirting'], ['lampT', 'lamps'], ['shOnT', 'shOn']].forEach(([id, k]) => $(id).onchange = e => { S.room[k] = e.target.checked; rebuild(); });
 [['angR', 'angle', 'angV', v => v + '°'], ['shAng', 'shAng', 'shAngV', v => v + '°'], ['shBlur', 'shBlur', 'shBlurV', v => v], ['shDist', 'shDist', 'shDistV', v => Math.round(v * 100) + '%'], ['glare', 'glare', 'glareV', v => Math.round(v * 100) + '%'], ['shadow', 'shadow', 'shadowV', v => Math.round(v * 100) + '%'], ['roomX', 'extra', 'roomV', v => v], ['ceilH', 'ceilH', 'ceilV', v => v]].forEach(([id, k, lab, f]) => { let t; $(id).oninput = e => { S.room[k] = +e.target.value; $(lab).textContent = f(S.room[k]); clearTimeout(t); t = setTimeout(rebuild, 40); }; });
-const SW = ['#ecdcc8', '#e8d3bd', '#f2efe9', '#ffffff', '#dcd9d3', '#c9d3cf', '#d8c3b0', '#bfc7d1'];
+const SW = ['#b3b1ad', '#c9c7c2', '#ecdcc8', '#e8d3bd', '#f2efe9', '#ffffff', '#dcd9d3', '#c9d3cf', '#d8c3b0', '#bfc7d1'];
 $('skirtC').oninput = e => { S.room.skirtColor = e.target.value; rebuild(); }; $('glowS').onchange = e => { S.room.glow = e.target.value; rebuild(); };
 $('swatches').innerHTML = SW.map(c => `<button type="button" style="background:${c}" data-sw="${c}" title="${c}"></button>`).join('');
 $('swatches').querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { S.wall = b.dataset.sw; $('wall').value = S.wall; rebuild(); });
@@ -959,7 +989,7 @@ function dockTools() { const t = document.querySelector('.tools'); if (t.parentN
 addEventListener('resize', dockTools); dockTools();
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
-fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : S.layout === 'straight' ? 'front' : 'iso');
+fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : 'nice');
 const _x=0;window.__gs = { get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
 // ---------- v4 extra controls ----------
@@ -990,13 +1020,29 @@ $('wbBtn').onclick = () => {
   const CW = 1800, CH = 2400, sv = { pos: camera.position.clone(), pr: renderer.getPixelRatio(), q: camera.quaternion.clone() }, sm = sun.shadow.mapSize.x;
   sun.shadow.mapSize.set(4096, 4096); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(1); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix(); if (orb.on) applyCam();
-  const b = meshBox(), pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
-  const fwd = V(0, 0, -1).applyQuaternion(camera.quaternion), up = V(0, 1, 0).applyQuaternion(camera.quaternion), rt = V(1, 0, 0).applyQuaternion(camera.quaternion), c = b.getCenter(new THREE.Vector3());
-  const yTop = 1 - 2 * 0.16, yBot = -1 + 2 * 0.08, xm = 1 - 2 * 0.15; let off = V(0, 0, 0), d = 3;
-  const ndc = dd => { camera.position.copy(c).addScaledVector(fwd, -dd).add(off); camera.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9; pts.forEach(p => { const q = p.clone().project(camera); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }); return [x0, x1, y0, y1]; };
-  for (let k = 0; k < 4; k++) { let lo = 0.3, hi = 60; for (let j = 0; j < 40; j++) { const m = (lo + hi) / 2, [x0, x1, y0, y1] = ndc(m); if (x1 - x0 <= 2 * xm && y1 - y0 <= yTop - yBot) hi = m; else lo = m; } d = hi; const [x0, x1, y0, y1] = ndc(d), th = Math.tan(camera.fov * Math.PI / 360) * d; off.addScaledVector(up, ((y0 + y1) / 2 - (yTop + yBot) / 2) * th).addScaledVector(rt, ((x0 + x1) / 2) * th * camera.aspect); }
-  ndc(d); renderer.render(scene, camera);
+  // the work canvas is already 3:4, so the shot is exactly the visible frame
+  renderer.render(scene, camera);
   renderer.domElement.toBlob(bl => { const a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = 'garderob-wb-1800x2400.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }, 'image/png');
   sun.shadow.mapSize.set(sm, sm); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q);
 };
+
+$('niceBtn').onclick = () => { lastCam = 'nice'; camTo('nice'); };
+
+$('shot2').onclick = () => $('pngBtn').click(); $('wb2').onclick = () => $('wbBtn').click();
+{ const o = $('ceilT').onchange; $('ceilT').onchange = e => { o(e); setBg(); }; }
+// ---------- stepper ----------
+{
+  const P = $('panel'), G = [...P.querySelectorAll(':scope > .grp')], names = ['Каркас', 'Наполнение', 'Оформление', 'Готово'];
+  const stepOf = g => Math.min(3, G.indexOf(g)); // card and photo blocks belong to step 4
+  const bar = document.createElement('div'); bar.id = 'stepper'; bar.innerHTML = names.map((n, i) => `<button data-step="${i}"><b>${i + 1}</b> ${n}</button>`).join(''); P.prepend(bar);
+  G.forEach(g => { const i = stepOf(g); g.dataset.st = i; g.querySelector('h3').textContent = g.querySelector('h3').textContent.replace(/^\d\.\s*/, ''); });
+  [0, 1, 2].forEach(i => { const nb = document.createElement('div'); nb.className = 'btns next'; nb.innerHTML = `<button class="acc" data-go="${i + 1}">Далее: ${names[i + 1]} →</button>`; G[i].appendChild(nb); });
+  const foot = P.querySelector(':scope > p.foot'); if (foot) foot.dataset.st = 3;
+  window.goStep = i => { P.querySelectorAll('[data-st]').forEach(e => e.classList.toggle('hide', +e.dataset.st !== i)); bar.querySelectorAll('[data-step]').forEach(b => b.classList.toggle('on', +b.dataset.step === i)); P.scrollTop = 0; bar.scrollIntoView({ block: 'nearest' }); };
+  bar.querySelectorAll('[data-step]').forEach(b => b.onclick = () => goStep(+b.dataset.step));
+  P.querySelectorAll('[data-go]').forEach(b => b.onclick = () => goStep(+b.dataset.go));
+  goStep(0);
+  // tapping a section in 3D opens step 2
+  const sv = Element.prototype.scrollIntoView; $('secEdit').scrollIntoView = function (o) { goStep(1); sv.call(this, o); };
+}
