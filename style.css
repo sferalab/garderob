@@ -160,3 +160,15 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 #plantBtns button,#openBtns button{min-width:0}
 @media(max-width:430px){#floatBar{gap:2px;padding:3px}#floatBar button{padding:5px 5px;font-size:11px;letter-spacing:-.1px}#floatBar .rnd{width:33px;height:33px;font-size:16px}#floatBar #delBtn{font-size:14px}}
 @media(max-width:370px){#floatBar button{padding:4px 4px;font-size:10.5px}#floatBar .rnd{width:30px;height:30px;font-size:14px}}
+/* v9 */
+.gaprow .gr2{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px}.gaprow .gr2 label{font-size:12.5px;margin:2px 0}.gaprow .gr2 input{width:100%}
+.sws{display:flex;gap:8px;flex-wrap:wrap}
+.sws button{flex-direction:row;gap:7px;padding:6px 11px 6px 7px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px #e2dcd2;font-size:13px;color:#333}
+.sws button i{width:22px;height:22px;border-radius:6px;box-shadow:inset 0 0 0 1px #0003}
+.sws button.on{box-shadow:inset 0 0 0 2px #2b2b2b}.sws button.on i{box-shadow:inset 0 0 0 1px #0003}
+.swrow{display:flex;gap:22px;flex-wrap:wrap;margin:6px 0 10px}
+.tiles{grid-template-columns:repeat(5,1fr);gap:6px}.tiles.fl{grid-template-columns:repeat(6,1fr)}
+.tiles button{font-size:10px;gap:3px}.tiles button i{border-radius:8px}
+.cpk{max-width:300px}.cpfield canvas{height:96px}.cpgrid{grid-template-columns:repeat(13,1fr);gap:4px}.cpstrip{height:14px}
+.skp{align-items:center}.skp .clr{display:flex;align-items:center;gap:8px;font-size:13px}.skp .clr input{width:44px;height:28px;padding:0}
+.cpstrip i{width:18px;height:18px;margin:-9px 0 0 -9px}
