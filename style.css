@@ -124,7 +124,7 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 #floatBar{gap:4px;padding:4px 5px;flex-wrap:nowrap}
 #floatBar .rnd{width:38px;height:38px;font-size:19px;border-radius:50%}
 #floatBar #delBtn{font-size:17px}
-#floatBar #camBtn{font-size:18px;background:#2b2b2b;border-color:#2b2b2b}
+#floatBar #camBtn{font-size:18px;color:#2b2b2b;display:flex;align-items:center;justify-content:center}
 @media(max-width:430px){#floatBar{gap:3px;padding:3px 4px}#floatBar button{padding:6px 6px;font-size:11.5px}#floatBar .rnd{width:34px;height:34px;font-size:17px}#floatBar #delBtn{font-size:15px}}
 @media(max-width:370px){#floatBar button{padding:5px 5px;font-size:11px}#floatBar .rnd{width:31px;height:31px;font-size:15px}}
 #topbar>#sndBtn{margin-left:auto;padding:5px 7px;display:flex;align-items:center;justify-content:center;color:#2b2b2b}
@@ -172,3 +172,8 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 .cpk{max-width:300px}.cpfield canvas{height:96px}.cpgrid{grid-template-columns:repeat(13,1fr);gap:4px}.cpstrip{height:14px}
 .skp{align-items:center}.skp .clr{display:flex;align-items:center;gap:8px;font-size:13px}.skp .clr input{width:44px;height:28px;padding:0}
 .cpstrip i{width:18px;height:18px;margin:-9px 0 0 -9px}
+#topbar>#lensBtn{margin-left:auto;padding:5px 6px;display:flex;align-items:center;justify-content:center;color:#2b2b2b}
+#topbar>#lensBtn+#sndBtn{margin-left:0}
+#lensBtn svg{width:21px;height:21px;display:block}#lensBtn .l2{display:none}#lensBtn.on .l2{display:inline}#lensBtn.on{background:#2b2b2b;color:#fff;border-color:#2b2b2b}
+#lensBtn.on{background:#efe7da;color:#2b2b2b;border-color:#d9cdb8}
+@media (max-width:430px){#mirrorBtn .mtx{display:none}#mirrorBtn{padding-left:10px;padding-right:10px}}
