@@ -434,6 +434,10 @@ function buildItem(g, item, x0, x1, sec) {
     [0, 0.33, 0.66, 1].forEach(t => { const p = P(t); r.push([V(x0, p.y, p.z), V(x1, p.y, p.z), 0.005]); });
     const p1 = P(1); r.push([V(a, p1.y + 0.04, p1.z + 0.003), V(b, p1.y + 0.04, p1.z + 0.003), 0.0055]);
     g.add(rods(r, M.metal));
+    // angled shoe brackets: the same slope as the mesh, hooked into the uprights at the back
+    const ang = Math.atan2(drop, dep), Lb = Math.hypot(dep, drop);
+    [x0, x1].forEach(x => { const br = box(0.006, 0.026, Lb, x, y + 0.004 - drop / 2 - 0.016, z0 + dep / 2, M.metal); br.rotation.x = ang; br.castShadow = true; g.add(br);
+      g.add(box(0.006, 0.07, 0.012, x, y - 0.025, z0 + 0.006, M.metal)); });
   } else if (item.t === 'rail') {
     // Titan-GS rod holder: sheet-steel hook 101 x 31 x 30 mm hung on the shelf bracket (before the shelf), seat for the d25 rod
     const sh = sec && sec.items.filter(o => o !== item && o.t !== 'rail' && o.t !== 'shoe' && o.y > item.y && o.y - item.y <= 25).sort((p, q) => p.y - q.y)[0];
@@ -1309,6 +1313,13 @@ function setLift(v, live) { const d = Math.round(v) - liftCm(); if (!d) return; 
 $('lift').oninput = e => setLift(+e.target.value, true); $('lift').onchange = e => setLift(+e.target.value);
 $('layout').innerHTML = Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
 $('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); fillDims(); };
+// «Зеркально» keeps the framing: same zoom, height and target offset, mirrored azimuth around the construction
+function mirrorKeep() { const c0 = bbox.getCenter(new THREE.Vector3()), o = { dx: orb.T.x - c0.x, ty: orb.T.y, tz: orb.T.z, az: orb.az, R: orb.R, h: orb.h, on: orb.on, p: camera.position.clone(), t: controls.target.clone() };
+  mirror(); const put = () => { const c1 = bbox.getCenter(new THREE.Vector3());
+    if (o.on) { orb.on = true; controls.enabled = false; orb.T.set(c1.x - o.dx, o.ty, o.tz); orb.az = -o.az; orb.R = o.R; orb.h = o.h; orb.snapAz = false; applyCam(); }
+    else { camera.position.set(2 * c1.x - o.p.x, o.p.y, o.p.z); controls.target.set(2 * c1.x - o.t.x, o.t.y, o.t.z); controls.update(); }
+    if (WG.length) rebuildDims(); };
+  put(); requestAnimationFrame(put); }
 function mirror() {
   // every wall keeps its own shift from its corner; the left and right walls swap places
   const W0 = S.walls[0]; W0.sections.reverse(); if (W0.postL) { const n = W0.sections.length, nl = {}; Object.entries(W0.postL).forEach(([k, v]) => nl[n - +k] = v); W0.postL = nl; }
@@ -1319,7 +1330,7 @@ function mirror() {
   cur.s = Math.max(0, S.walls[cur.w].sections.length - 1 - cur.s);
   rebuild(); renderSec(); fillDims();
 }
-$('mirrorBtn').onclick = mirror;
+$('mirrorBtn').onclick = mirrorKeep;
 function renderCatalog() {
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const cell = v => v === 'уточнить' ? '<span class="tbd">уточнить</span>' : esc(v);
@@ -1520,7 +1531,7 @@ function tickFlash() { if (!flashMat) return; const t = (performance.now() - fla
 // delete selected item from the bottom strip
 $('delBtn').onclick = () => { if (window.__plantSel >= 0 && S.plants && S.plants[window.__plantSel]) { S.plants.splice(window.__plantSel, 1); window.__plantSel = -1; plantSel = -1; rebuild(); renderDeco(); pushHist(); localStorage.setItem('gs_auto', JSON.stringify(S)); return; } const sc = S.walls[cur.w].sections[cur.s]; if (!sc || cur.it < 0 || !sc.items[cur.it]) return; removeItem(sc, cur.it); cur.it = -1; rebuild(); renderSec(); };
 // top bar: view switch, mirror, more menu
-$('mirrorBtn').onclick = mirror;
+$('mirrorBtn').onclick = mirrorKeep;
 $('moreBtn').onclick = e => { e.stopPropagation(); $('dimPop').classList.add('hide'); $('morePop').classList.toggle('hide'); };
 $('tplBtn').onclick = () => $('tplPop').classList.toggle('hide');
 $('pngTop').onclick = () => { closeMenus(); $('pngBtn').click(); }; $('wbTop').onclick = () => { closeMenus(); $('wbBtn').click(); };
@@ -1695,11 +1706,13 @@ function snap34() {
   return out;
 }
 const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-$('camBtn').onclick = () => {
+$('camBtn').onclick = () => { try { camShot(); } catch (er) { msg('Не удалось сделать снимок'); } };
+function camShot() {
   const out = cleanShot(snap34), name = 'garderob-' + new Date().toISOString().slice(0, 10) + '-1800x2400.png';
-  if (isIOS() && navigator.canShare) { try { const bin = atob(out.toDataURL('image/png').split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const file = new File([u8], name, { type: 'image/png' }); if (navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(() => {}); return; } } catch (er) {} }
-  out.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); msg('Снимок сохранен'); }, 'image/png');
-};
+  if (isIOS() && navigator.canShare) { try { const bin = atob(out.toDataURL('image/png').split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const file = new File([u8], name, { type: 'image/png' }); if (navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(e => { if (!e || e.name !== 'AbortError') dl(); }); return; } } catch (er) {} }
+  dl();
+  function dl() { out.toBlob(b => { if (!b) { msg('Не удалось сделать снимок'); return; } const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); msg('Снимок сохранен'); }, 'image/png'); }
+}
 // ---- plants: drag with a finger on the floor
 { const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null;
   const ray = e => { const r = el.getBoundingClientRect(); RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); };
