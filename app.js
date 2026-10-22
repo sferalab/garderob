@@ -319,7 +319,7 @@ function makeMats() {
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xf2f4f6, metalness: 1, roughness: 0.14, clearcoat: 1, clearcoatRoughness: 0.03, emissive: new THREE.Color(0x44484d), envMapIntensity: 2.4 * Math.max(0.6, gm) });
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.03, emissive: new THREE.Color(0x2a2d31), envMap: chromeEnv(), envMapIntensity: 1.5 * Math.max(0.7, gm) });
   M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
@@ -403,13 +403,17 @@ function bracket(g, x, y, L) {
   g.add(box(0.03, 0.005, L, x, y - 0.0025, ZB + L / 2, M.metal));
   g.add(box(0.016, 0.02, 0.01, x, y - 0.01, ZB + L - 0.005, M.metal));
 }
-const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0195, 0.0032, 10, 28, Math.PI * 1.25), RIV_G = new THREE.CylinderGeometry(0.0035, 0.0035, 0.007, 12);
+const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0175, 0.0042, 12, 32, Math.PI * 1.7), RIV_G = new THREE.CylinderGeometry(0.0035, 0.0035, 0.007, 12);
+let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#fdfdfd'); gr.addColorStop(0.36, '#c9ced4'); gr.addColorStop(0.49, '#3a3d42'); gr.addColorStop(0.55, '#16171a'); gr.addColorStop(0.75, '#6b6e72'); gr.addColorStop(1, '#2a2b2d'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
+  g.fillStyle = '#ffffff'; [[40, 50], [200, 30], [330, 60], [450, 24]].forEach(([x, w]) => g.fillRect(x, 30, w, 70));
+  const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; _CHE = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; return _CHE; }
 function rodHolder(g, x, by, ry, zr) {
   // Titan-GS: pressed-steel strap riveted to the underside of the shelf bracket, ~100 mm drop, ending in a round cup that holds the chrome rod (system color)
   const top = by - 0.014, bot = ry + 0.012, len = Math.max(0.02, top - bot);
   const st = new THREE.Mesh(new RoundedBoxGeometry(0.004, len + 0.012, 0.024, 2, 0.0015), M.metal); st.position.set(x, bot + len / 2 + 0.004, zr); st.castShadow = true; g.add(st);
   [top - 0.004, top - 0.022].forEach(yy => { const r = new THREE.Mesh(RIV_G, M.metal); r.rotation.z = Math.PI / 2; r.position.set(x, yy, zr); g.add(r); });
-  const cup = new THREE.Mesh(HOOK_G, M.metal); cup.rotation.y = Math.PI / 2; cup.rotation.x = Math.PI * 0.375 + Math.PI; cup.scale.set(1, 1, 5.5); cup.position.set(x, ry, zr); cup.castShadow = true; g.add(cup);
+  const cup = new THREE.Mesh(HOOK_G, M.metal); cup.rotation.y = Math.PI / 2; cup.rotation.x = Math.PI * 0.375 + Math.PI; cup.scale.set(1, 1, 5.5); cup.position.set(x, ry, zr); { const fl = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.019, 0.003, 28), M.metal); fl.rotation.z = Math.PI / 2; fl.position.set(x, ry, zr); fl.castShadow = true; g.add(fl); } cup.castShadow = true; g.add(cup);
 }
 function buildItem(g, item, x0, x1, sec) {
   const y = item.y * 10 * MM, dep = (REAL_DEPTH[item.t][item.d] || 400) * MM, z0 = ZI, zf = z0 + dep;
@@ -1916,9 +1920,8 @@ function snap34() {
   return out;
 }
 const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-$('camBtn').onclick = () => { try { camShot(); } catch (er) { msg('Не удалось сделать снимок'); } };
-function camShot() {
-  const out = cleanShot(snap34), name = 'garderob-' + new Date().toISOString().slice(0, 10) + '-1800x2400.png';
+function camShot(o, nm) {
+  const out = o || cleanShot(snap34), name = nm || 'garderob-' + new Date().toISOString().slice(0, 10) + '-1800x2400.png';
   if (isIOS() && navigator.canShare) { try { const bin = atob(out.toDataURL('image/png').split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const file = new File([u8], name, { type: 'image/png' }); if (navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(e => { if (!e || e.name !== 'AbortError') dl(); }); return; } } catch (er) {} }
   dl();
   function dl() { out.toBlob(b => { if (!b) { msg('Не удалось сделать снимок'); return; } const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); msg('Снимок сохранен'); }, 'image/png'); }
@@ -2020,7 +2023,7 @@ renderPropBtns();
 // ---- room presets: one tap sets walls, floor, rug, window, light and decor (the wardrobe itself is untouched)
 const ROOMP = {
   loft: ['Кирпичный лофт', { wallFin: 'relief', fv: 'brick', wall: '#f4f2ee', floor: 'tile2', rug: { shape: 'rect', pile: 'jute' }, win: true, winX: -1, shP: 'soft', metal: 'black', plants: ['mirror', 'pouf'] }],
-  beige: ['Светлый бежевый', { wallFin: 'plaster', fv: 'beige', wall: '#fff8ee', floor: 'oak', rug: { shape: 'round', pile: 'fluffy' }, win: true, winX: 0, shP: 'sun', winL: 'both', plants: ['olive'] }],
+  beige: ['Светлый бежевый', { wallFin: 'plaster', fv: 'beige', wall: '#f4ebe3', floor: 'oak', rug: { shape: 'round', pile: 'fluffy' }, win: true, winX: 0, shP: 'sun', winL: 'both', plants: ['olive'] }],
   scandi: ['Скандинавский', { wallFin: 'paint', fv: 'matte', wall: '#f1efea', floor: 'lam', rug: { shape: 'rect', pile: 'flat' }, win: false, shP: 'soft', plants: ['fig', 'pouf'] }],
   conc: ['Бетон и дуб', { wallFin: 'relief', fv: 'conc2', wall: '#d9d6d1', floor: 'lamD', rug: null, win: false, shP: 'left', plants: ['monstera', 'mirror'] }] };
 function applyRoomPreset(k) { const p = ROOMP[k][1], R = S.room; S.wallFin = p.wallFin; S.wallVar = Object.assign({}, S.wallVar, { [p.wallFin]: p.fv }); S.wall = p.wall; S.wallCustom = true;
@@ -2055,3 +2058,53 @@ renderRoomPre();
   const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); const mode = pd.mode; pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist();
     if (mode !== 'move') { HLG = null; rebuild(); const m = decor.children.find(c => c.userData.rug); if (m) { sel = m; hlOnly(m); showH(m); } } };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true); }
+// ---- 📷 «Визуализация»: progressive GPU path tracing (three-gpu-pathtracer) of the current view; the live editor is untouched
+function skyEquirect() { const W = 256, H = 128, d = new Float32Array(W * H * 4);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const v = 1 - y / (H - 1), el = (v - 0.5) * Math.PI, i = (y * W + x) * 4, u = x / W;
+    let r, g, b; if (el > 0) { const k = Math.pow(1 - el / (Math.PI / 2), 3); r = 0.55 + 0.6 * k; g = 0.68 + 0.5 * k; b = 0.95 + 0.25 * k; } else { r = 0.42; g = 0.4; b = 0.36; }
+    const sd = Math.hypot((u - 0.15) * 4, (el - 0.6) * 3); if (sd < 1) { const s = (1 - sd) * 4; r += s * 1.1; g += s; b += s * 0.85; }
+    d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = 1; }
+  const t = new THREE.DataTexture(d, W, H, THREE.RGBAFormat, THREE.FloatType); t.mapping = THREE.EquirectangularReflectionMapping; t.needsUpdate = true; return t; }
+async function vizShot(opt = {}) {
+  const ios = isIOS(), CW = opt.w || (ios ? 750 : 1200), CH = opt.h || (ios ? 1000 : 1600), T = opt.t || (ios ? 12000 : 22000), maxS = opt.s || (ios ? 160 : 400);
+  const ov = document.createElement('div'); ov.id = 'vizOv'; ov.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;background:rgba(20,20,22,.55);color:#fff;font:600 16px system-ui;text-align:center;padding:20px';
+  ov.textContent = 'Создаю визуализацию…'; document.body.appendChild(ov); await new Promise(r => setTimeout(r, 30));
+  let mod; try { mod = await import('three-gpu-pathtracer'); } catch (er) { ov.remove(); msg('Визуализация недоступна в этом браузере'); throw er; }
+  const sw = [], hid = [], sv = { pos: camera.position.clone(), q: camera.quaternion.clone(), pr: renderer.getPixelRatio(), env: scene.environment, bg: scene.background, ei: scene.environmentIntensity };
+  const sel = { it: cur.it, sp: selPost }; if (sel.it >= 0 || sel.sp) { cur.it = -1; selPost = null; histLock = true; rebuild(); histLock = false; }
+  flashG.visible = false; snapLine.visible = false;
+  const hide = o => { if (o.visible) { o.visible = false; hid.push(o); } };
+  scene.traverse(o => { if (o.isSprite || o.isLine || o.isLineSegments || o.isPoints || o.userData.dims || o.userData.contact || o === catcher) { hide(o); return; }
+    if (!o.isMesh || !o.material || Array.isArray(o.material)) return; const m = o.material;
+    if (m.isShadowMaterial || (m.isMeshBasicMaterial && (m.transparent || m.opacity < 1 || m.blending !== THREE.NormalBlending))) { hide(o); return; }
+    let n = null;
+    if (m.isMeshBasicMaterial) { n = m.map && m.toneMapped === false ? new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: m.map, emissiveIntensity: 2.6, side: m.side }) : new THREE.MeshStandardMaterial({ color: m.color, map: m.map, roughness: 0.9, side: m.side }); }
+    else if (m.emissive && (m.emissive.r + m.emissive.g + m.emissive.b) > 0.001) { n = m.clone(); n.emissive = new THREE.Color(0); n.emissiveMap = null; if (m.emissiveMap) n.color.multiplyScalar(1.25); }
+    if (n) { sw.push([o, m]); o.material = n; } });
+  M.rod && sw.length; scene.environment = skyEquirect(); scene.background = scene.environment; if ('environmentIntensity' in scene) scene.environmentIntensity = 1;
+  renderer.setPixelRatio(1); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix(); if (orb.on) applyCam();
+  ['environmentRotation', 'backgroundRotation'].forEach(k => { if (!(k in THREE.Scene.prototype)) Object.defineProperty(THREE.Scene.prototype, k, { configurable: true, get() { return this['_' + k] || (this['_' + k] = new THREE.Euler()); }, set(v) { this['_' + k] = v; } }); });
+  const pt = new mod.WebGLPathTracer(renderer); pt.renderToCanvas = true; pt.tiles.set(ios ? 3 : 2, ios ? 3 : 2); pt.bounces = ios ? 4 : 6; pt.filterGlossyFactor = 0.5; pt.minSamples = 1; pt.dynamicLowRes = false; pt.renderScale = 1;
+  const t0 = performance.now(); let out;
+  try { pt.setScene(scene, camera);
+    while (pt.samples < maxS && performance.now() - t0 < T) { pt.renderSample(); if ((pt.samples | 0) % 2 === 0) { ov.textContent = 'Создаю визуализацию… ' + Math.min(99, Math.round(100 * Math.max(pt.samples / maxS, (performance.now() - t0) / T))) + '%'; await new Promise(r => requestAnimationFrame(r)); } }
+    out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
+    g.filter = 'blur(0.6px)'; g.drawImage(renderer.domElement, 0, 0, CW, CH); g.filter = 'none';
+    const im = g.getImageData(0, 0, CW, CH), d = im.data; // gentle filmic grade: soft toe/shoulder, warm highlights, light vignette
+    for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) { const i = (y * CW + x) * 4, vx = (x / CW - 0.5), vy = (y / CH - 0.5), vg = 1 - 0.22 * Math.min(1, (vx * vx + vy * vy) * 2.2);
+      for (let c = 0; c < 3; c++) { let v = d[i + c] / 255; v = v * v * (3 - 2 * v) * 0.35 + v * 0.65; v = v * (c === 0 ? 1.015 : c === 2 ? 0.975 : 1) * vg; d[i + c] = Math.max(0, Math.min(255, v * 255 + 2)); } }
+    g.putImageData(im, 0, 0);
+  } finally {
+    window.__vizInfo = { samples: pt.samples, ms: Math.round(performance.now() - t0), w: CW, h: CH }; try { pt.dispose(); } catch (er) {}
+    sw.forEach(([o, m]) => { o.material.dispose(); o.material = m; }); hid.forEach(o => o.visible = true); scene.environment.dispose(); scene.environment = sv.env; scene.background = sv.bg; if (sv.ei != null) scene.environmentIntensity = sv.ei;
+    flashG.visible = true; if (sel.it >= 0 || sel.sp) { cur.it = sel.it; selPost = sel.sp; histLock = true; rebuild(); histLock = false; }
+    renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q); if (orb.on) applyCam(); ov.remove(); }
+  window.__vizOut = out; if (!opt.noSave) camShot(out, 'garderob-viz-' + new Date().toISOString().slice(0, 10) + '-' + CW + 'x' + CH + '.png');
+  return out;
+}
+{ const pop = document.createElement('div'); pop.id = 'shotPop'; pop.className = 'hide'; pop.innerHTML = '<button data-sh="snap">📷 Снимок</button><button data-sh="viz">✨ Визуализация</button><p class="foot">Визуализация — реалистичный свет, 10–30 с</p>'; document.body.appendChild(pop);
+  $('camBtn').onclick = e => { e.stopPropagation(); const r = $('camBtn').getBoundingClientRect(); pop.style.bottom = (innerHeight - r.top + 8) + 'px'; pop.style.right = Math.max(6, innerWidth - r.right) + 'px'; pop.classList.toggle('hide'); };
+  pop.querySelector('[data-sh=snap]').onclick = () => { pop.classList.add('hide'); try { camShot(); } catch (er) { msg('Не удалось сделать снимок'); } };
+  pop.querySelector('[data-sh=viz]').onclick = () => { pop.classList.add('hide'); vizShot().catch(er => { console.warn(er); msg('Не удалось создать визуализацию'); }); };
+  document.addEventListener('pointerdown', e => { if (!pop.contains(e.target) && !$('camBtn').contains(e.target)) pop.classList.add('hide'); }); }
+window.__gs && (window.__gs.viz = vizShot);

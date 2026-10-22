@@ -182,3 +182,4 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 #topbar>#fxBtn{margin-left:auto;padding:5px 6px;display:flex;align-items:center;justify-content:center;color:#2b2b2b}
 #topbar>#fxBtn+#lensBtn{margin-left:0}
 #fxBtn svg{width:20px;height:20px;display:block}#fxBtn.on{background:#efe7da;border-color:#d9cdb8}
+#shotPop{position:fixed;z-index:50;background:#fff;border-radius:14px;box-shadow:0 8px 30px #0003;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:190px}#shotPop.hide{display:none}#shotPop button{text-align:left;padding:10px 12px;border-radius:10px;border:1px solid #e6dfd4;background:#fff;font-size:15px}#shotPop .foot{margin:2px 4px 0;font-size:12px;color:#888}
