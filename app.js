@@ -137,7 +137,7 @@ function carpetTex() {
 function floorMat() {
   const [n, mx, tint, , , my] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
   if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2 }); }
-  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: S.floor === 'marble' ? 0.75 : S.floor === 'conc' ? 0.45 : 0.35, clearcoatRoughness: S.floor === 'marble' ? 0.12 : S.floor === 'conc' ? 0.25 : 0.28, envMapIntensity: 0.9 });
+  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: S.floor === 'marble' ? 0.5 : S.floor === 'conc' ? 0.15 : 0.06, clearcoatRoughness: S.floor === 'marble' ? 0.2 : 0.5, envMapIntensity: S.floor === 'marble' ? 0.7 : 0.4, specularIntensity: S.floor === 'marble' ? 1 : 0.35 });
 }
 let PAPER;
 function paperTex() {
@@ -146,8 +146,8 @@ function paperTex() {
   return PAPER;
 }
 // walls: unlit exact color (identical on every wall) with a baked finish texture tinted by the wall color; shadows via a ShadowMaterial overlay
-const FINS = { paint: [['matte', 'Матовая'], ['satin', 'Сатин'], ['roller', 'Валик']], plaster: [['koroed', 'Короед, крошка'], ['venet', 'Венецианка'], ['beton', 'Бетон'], ['silk', 'Шелк'], ['trav', 'Травертин']], paper: [['linen', 'Лен'], ['geo', 'Геометрия'], ['botan', 'Ботаника'], ['stripe', 'Полоска'], ['damask', 'Дамаск']] };
-const FINK = { matte: 0.9, satin: 1.4, roller: 0.8, koroed: 0.7, venet: 1.3, beton: 1.6, silk: 0.6, trav: 1.2, linen: 0.45, geo: 0.5, botan: 0.75, stripe: 0.6, damask: 0.7 };
+const FINS = { paint: [['matte', 'Матовая'], ['satin', 'Сатин'], ['roller', 'Валик'], ['eggs', 'Яичная скорлупа'], ['lime', 'Известковая']], relief: [['brick', 'Белый кирпич'], ['stone', 'Декор. камень'], ['slats', 'Рейки'], ['woodp', 'Деревянные панели'], ['conc2', 'Бетон']], plaster: [['beige', 'Теплая бежевая'], ['koroed', 'Короед, крошка'], ['venet', 'Венецианка'], ['beton', 'Бетон'], ['silk', 'Шелк'], ['trav', 'Травертин']], paper: [['linen', 'Лен'], ['geo', 'Геометрия'], ['botan', 'Ботаника'], ['stripe', 'Полоска'], ['damask', 'Дамаск']] };
+const FINK = { brick: 0.52, beige: 1.3, conc2: 1.2, woodp: 0.6, slats: 0.48, stone: 0.9, eggs: 0.9, lime: 1.2, matte: 0.9, satin: 1.4, roller: 0.8, koroed: 0.7, venet: 1.3, beton: 1.6, silk: 0.6, trav: 1.2, linen: 0.45, geo: 0.5, botan: 0.75, stripe: 0.6, damask: 0.7 };
 const FIN = {};
 function finVar() { const f = S.wallFin || 'paint', v = S.wallVar && S.wallVar[f]; return FINS[f].some(p => p[0] === v) ? v : FINS[f][0][0]; }
 function finishTex(v) {
@@ -158,7 +158,8 @@ function finishTex(v) {
   const blob = (x, y, r, col) => wrap(() => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); });
   const specks = (n, lo, a, s = 1.4) => { for (let i = 0; i < n; i++) { const l = lo + rnd() * (255 - lo); g.fillStyle = `rgba(${l},${l},${l},${a})`; g.fillRect(rnd() * w, rnd() * h, s, s); } };
   g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
-  if (v === 'matte') specks(16000, 236, 0.22);
+  if (RELV.includes(v)) { const hc = document.createElement('canvas'); hc.width = hc.height = 512; reliefDraw(v, g, hc.getContext('2d'), w, h, rnd); RELIEF[v] = hc; }
+  else if (v === 'matte') specks(16000, 236, 0.22);
   else if (v === 'satin') { for (let x = 0; x < w; x += 4) { const l = 248 + 7 * Math.sin(x / w * Math.PI * 2); g.fillStyle = `rgb(${l},${l},${l})`; g.fillRect(x, 0, 4, h); } specks(6000, 242, 0.15, 1); }
   else if (v === 'roller') { for (let x = 0; x < w; x += 128) { g.fillStyle = 'rgba(0,0,0,0.018)'; g.fillRect(x, 0, 64, h); } for (let i = 0; i < 9000; i++) { const x = rnd() * w, y = rnd() * h, r = 0.8 + rnd() * 2.4, l = 205 + rnd() * 40; g.fillStyle = `rgba(${l},${l},${l},0.28)`; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,0.5)'; g.beginPath(); g.arc(x - r * 0.4, y - r * 0.4, r * 0.5, 0, 7); g.fill(); } }
   else if (v === 'koroed') { specks(30000, 215, 0.35, 1.6); for (let i = 0; i < 1300; i++) { const x = rnd() * w, y = rnd() * h, a = Math.PI / 2 + (rnd() - 0.5) * 1.3, L = 6 + rnd() * 22, x2 = x + Math.cos(a) * L, y2 = y + Math.sin(a) * L, mx = (x + x2) / 2 + (rnd() - 0.5) * 6, my = (y + y2) / 2;
@@ -176,7 +177,60 @@ function finishTex(v) {
     wrap(() => { motif(128, 128); motif(384, 384); motif(384, -128 + 0); }); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace; FIN[v] = t; return t;
 }
-function wallMat() { const v = finVar(), t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(S.wall), map: t, toneMapped: false }); m.userData.wall = true; return m; }
+// ---- v10 relief finishes: drawn color + height; height -> normal map; lit wall material keeps the chosen color
+const RELIEF = {};
+function reliefDraw(v, g, hg, w, h, rnd) {
+  const R = (x, y, ww, hh, col, hv) => { g.fillStyle = col; g.fillRect(x, y, ww, hh); hg.fillStyle = `rgb(${hv},${hv},${hv})`; hg.fillRect(x, y, ww, hh); };
+  const noise = (n, a, s, hgA) => { for (let i = 0; i < n; i++) { const x = rnd() * w, y = rnd() * h, l = 200 + rnd() * 55, q = rnd() * 255; g.fillStyle = `rgba(${l},${l},${l},${a})`; g.fillRect(x, y, s, s); hg.fillStyle = `rgba(${q},${q},${q},${hgA})`; hg.fillRect(x, y, s, s); } };
+  if (v === 'brick') { // white painted brick 250x65 + 10 mm joints, tile 0.52 x 0.45 m
+    R(0, 0, w, h, '#e9e6e1', 40); const rows = 6, bh = h / rows, bw = w / 2, j = 9;
+    for (let r = 0; r < rows; r++) for (let k = -1; k < 3; k++) { const x = k * bw + (r % 2 ? bw / 2 : 0) + j / 2, y = r * bh + j / 2, ww = bw - j, hh = bh - j, l = 244 + rnd() * 10, sh = 215 + rnd() * 30;
+      g.fillStyle = `rgb(${l},${l - 1},${l - 4})`; g.beginPath(); g.roundRect(x, y, ww, hh, 5); g.fill();
+      const gr = hg.createLinearGradient(0, y, 0, y + hh); gr.addColorStop(0, `rgb(${sh - 40},${sh - 40},${sh - 40})`); gr.addColorStop(0.15, `rgb(${sh},${sh},${sh})`); gr.addColorStop(0.85, `rgb(${sh},${sh},${sh})`); gr.addColorStop(1, `rgb(${sh - 50},${sh - 50},${sh - 50})`); hg.fillStyle = gr; hg.beginPath(); hg.roundRect(x, y, ww, hh, 6); hg.fill();
+      for (let i = 0; i < 60; i++) { const px = x + rnd() * ww, py = y + rnd() * hh, rr = 1 + rnd() * 4, d = rnd() * 90; hg.fillStyle = `rgba(0,0,0,${d / 255})`; hg.beginPath(); hg.arc(px, py, rr, 0, 7); hg.fill(); g.fillStyle = 'rgba(120,110,100,0.06)'; g.beginPath(); g.arc(px, py, rr, 0, 7); g.fill(); } }
+    noise(9000, 0.18, 1.3, 0.25); }
+  else if (v === 'beige') { // warm beige lime plaster, soft trowel clouds
+    R(0, 0, w, h, '#f1e3cf', 128); for (let i = 0; i < 420; i++) { const x = rnd() * w, y = rnd() * h, r = 20 + rnd() * 80, l = rnd(); for (const dx of [-w, 0, w]) for (const dy of [-h, 0, h]) { const gr = g.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r); gr.addColorStop(0, l > 0.5 ? 'rgba(255,248,236,0.22)' : 'rgba(214,190,160,0.16)'); gr.addColorStop(1, l > 0.5 ? 'rgba(255,248,236,0)' : 'rgba(214,190,160,0)'); g.fillStyle = gr; g.fillRect(x + dx - r, y + dy - r, 2 * r, 2 * r);
+      const q = l > 0.5 ? 160 : 100, gh = hg.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r); gh.addColorStop(0, `rgba(${q},${q},${q},0.25)`); gh.addColorStop(1, `rgba(${q},${q},${q},0)`); hg.fillStyle = gh; hg.fillRect(x + dx - r, y + dy - r, 2 * r, 2 * r); } }
+    noise(14000, 0.12, 1.2, 0.3); }
+  else if (v === 'conc2') { R(0, 0, w, h, '#e4e2de', 128); for (let i = 0; i < 600; i++) { const x = rnd() * w, y = rnd() * h, r = 8 + rnd() * 50, l = 200 + rnd() * 50; g.fillStyle = `rgba(${l},${l},${l - 3},0.18)`; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+    noise(26000, 0.25, 1.4, 0.4); for (const [x, y] of [[128, 128], [384, 128], [128, 384], [384, 384]]) { g.fillStyle = 'rgba(90,88,84,0.55)'; g.beginPath(); g.arc(x, y, 9, 0, 7); g.fill(); hg.fillStyle = '#000'; hg.beginPath(); hg.arc(x, y, 9, 0, 7); hg.fill(); }
+    g.fillStyle = 'rgba(0,0,0,0.08)'; g.fillRect(0, 0, w, 2); g.fillRect(0, 0, 2, h); hg.fillStyle = '#303030'; hg.fillRect(0, 0, w, 3); hg.fillRect(0, 0, 3, h); }
+  else if (v === 'woodp') { const pw = w / 4; for (let k = 0; k < 4; k++) { const base = 205 + rnd() * 25; R(k * pw, 0, pw, h, `rgb(${base},${base - 22},${base - 52})`, 200);
+      for (let i = 0; i < 70; i++) { const x = k * pw + rnd() * pw, l = base - 30 + rnd() * 25; g.strokeStyle = `rgba(${l},${l - 28},${l - 60},0.5)`; g.lineWidth = 0.8 + rnd() * 1.8; g.beginPath(); g.moveTo(x, 0); for (let y = 0; y <= h; y += 32) g.lineTo(x + Math.sin(y / 60 + i) * 3, y); g.stroke(); hg.strokeStyle = 'rgba(150,150,150,0.4)'; hg.lineWidth = 1; hg.beginPath(); hg.moveTo(x, 0); hg.lineTo(x, h); hg.stroke(); }
+      hg.fillStyle = '#202020'; hg.fillRect(k * pw, 0, 4, h); g.fillStyle = 'rgba(60,40,20,0.45)'; g.fillRect(k * pw, 0, 3, h); } }
+  else if (v === 'slats') { const n = 8, sw = w / n; R(0, 0, w, h, '#3a342e', 0); for (let k = 0; k < n; k++) { const x = k * sw + 6, l = 236 + rnd() * 12; g.fillStyle = `rgb(${l},${l - 4},${l - 10})`; g.fillRect(x, 0, sw - 12, h);
+      const gr = hg.createLinearGradient(x, 0, x + sw - 12, 0); gr.addColorStop(0, '#9a9a9a'); gr.addColorStop(0.12, '#fafafa'); gr.addColorStop(0.88, '#fafafa'); gr.addColorStop(1, '#9a9a9a'); hg.fillStyle = gr; hg.fillRect(x, 0, sw - 12, h); }
+    noise(5000, 0.12, 1.2, 0.2); }
+  else if (v === 'stone') { R(0, 0, w, h, '#b9b2a8', 0); let y = 0; while (y < h - 4) { const rh = Math.min(h - y, 30 + rnd() * 50); let x = -rnd() * 60; while (x < w) { const rw = 50 + rnd() * 120, l = 210 + rnd() * 40, j = 5;
+        g.fillStyle = `rgb(${l},${l - 4},${l - 10})`; g.beginPath(); g.roundRect(x + j, y + j, rw - 2 * j, rh - 2 * j, 4); g.fill(); const q = 150 + rnd() * 80; hg.fillStyle = `rgb(${q},${q},${q})`; hg.beginPath(); hg.roundRect(x + j, y + j, rw - 2 * j, rh - 2 * j, 6); hg.fill();
+        for (let i = 0; i < 40; i++) { const px = x + j + rnd() * (rw - 2 * j), py = y + j + rnd() * (rh - 2 * j), s = 2 + rnd() * 7, d = rnd() * 70; hg.fillStyle = `rgba(${rnd() > 0.5 ? 255 : 0},${0},${0},0)`; hg.fillStyle = `rgba(${d > 35 ? 255 : 0},${d > 35 ? 255 : 0},${d > 35 ? 255 : 0},0.25)`; hg.fillRect(px, py, s, s); } x += rw; } y += rh; }
+    noise(12000, 0.15, 1.3, 0.3); }
+  else if (v === 'eggs') { R(0, 0, w, h, '#fbfbfa', 128); noise(30000, 0.12, 1, 0.35); }
+  else if (v === 'lime') { R(0, 0, w, h, '#f6f4f0', 128); for (let i = 0; i < 300; i++) { const x = rnd() * w, y = rnd() * h, r = 15 + rnd() * 60, l = 225 + rnd() * 30; g.fillStyle = `rgba(${l},${l - 2},${l - 6},0.2)`; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); } noise(12000, 0.12, 1.3, 0.3); }
+}
+const RELV = ['brick', 'beige', 'conc2', 'woodp', 'slats', 'stone', 'eggs', 'lime'];
+function finHeight(v) { // height canvas: relief variants draw their own, the others use the luminance of the color pattern
+  if (RELIEF[v]) return RELIEF[v];
+  const c = document.createElement('canvas'); c.width = c.height = 512; const hg = c.getContext('2d');
+  if (!RELV.includes(v)) { hg.drawImage(finishTex(v).image, 0, 0); }
+  return RELIEF[v] = c;
+}
+const NRM = {};
+function normalTex(v, str) {
+  if (NRM[v]) return NRM[v];
+  const src = finHeight(v).getContext('2d').getImageData(0, 0, 512, 512).data, c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d'), im = g.createImageData(512, 512), d = im.data;
+  const H = (x, y) => src[(((y + 512) % 512) * 512 + ((x + 512) % 512)) * 4] / 255;
+  for (let y = 0; y < 512; y++) for (let x = 0; x < 512; x++) { const dx = (H(x + 1, y) - H(x - 1, y)) * str, dy = (H(x, y + 1) - H(x, y - 1)) * str, l = Math.hypot(dx, dy, 1), i = (y * 512 + x) * 4;
+    d[i] = (-dx / l * 0.5 + 0.5) * 255; d[i + 1] = (dy / l * 0.5 + 0.5) * 255; d[i + 2] = (1 / l * 0.5 + 0.5) * 255; d[i + 3] = 255; }
+  g.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return NRM[v] = t;
+}
+// lit wall: emissive carries the chosen color (stable), a dim diffuse part picks up relief, corners and sunlight
+function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).multiplyScalar(m.userData.kd); m.emissive.copy(col).multiplyScalar(m.userData.ke); }
+const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
+function wallMat() { const v = finVar(), t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
+  const sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, normalMap: n, roughness: 0.93, metalness: 0, envMapIntensity: 0.25, toneMapped: false });
+  m.userData = { wall: true, kd: sunM ? 0.42 : 0.3, ke: sunM ? 0.6 : 0.74 }; setWallCol(m, S.wall); return m; }
 // small tile preview of a finish, tinted by the wall color
 function finSwatch(v) { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'), src = finishTex(v).image, k = FINK[v] || 0.9, px = Math.min(512, 512 * 0.35 / k); g.drawImage(src, 0, 0, px, px, 0, 0, 96, 96); g.globalCompositeOperation = 'multiply'; g.fillStyle = S.wall; g.fillRect(0, 0, 96, 96); return c.toDataURL('image/jpeg', 0.85); }
 
@@ -473,7 +527,7 @@ function buildRoom() {
     const sh = new THREE.Shape(); sh.moveTo(-w / 2, -WH / 2); sh.lineTo(w / 2, -WH / 2); sh.lineTo(w / 2, WH / 2); sh.lineTo(-w / 2, WH / 2); sh.lineTo(-w / 2, -WH / 2);
     holes.forEach(o => { const x0 = o.c - o.w / 2, y0 = Math.max(o.b, 0.002) - WH / 2, p = new THREE.Path(); p.moveTo(x0, y0); p.lineTo(x0 + o.w, y0); p.lineTo(x0 + o.w, o.b + o.h - WH / 2); p.lineTo(x0, o.b + o.h - WH / 2); p.lineTo(x0, y0); sh.holes.push(p); });
     const geo = new THREE.ShapeGeometry(sh), grp = new THREE.Group(); grp.position.set(x, WH / 2, z); grp.rotation.y = ry; parent.add(grp);
-    if (!ST) grp.add(new THREE.Mesh(geo, wallMat()));
+    if (!ST) { const wm = new THREE.Mesh(geo, wallMat()); wm.receiveShadow = S.room.shP === 'sun'; grp.add(wm); }
     const q = new THREE.Mesh(geo, wallShadowMat()); q.receiveShadow = true; grp.add(q);
     holes.forEach(o => buildOpening(grp, o, WH)); grp.userData.wallG = true; return grp;
   };
@@ -1510,7 +1564,7 @@ function colorPicker(box, get, set, tones) {
   draw(); return draw;
 }
 let wallT = 0;
-function liveWall(c, fin) { S.wall = c; S.wallCustom = true; $('wall').value = c; room.traverse(o => { if (o.material && o.material.userData && o.material.userData.wall) o.material.color.set(c); }); clearTimeout(wallT); if (fin) wallT = setTimeout(() => { localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); }, 200); }
+function liveWall(c, fin) { S.wall = c; S.wallCustom = true; $('wall').value = c; room.traverse(o => { if (o.material && o.material.userData && o.material.userData.wall) setWallCol(o.material, c); }); clearTimeout(wallT); if (fin) wallT = setTimeout(() => { localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); }, 200); }
 const drawWallPick = colorPicker($('wallPick'), () => S.wall, liveWall, TONES);
 const BGT = ['#ffffff', '#f6f4f0', '#efece7', '#e9e6e0', '#e4e7ea', '#ddd8cf', '#d4d9d2', '#cfd6de', '#e8ded3', '#c9c6c0', '#8f8b86', '#2b2b2b'];
 const drawBgPick = colorPicker($('bgPick'), () => S.bg || '#e2ded7', (c, fin) => { S.bg = c; setBg(); if (fin) { localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); } }, BGT);
@@ -1518,12 +1572,12 @@ function renderDeco() {
   const st = !!S.studio, R = S.room; $('dRoom').classList.toggle('hide', st); $('dStudio').classList.toggle('hide', !st);
   document.querySelectorAll('[data-dt]').forEach(b => b.classList.toggle('on', (b.dataset.dt === 'studio') === st));
   const fin = S.wallFin || 'paint', fv = finVar();
-  $('finBtns').innerHTML = [['paint', 'Краска'], ['plaster', 'Штукатурка'], ['paper', 'Обои']].map(([k, t]) => `<button data-fin="${k}" class="${fin === k ? 'on' : ''}">${t}</button>`).join('');
+  $('finVars').style.gridTemplateColumns = `repeat(${Math.min(6, FINS[fin].length)},1fr)`; $('finBtns').innerHTML = [['paint', 'Краска'], ['plaster', 'Штукатурка'], ['relief', 'Рельеф'], ['paper', 'Обои']].map(([k, t]) => `<button data-fin="${k}" class="${fin === k ? 'on' : ''}">${t}</button>`).join('');
   $('finVars').innerHTML = FINS[fin].map(([k, t]) => `<button data-fv="${k}" class="${fv === k ? 'on' : ''}"><i style="background-image:url(${finSwatch(k)})"></i><span>${t}</span></button>`).join('');
   const FL = [['oak', 'Паркет', 'herringbone_parquet', ''], ['lam', 'Светлый ламинат', 'laminate_floor_02', ''], ['lamD', 'Темный ламинат', 'wood_floor_worn', 'filter:brightness(.62) saturate(1.1)'], ['conc', 'Бетон', 'concrete_floor_worn_001', 'filter:brightness(1.08) grayscale(.4)'], ['marble', 'Мрамор', 'marble_01', ''], ['carpet', 'Ковролин', '', '']];
   $('floorBtns').innerHTML = FL.map(([k, t, tx, f]) => `<button data-fl="${k}" class="${S.floor === k ? 'on' : ''}"><i style="${tx ? `background-image:url(tex/${tx}_diff.jpg);background-size:${k === 'oak' ? 160 : 120}%;${f}` : 'background:#b9ab98'}"></i><span>${t}</span></button>`).join('');
   $('finBtns').querySelectorAll('[data-fin]').forEach(b => b.onclick = () => { S.wallFin = b.dataset.fin; $('wallFin').value = S.wallFin; rebuild(); renderDeco(); });
-  $('finVars').querySelectorAll('[data-fv]').forEach(b => b.onclick = () => { S.wallVar = Object.assign({}, S.wallVar, { [fin]: b.dataset.fv }); rebuild(); renderDeco(); });
+  $('finVars').querySelectorAll('[data-fv]').forEach(b => b.onclick = () => { S.wallVar = Object.assign({}, S.wallVar, { [fin]: b.dataset.fv }); const AC = { brick: '#ffffff', beige: '#ffffff', slats: '#ffffff', woodp: '#ffffff', stone: '#ffffff', conc2: '#ffffff' }[b.dataset.fv]; if (AC && !S.wallCustom) S.wall = AC; rebuild(); renderDeco(); });
   $('floorBtns').querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { S.floor = b.dataset.fl; $('floor').value = S.floor; rebuild(); renderDeco(); });
   // rug: shape x pile
   const rg = S.rug, carpet = S.floor === 'carpet';
