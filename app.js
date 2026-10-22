@@ -6,10 +6,10 @@ import { CATALOG, RULES } from './catalog.js';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
-const METAL = { white: 0xf7f9fc, black: 0x111111, silver: 0xc3c6c8 };
+const METAL = { white: 0xf7f9fc, black: 0x202124, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
-const FLOORS = { tile2: ['floor_tiles_08', 1.6, 0xfffaf2, null, 0, 1.6], oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
+const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
   basket: 'Корзина стационарная', pull: 'Корзина выдвижная', rail: 'Штанга для вешалок', shoe: 'Полка для обуви', trouser: 'Брючница выдвижная'
@@ -86,12 +86,12 @@ function validState(v) {
     w.sections = w.sections.filter(s => s && typeof s === 'object').map(s => { s.w = num(s.w, 10, 200, 60);
       s.items = (Array.isArray(s.items) ? s.items : []).filter(o => o && REAL_DEPTH[o.t] && typeof o.y === 'number' && isFinite(o.y) && o.y >= 0 && o.y <= 300);
       s.items.forEach(o => { if (!REAL_DEPTH[o.t][o.d]) o.d = +Object.keys(REAL_DEPTH[o.t])[0]; if (o.h != null) o.h = num(o.h, 20, 400, 85);
-        if (o.pr != null) o.pr = Array.isArray(o.pr) ? o.pr.filter(p => p && (typeof PROPK === 'undefined' || !PROPK || PROPK[p.k])).map(p => ({ k: p.k, u: num(p.u, 0, 1, 0.5) })) : []; });
+        if (o.pr != null) o.pr = Array.isArray(o.pr) ? o.pr.filter(p => p && PROPK[p.k]).map(p => ({ k: p.k, u: num(p.u, 0, 1, 0.5) })) : []; });
       return s; });
     if (!w.sections.length && wi === 0) bad++; return w; });
   if (bad > 1) return null;
   if (v.plants != null && !Array.isArray(v.plants)) v.plants = [];
-  if (Array.isArray(v.plants)) v.plants = v.plants.filter(p => p && (typeof PLANTS === 'undefined' || !PLANTS || PLANTS[p.k] || ['fig', 'monstera', 'olive', 'mirror', 'pouf'].includes(p.k)) && isFinite(p.x) && isFinite(p.z)).map(p => ({ ...p, s: num(p.s, 0.3, 3, 1), r: num(p.r, -100, 100, 0) }));
+  if (Array.isArray(v.plants)) v.plants = v.plants.filter(p => p && PLANTS[p.k] && isFinite(p.x) && isFinite(p.z)).map(p => ({ ...p, s: num(p.s, 0.3, 3, 1), r: num(p.r, -100, 100, 0) }));
   if (v.room != null && typeof v.room !== 'object') delete v.room; if (v.dm != null && typeof v.dm !== 'object') delete v.dm;
   return v;
 }
@@ -256,14 +256,9 @@ function normalTex(v, str) {
 // lit wall: emissive carries the chosen color (stable), a dim diffuse part picks up relief, corners and sunlight
 function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).multiplyScalar(m.userData.kd); m.emissive.copy(col).multiplyScalar(m.userData.ke); }
 const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
-// real CC0 photo textures (Poly Haven, 1k) with normal + roughness maps for the key finishes; procedural for the rest
-const PHW = { brick: ['painted_brick', 1.04, 1.0], beige: ['beige_wall_001', 2.4, 1, 1.1], lime: ['white_plaster_02', 2.2, 1] };
-function wallMat() { const v = finVar(), ph = PHW[v];
-  if (ph) { const rp = (1 / ph[1]).toFixed(4), sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: tex(ph[0] + '_diff', true, rp), emissiveMap: tex(ph[0] + '_diff', true, rp), normalMap: tex(ph[0] + '_nor_gl', false, rp), normalScale: new THREE.Vector2(ph[2], ph[2]), roughnessMap: tex(ph[0] + '_rough', false, rp), roughness: 1, metalness: 0, envMapIntensity: 0.35, toneMapped: false });
-    const gn = ph[3] || 1, lf = S.roomPre === 'loft' && v === 'brick'; m.userData = lf ? { wall: true, kd: 0.3, ke: 0.8 } : { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; if (lf) m.roughness = 0.85; setWallCol(m, S.wall); return m; }
-  const t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
+function wallMat() { const v = finVar(), t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
   const sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, normalMap: n, roughness: 0.93, metalness: 0, envMapIntensity: 0.25, toneMapped: false });
-  m.userData = { wall: true, kd: sunM ? 0.55 : 0.62, ke: sunM ? 0.4 : 0.42 }; /* lit PBR wall: relief reads in the light, emissive keeps the color clean */ setWallCol(m, S.wall); return m; }
+  m.userData = { wall: true, kd: sunM ? 0.4 : 0.28, ke: sunM ? 0.55 : 0.7 }; setWallCol(m, S.wall); return m; }
 // small tile preview of a finish, tinted by the wall color
 function finSwatch(v) { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'), src = finishTex(v).image, k = FINK[v] || 0.9, px = Math.min(512, 512 * 0.35 / k); g.drawImage(src, 0, 0, px, px, 0, 0, 96, 96); g.globalCompositeOperation = 'multiply'; g.fillStyle = S.wall; g.fillRect(0, 0, 96, 96); return c.toDataURL('image/jpeg', 0.85); }
 
@@ -308,18 +303,18 @@ function makeMats() {
   const PB = {
     white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.6, clearcoatRoughness: bright ? 0.05 : 0.16, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xeef4ff), emissive: new THREE.Color(0x181c22), envMapIntensity: 0.95 * gm },
     silver: { color: METAL.silver, metalness: 0.62, roughness: 0.4, clearcoat: bright ? 0.6 : 0.25, clearcoatRoughness: bright ? 0.12 : 0.4, specularIntensity: 0.75, envMapIntensity: 1.35 * gm },
-    black: { color: METAL.black, metalness: 0.85, roughness: 0.45, clearcoat: bright ? 0.5 : 0.15, clearcoatRoughness: 0.35, specularIntensity: 0.9, sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
+    black: { color: METAL.black, metalness: 0.25, roughness: 0.48, clearcoat: bright ? 1 : 0.45, clearcoatRoughness: bright ? 0.1 : 0.32, specularIntensity: 0.9, sheen: 0.5, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
   }[S.metal] || {};
   const G = grainTex();
   M.metal = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 6, 6), normalScale: new THREE.Vector2(0.22, 0.22), roughnessMap: rep(G.rough, 6, 6) });
-  M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: S.metal === 'black' ? 0.45 : 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
+  M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
   const dark = S.metal === 'black', pt = slotTex(false, dark).clone(); pt.needsUpdate = true; pt.repeat.set(1, S.postH / 32);
   // uprights: crisp perforation as color + bump relief, powder grain in the roughness
   M.post = new THREE.MeshPhysicalMaterial({ ...PB, map: pt, bumpMap: pt, bumpScale: 2.2, roughnessMap: rep(G.rough, 1, S.postH / 60) });
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xe5e5e5, metalness: 0.95, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, emissive: new THREE.Color(0x2a2d31), envMap: chromeEnv(), envMapIntensity: 1.5 * Math.max(0.7, gm) });
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xf2f4f6, metalness: 1, roughness: 0.14, clearcoat: 1, clearcoatRoughness: 0.03, emissive: new THREE.Color(0x44484d), envMapIntensity: 2.4 * Math.max(0.6, gm) });
   M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
@@ -388,7 +383,7 @@ function buildWall(wi) {
     if (!S.studio) [1, -1].forEach(sd => aoStrip(g, pt - pb, 0.04, 0.2, m => { m.position.set(x + sd * (0.023 + 0.02), (pt + pb) / 2, 0.0012); if (sd < 0) m.scale.x = -1; m.userData.contact = m.userData.frame = true; m.renderOrder = 1; })); });
   W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si] + XIN, xs[si + 1] - XIN, s); buildProps(ig, item, xs[si] + XIN, xs[si + 1] - XIN, { wi, si, ii });
     // baked shadow tight on the wall under/behind the item: 5-15 cm, soft edge; presets only tilt it a little; never leaves the item's own wall
-    const B0 = SHB[S.room.shP] || SHB.soft, RK = S.room, B = B0.o > 0 ? { ...B0, o: B0.o * (RK.shK ?? 1), len: B0.len * (RK.shL ?? 1), f: Math.max(3, Math.round(B0.f * (RK.shS ?? 1))), dx: B0.dx + (RK.shD ?? 0) * 0.04 } : B0; if (B.o > 0 && item.t !== 'rail') { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) + 0.003) - ch / 2, 0.0026); cs.renderOrder = 2; cs.userData.contact = true; ig.add(cs); } }));
+    const B = SHB[S.room.shP] || SHB.soft; if (B.o > 0 && item.t !== 'rail') { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) + 0.003) - ch / 2, 0.0026); cs.renderOrder = 2; cs.userData.contact = true; ig.add(cs); } }));
   // soft contact shade on the floor under and just in front of the wall (the only shadow in Студия)
   if (false) { const fs = new THREE.Mesh(new THREE.PlaneGeometry(0.75, total * MM + 0.14), aoGrad(S.studio ? 0.36 : 0.12)); fs.rotation.x = -Math.PI / 2; fs.rotation.z = Math.PI / 2; fs.scale.x = -1; fs.position.set(total * MM / 2, 0.0025, 0.375); fs.userData.contact = fs.userData.keep = true; g.add(fs); }
   return g;
@@ -403,19 +398,13 @@ function bracket(g, x, y, L) {
   g.add(box(0.03, 0.005, L, x, y - 0.0025, ZB + L / 2, M.metal));
   g.add(box(0.016, 0.02, 0.01, x, y - 0.01, ZB + L - 0.005, M.metal));
 }
-const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0175, 0.0042, 12, 32, Math.PI * 1.7), RIV_G = new THREE.CylinderGeometry(0.0035, 0.0035, 0.007, 12);
-let _GRM = null, _GRK = null; function gridMat() { if (_GRM && _GRK === M.metal) return _GRM; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 9); g.fillRect(0, 0, 9, 64);
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(34, 15); t.anisotropy = 4; _GRK = M.metal; _GRM = M.metal.clone(); _GRM.alphaMap = t; _GRM.alphaTest = 0.5; _GRM.side = THREE.DoubleSide; _GRM.normalMap = null; return _GRM; }
-let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#fdfdfd'); gr.addColorStop(0.36, '#c9ced4'); gr.addColorStop(0.49, '#3a3d42'); gr.addColorStop(0.55, '#16171a'); gr.addColorStop(0.75, '#6b6e72'); gr.addColorStop(1, '#2a2b2d'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
-  g.fillStyle = '#ffffff'; [[40, 50], [200, 30], [330, 60], [450, 24]].forEach(([x, w]) => g.fillRect(x, 30, w, 70));
-  const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; _CHE = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; return _CHE; }
+const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0195, 0.0032, 10, 28, Math.PI * 1.25), RIV_G = new THREE.CylinderGeometry(0.0035, 0.0035, 0.007, 12);
 function rodHolder(g, x, by, ry, zr) {
   // Titan-GS: pressed-steel strap riveted to the underside of the shelf bracket, ~100 mm drop, ending in a round cup that holds the chrome rod (system color)
   const top = by - 0.014, bot = ry + 0.012, len = Math.max(0.02, top - bot);
   const st = new THREE.Mesh(new RoundedBoxGeometry(0.004, len + 0.012, 0.024, 2, 0.0015), M.metal); st.position.set(x, bot + len / 2 + 0.004, zr); st.castShadow = true; g.add(st);
   [top - 0.004, top - 0.022].forEach(yy => { const r = new THREE.Mesh(RIV_G, M.metal); r.rotation.z = Math.PI / 2; r.position.set(x, yy, zr); g.add(r); });
-  const cup = new THREE.Mesh(HOOK_G, M.metal); cup.rotation.y = Math.PI / 2; cup.rotation.x = Math.PI * 0.375 + Math.PI; cup.scale.set(1, 1, 5.5); cup.position.set(x, ry, zr); { const fl = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.019, 0.003, 28), M.metal); fl.rotation.z = Math.PI / 2; fl.position.set(x, ry, zr); fl.castShadow = true; g.add(fl); } cup.castShadow = true; g.add(cup);
+  const cup = new THREE.Mesh(HOOK_G, M.metal); cup.rotation.y = Math.PI / 2; cup.rotation.x = Math.PI * 0.375 + Math.PI; cup.scale.set(1, 1, 5.5); cup.position.set(x, ry, zr); cup.castShadow = true; g.add(cup);
 }
 function buildItem(g, item, x0, x1, sec) {
   const y = item.y * 10 * MM, dep = (REAL_DEPTH[item.t][item.d] || 400) * MM, z0 = ZI, zf = z0 + dep;
@@ -433,7 +422,7 @@ function buildItem(g, item, x0, x1, sec) {
     const lip = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0 - 0.002, 0.042, 0.008, 2, 0.0028), M.metal); lip.position.set(mid, y - 0.01, zf + 0.004); lip.castShadow = lip.receiveShadow = true; g.add(lip);
     const rim = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0 - 0.002, 0.009, 0.02, 2, 0.0035), M.metal); rim.position.set(mid, y + 0.0075, zf - 0.006); rim.castShadow = true; g.add(rim);
   } else if (item.t === 'metal') {
-    g.add(box(x1 - x0, 0.0045, dep, mid, y + 0.00225, z0 + dep / 2, S.roomPre === 'loft' ? gridMat() : M.metal));
+    g.add(box(x1 - x0, 0.0045, dep, mid, y + 0.00225, z0 + dep / 2, M.metal));
     const f = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0, 0.038, 0.007, 2, 0.0025), M.metal); f.position.set(mid, y - 0.015, zf); f.castShadow = true; g.add(f);
     g.add(box(x1 - x0, 0.024, 0.006, mid, y + 0.012, z0, M.metal));
   } else if (item.t === 'ldsp') {
@@ -503,9 +492,9 @@ function pmat(c, kind) { const key = c + (kind || ''); if (!PMAT[key]) PMAT[key]
 function extr(key, pts, depth, bev) { if (!PGEO[key]) { const sh = new THREE.Shape(); sh.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) sh.lineTo(pts[i][0], pts[i][1]);
   const ge = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 2, curveSegments: 4 }); ge.translate(0, 0, -depth / 2); PGEO[key] = ge; } return PGEO[key]; }
 function hanger(g) { // wooden hanger with a chrome hook over the rod (rod center at 0,0)
-  const w = PMAT.gold || (PMAT.gold = new THREE.MeshPhysicalMaterial({ color: 0xd4ad62, metalness: 1, roughness: 0.22, clearcoat: 0.6, envMapIntensity: 1.6 })), bar = new THREE.Mesh(extr('hgr', [[-0.21, -0.075], [0, -0.037], [0.21, -0.075], [0.21, -0.081], [0, -0.043], [-0.21, -0.081]], 0.003, 0.0018), w); g.add(bar); // thin gold wire hanger
-  const hk = new THREE.Mesh(PGEO.hk || (PGEO.hk = new THREE.TorusGeometry(0.019, 0.0022, 6, 16, Math.PI * 1.3)), PMAT.gold); hk.rotation.z = -0.2; hk.position.y = 0.001; g.add(hk);
-  const st = new THREE.Mesh(PGEO.hs || (PGEO.hs = new THREE.CylinderGeometry(0.002, 0.002, 0.03, 6)), PMAT.gold); st.position.y = -0.03; g.add(st); }
+  const w = pmat('#a9784f', 'wood'), bar = new THREE.Mesh(extr('hgr', [[-0.21, -0.075], [0, -0.035], [0.21, -0.075], [0.21, -0.088], [0, -0.05], [-0.21, -0.088]], 0.012, 0.003), w); g.add(bar);
+  const hk = new THREE.Mesh(PGEO.hk || (PGEO.hk = new THREE.TorusGeometry(0.019, 0.0022, 6, 16, Math.PI * 1.3)), M.chrome); hk.rotation.z = -0.2; hk.position.y = 0.001; g.add(hk);
+  const st = new THREE.Mesh(PGEO.hs || (PGEO.hs = new THREE.CylinderGeometry(0.002, 0.002, 0.03, 6)), M.chrome); st.position.y = -0.03; g.add(st); }
 function garment(k, c, i) { const g = new THREE.Group(); hanger(g); let m;
   if (k === 'shirts') { m = new THREE.Mesh(extr('shirt', [[-0.2, -0.08], [-0.06, -0.04], [0.06, -0.04], [0.2, -0.08], [0.23, -0.32], [0.18, -0.33], [0.17, -0.2], [0.175, -0.76], [-0.175, -0.76], [-0.17, -0.2], [-0.18, -0.33], [-0.23, -0.32]], 0.008, 0.009), pmat(c)); const col = new THREE.Mesh(PGEO.col || (PGEO.col = new THREE.TorusGeometry(0.045, 0.01, 6, 18, Math.PI)), pmat(c)); col.rotation.z = Math.PI; col.position.y = -0.045; col.scale.z = 1.6; g.add(col);
     const pl = new THREE.Mesh(PGEO.pl || (PGEO.pl = new THREE.BoxGeometry(0.025, 0.68, 0.003)), pmat(new THREE.Color(c).multiplyScalar(0.9).getStyle())); pl.position.set(0, -0.41, 0.019); g.add(pl); }
@@ -699,19 +688,7 @@ function buildRoom() {
 // ---------- decor: rug, plants, window light ----------
 const decor = new THREE.Group(); scene.add(decor);
 const RUGT = {};
-function juteTex() { if (RUGT.j) return RUGT.j; const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d'), h = document.createElement('canvas'); h.width = h.height = 512; const q = h.getContext('2d');
-  g.fillStyle = '#b39467'; g.fillRect(0, 0, 512, 512); q.fillStyle = '#000'; q.fillRect(0, 0, 512, 512); let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-  // braided jute: rows of slanted plaits, alternating direction, fibre noise on top
-  for (let y = 0; y < 512; y += 16) for (let x = -16; x < 528; x += 12) { const dir = (y / 16) % 2 ? 1 : -1, l = 150 + rnd() * 50;
-    g.fillStyle = `rgb(${l + 30},${l + 6},${l - 40})`; g.beginPath(); g.ellipse(x, y + 8, 7, 4.2, dir * 0.6, 0, 7); g.fill();
-    const gr = q.createRadialGradient(x, y + 8, 0, x, y + 8, 7); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#000'); q.fillStyle = gr; q.beginPath(); q.ellipse(x, y + 8, 7, 4.2, dir * 0.6, 0, 7); q.fill(); }
-  for (let i = 0; i < 9000; i++) { const l = 120 + rnd() * 90; g.fillStyle = `rgba(${l},${l - 20},${l - 60},0.35)`; g.fillRect(rnd() * 512, rnd() * 512, 2 + rnd() * 4, 1); }
-  const src = q.getImageData(0, 0, 512, 512).data, n = document.createElement('canvas'); n.width = n.height = 512; const nq = n.getContext('2d'), im = nq.createImageData(512, 512), H = (x, y) => src[(((y + 512) % 512) * 512 + ((x + 512) % 512)) * 4] / 255;
-  for (let y = 0; y < 512; y++) for (let x = 0; x < 512; x++) { const dx = (H(x + 1, y) - H(x - 1, y)) * 2.5, dy = (H(x, y + 1) - H(x, y - 1)) * 2.5, L = Math.hypot(dx, dy, 1), i = (y * 512 + x) * 4; im.data[i] = (-dx / L * 0.5 + 0.5) * 255; im.data[i + 1] = (dy / L * 0.5 + 0.5) * 255; im.data[i + 2] = (1 / L * 0.5 + 0.5) * 255; im.data[i + 3] = 255; }
-  nq.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; const tn = new THREE.CanvasTexture(n); tn.wrapS = tn.wrapT = THREE.RepeatWrapping;
-  return (RUGT.j = [t, tn]); }
 function rugTex(fluffy) {
-  if (fluffy === 'jute') return juteTex();
   const k = fluffy ? 'f' : 'p'; if (RUGT[k]) return RUGT[k];
   let sd = fluffy ? 21 : 33; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
   const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
@@ -726,14 +703,13 @@ function rugTex(fluffy) {
 function rugSpot() { const F = frame(), act = wallsActive(); if (S.layout === 'L') return [F.xL + 1.05, Math.max(1.0, Math.min(1.4, (act.includes(1) ? effGap(1) / 100 + wallWidth(1) * MM : 1) * 0.5 + 0.55))]; if (S.layout === 'Lr') return [F.xR - 1.05, 1.1]; return [F.x0 + F.backW / 2, S.layout === 'U' ? 1.2 : 1.05]; }
 function buildRug() {
   const R = S.rug; if (!R || S.floor === 'carpet') return;
-  const round = R.shape === 'round', fluffy = R.pile === 'fluffy', jute = R.pile === 'jute', rk = Math.max(0.5, Math.min(2, R.k || 1)), th = fluffy ? 0.024 : jute ? 0.01 : 0.006, w = (round ? 1.5 : 1.8) * rk, d = (round ? 1.5 : 1.2) * rk, [t, tn] = rugTex(jute ? 'jute' : fluffy);
+  const round = R.shape === 'round', fluffy = R.pile === 'fluffy', rk = Math.max(0.5, Math.min(2, R.k || 1)), th = fluffy ? 0.024 : 0.006, w = (round ? 1.5 : 1.8) * rk, d = (round ? 1.5 : 1.2) * rk, [t, tn] = rugTex(fluffy);
   const mt = t.clone(), mn = tn.clone(); mt.needsUpdate = mn.needsUpdate = true; mt.repeat.set(fluffy ? 2.5 : 1, fluffy ? 2.5 : (round ? 1 : 1)); mn.repeat.copy(mt.repeat);
   const mat = new THREE.MeshStandardMaterial({ color: 0xd8cfc0, map: mt, normalMap: mn, normalScale: new THREE.Vector2(fluffy ? 0.9 : 0.5, fluffy ? 0.9 : 0.5), roughness: 1, envMapIntensity: 0.25 });
   const geo = round ? new THREE.CylinderGeometry(w / 2, w / 2 - (fluffy ? 0.012 : 0.002), th, 96) : new RoundedBoxGeometry(w, th, d, 3, fluffy ? 0.011 : 0.0028);
   if (round) { const uv = geo.attributes.uv, p = geo.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, p.getX(i) / w + 0.5, p.getZ(i) / w + 0.5); }
   else { const uv = geo.attributes.uv, p = geo.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, p.getX(i) / w + 0.5, p.getZ(i) / d + 0.5); }
-  if (jute) { mat.color.set(0xffffff); mat.normalScale.set(1.1, 1.1); mt.repeat.set(w / 0.6, d / 0.6); mn.repeat.copy(mt.repeat); }
-  const m = new THREE.Mesh(geo, mat), sp = rugSpot(), cn = !round && (S.layout === 'L' || S.layout === 'Lr') ? (S.layout === 'L' ? [frame().xL + 1.0, 1.0, Math.PI / 4] : [frame().xR - 1.0, 1.0, -Math.PI / 4]) : null, x0_ = 0, x = R.x ?? (cn ? cn[0] : sp[0]), z = R.z ?? (cn ? cn[1] : sp[1]); m.position.set(x, th / 2 + 0.001, z); if (!round) m.rotation.y = R.r ?? (cn ? cn[2] : 0); m.userData.rug = true; m.userData.k0 = rk; m.receiveShadow = true; m.castShadow = false; decor.add(m);
+  const m = new THREE.Mesh(geo, mat), sp = rugSpot(), x = R.x ?? sp[0], z = R.z ?? sp[1]; m.position.set(x, th / 2 + 0.001, z); if (!round) m.rotation.y = R.r || 0; m.userData.rug = true; m.userData.k0 = rk; m.receiveShadow = true; m.castShadow = false; decor.add(m);
 }
 // ---- plants: procedural potted plants, draggable on the floor ----
 var PLANTS = { fig: 'Фикус лировидный', monstera: 'Монстера', olive: 'Оливковое дерево', mirror: 'Зеркало в черной раме', pouf: 'Пуф' };
@@ -753,8 +729,8 @@ function mirrorModel() { const g = new THREE.Group(), W = 0.62, H = 1.72, f = 0.
   g.position.z = 0; return g; }
 // square upholstered pouf in soft velvet with a piped top edge
 function poufModel() { const g = new THREE.Group(), s = 0.42, h = 0.44;
-  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#e6dfd3'; x.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 1800; i++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,250' : '90,80,70'},${Math.random() * 0.08})`; x.fillRect(Math.random() * 128, Math.random() * 128, 1 + Math.random() * 2, 1); }
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#8f7570'; x.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 1800; i++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '255,240,235' : '40,20,20'},${Math.random() * 0.08})`; x.fillRect(Math.random() * 128, Math.random() * 128, 1 + Math.random() * 2, 1); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
   const m = new THREE.MeshPhysicalMaterial({ map: t, roughness: 0.85, sheen: 1, sheenRoughness: 0.45, sheenColor: new THREE.Color(0xe7cfc8), envMapIntensity: 0.5 });
   const b = new THREE.Mesh(new RoundedBoxGeometry(s, h - 0.03, s, 5, 0.06), m); b.position.y = (h - 0.03) / 2 + 0.03; b.castShadow = b.receiveShadow = true; g.add(b);
@@ -1017,13 +993,12 @@ function syncFromCam(kind) {
   const T = controls.target.clone(), p = camera.position;
   orb.T.copy(T); orb.az = Math.atan2(p.x - T.x, p.z - T.z); orb.R = Math.max(0.5, Math.hypot(p.x - T.x, p.z - T.z)); orb.h = p.y; applyCam();
 }
-const TP = new Set(); addEventListener('pointerdown', e => TP.add(e.pointerId), true); ['pointerup', 'pointercancel'].forEach(t => addEventListener(t, e => TP.delete(e.pointerId), true));
 function applyCam(cam = camera) {
   const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
   o.h = Math.max(0.05, Math.min(o.T.y + o.R * 4, Math.max(o.h, o.T.y - o.R * 3)));
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   if (ROOMB && !S.studio) { cam.position.x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, cam.position.x)); cam.position.z = Math.max(0.4, cam.position.z); }
-  const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 0.42);
+  const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 0.62); // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   const yN = -Math.tan(a - p) / Math.tan(cam.fov * Math.PI / 360);
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
@@ -1031,19 +1006,12 @@ function applyCam(cam = camera) {
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
   el.addEventListener('contextmenu', e => e.preventDefault());
-  el.addEventListener('pointerdown', e => { if (!orb.on) return; window.__userCam = true; orb.snapAz = false; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
+  el.addEventListener('pointerdown', e => { if (!orb.on) return; orb.snapAz = false; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
   // straight and U: a near-frontal view settles exactly frontal, so the ceiling and floor edges read level
   const end = e => { P.delete(e.pointerId); last = null; pinch = null; if (!P.size && (S.layout === 'straight' || S.layout === 'U') && Math.abs(orb.az) < 0.16) orb.snapAz = true; };
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
-  // safety net: object handlers or iOS gestures must never leave a stale pointer / drag lock behind
-  const resetAll = () => { P.clear(); last = null; pinch = null; window.__plantTap = false; TP.clear(); controls.enabled = !orb.on; window.__resetDrag && window.__resetDrag(); };
-  window.__resetInput = resetAll;
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => addEventListener(t, e => { if (P.has(e.pointerId)) end(e); setTimeout(() => { if (!TP.size) resetAll(); }, 0); }, true));
-  ['touchend', 'touchcancel'].forEach(t => addEventListener(t, e => { if (!e.touches || !e.touches.length) setTimeout(resetAll, 0); }, true));
-  addEventListener('blur', resetAll); document.addEventListener('visibilitychange', resetAll); ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
-  el.addEventListener('pointerdown', e => { [...P.keys()].forEach(id => { if (id !== e.pointerId && !TP.has(id)) P.delete(id); }); if (TP.size <= 1) { window.__plantTap = false; controls.enabled = !orb.on; } }, true);
   el.addEventListener('pointermove', e => {
-    if (!orb.on || !P.has(e.pointerId)) return; if (window.__plantTap) { const q = P.get(e.pointerId); q.x = e.clientX; q.y = e.clientY; last = null; pinch = null; return; } const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    if (!orb.on || !P.has(e.pointerId)) return; if (window.__rugDrag) { const q = P.get(e.pointerId); q.x = e.clientX; q.y = e.clientY; last = null; pinch = null; return; } const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
     const hpx = el.clientHeight || 600, unit = orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
     if (P.size >= 2) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -1058,7 +1026,7 @@ function applyCam(cam = camera) {
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
-function camK() { const k = localStorage.getItem('gs_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'std'; }
+function camK() { const k = localStorage.getItem('gs_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'int'; } // default: «Интерьер» photo preset, closest to the client renders
 var CAMS = [['std', 'Стандарт'], ['int', 'Интерьер'], ['por', 'Портрет'], ['top3', 'Сверху 3/4']];
 const LENSF = () => 28;
 function CAMEXP() { return { int: 1.1, por: 1.03 }[camK()] || 1.0; }
@@ -1089,20 +1057,13 @@ function fitView() { if (!orb.on || !WG.length) return; const b = meshBox(); if 
     const k = Math.max(0.5, Math.min(2, s)); orb.h = orb.T.y + (orb.h - orb.T.y) * k; orb.R *= k;
     if (Math.abs(s - 1) < 0.02 && Math.abs(dx) < 0.005 && Math.abs(dy) < 0.005) break;
     // the room walls stop the camera from backing off sideways: turn a little more frontal instead
-    }
+    if (it >= 3 && s > 1.03) orb.az *= 0.75; }
   applyCam(); if (WG.length) rebuildDims(); }
 // selection highlight: blue tint in the color itself plus emissive, so it reads on white (clamped) and black metal alike
 function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.contact || m.userData.hlOrig || Array.isArray(m.material)) return; const o = m.material, c = o.clone(); m.userData.hlOrig = o;
   if (c.color) c.color.set(0x5b9bff); if (c.emissive) { c.emissive.set(0x1f66ff); c.emissiveIntensity = 0.55; } if (c.map && c.color) c.color.set(0x8fbaff); if ('sheen' in c) c.sheen = 0; m.material = c; }); }
 function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
 let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
-// shadow controls: strength, length, softness, direction of the baked wall shadows; «Реализм» only for 📷
-function shSliders() { let el = $('shSl'); if (!el) { el = document.createElement('div'); el.id = 'shSl'; $('shPBtns').after(el); } const R = S.room;
-  const sl = (k, t, lo, hi, st, d) => `<label class="rng">${t}<input type="range" data-shs="${k}" min="${lo}" max="${hi}" step="${st}" value="${R[k] ?? d}"></label>`;
-  el.innerHTML = sl('shK', 'Сила тени', 0, 2, 0.05, 1) + sl('shL', 'Длина тени', 0.4, 2.5, 0.05, 1) + sl('shS', 'Мягкость', 0.3, 2.5, 0.05, 1) + sl('shD', 'Направление', -1, 1, 0.05, 0)
-    + `<label class="chk"><input type="checkbox" id="realT" ${S.real ? 'checked' : ''}> Реализм для 📷 (мягкие тени, виньетка, высокое разрешение)</label>`;
-  el.querySelectorAll('[data-shs]').forEach(i => { i.oninput = () => { R[i.dataset.shs] = +i.value; clearTimeout(i._t); i._t = setTimeout(() => { rebuild(); }, 120); }; });
-  $('realT').onchange = e => { S.real = e.target.checked; localStorage.setItem('gs_auto', JSON.stringify(S)); }; }
 function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') fitView(); }
 function camTo0(kind) {
   if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
@@ -1124,7 +1085,7 @@ let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
 function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
-renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else controls.update(); tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -1205,18 +1166,8 @@ function applyGlareShadow() {
   specL.intensity = gmode === 'bright' ? 2.2 : gmode === 'soft' ? 0.5 : 0; specL.target.position.copy(c); tickSpec();
   const gm = { soft: 1, bright: 1, off: 0.35 }[gmode];
   scene.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial && !o.material.isMeshPhysicalMaterial && o.material !== M.chrome && !o.material.userData.wall) o.material.envMapIntensity = (o.material.metalness > 0.6 ? 1.0 : 0.9) * gm; });
-  sunMode(); loftLights();
+  sunMode();
 }
-const _isPhone = /iPhone|iPad|iPod|Android/.test(navigator.userAgent);
-function loftLights() { const lf = S.roomPre === 'loft' && !S.studio && !S.sun && !(photo && !$('showRoom').checked);
-  const want = lf ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap; if (renderer.shadowMap.type !== want) { renderer.shadowMap.type = want; scene.traverse(o => { if (o.material && !Array.isArray(o.material)) o.material.needsUpdate = true; }); }
-  if (!lf) return; const c = bbox.getCenter(new THREE.Vector3()), ms = _isPhone ? 1024 : 2048;
-  if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); }
-  sun.castShadow = true; sun.color.set(0xffffff); sun.intensity = 1.9; sun.position.set(c.x + 2, 4, c.z + 3); sun.target.position.set(c.x, c.y, 0); sun.target.updateMatrixWorld();
-  Object.assign(sc, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 14 }); sc.updateProjectionMatrix(); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02; sun.shadow.radius = 3;
-  hemi.color.set(0xffffff); hemi.groundColor.set(0xe8e4de); hemi.intensity = 0.32; fill.color.set(0xf4f6ff); fill.intensity = 1.35; fill.position.set(c.x - 4, 2.4, c.z + 0.6); sideFill.intensity = 0; gobo.intensity = 0; rim.intensity = 0.25;
-  try { glow.color.set(0xffffff); glow.intensity = 1.6; glow.angle = 0.95; glow.penumbra = 1; glow.decay = 0; glow.position.set(c.x, 2.4, c.z + 3.6); glow.target.position.set(c.x, 1.3, 0); glow.target.updateMatrixWorld(); } catch (e) {}
-  renderer.toneMappingExposure = 1.15; }
 function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(S.studio ? (S.bg || '#e2ded7') : S.room && S.room.ceiling ? '#fbfbf9' : '#e9e6e0'); }
 
 // ---------- export ----------
@@ -1587,7 +1538,12 @@ const visDeep = o => { while (o) { if (o.visible === false) return false; o = o.
 // combo rail belongs to its shelf: always act on the main item
 function mainIdx(wi, si, ii) { const sc = S.walls[wi].sections[si], o = sc && sc.items[ii]; if (o && o.lk) { const p = sc.items.findIndex(q => q.g === o.lk); if (p >= 0) return p; } return ii; }
 function pickHits(e) { const el = renderer.domElement, r = el.getBoundingClientRect(); RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-  return RC.intersectObjects(model.children, true).filter(h => h.object.isMesh && h.object !== catcher && !h.object.userData.contact && visDeep(h.object)); }
+  const hs = RC.intersectObjects(model.children, true).filter(h => h.object.isMesh && h.object !== catcher && !h.object.userData.contact && visDeep(h.object));
+  // wire baskets are mostly holes: pick them by their box so a tap anywhere on a basket selects it
+  const bx = new THREE.Box3(), pt = new THREE.Vector3();
+  model.traverse(o => { const r = o.userData.ref; if (!r || !visDeep(o)) return; const it = S.walls[r.wi] && S.walls[r.wi].sections[r.si] && S.walls[r.wi].sections[r.si].items[r.ii]; if (!it || !isBasket(it.t)) return;
+    bx.setFromObject(o); if (bx.isEmpty() || !RC.ray.intersectBox(bx, pt)) return; let mm = null; o.traverse(m => { if (!mm && m.isMesh) mm = m; }); if (mm) hs.push({ object: mm, distance: RC.ray.origin.distanceTo(pt), point: pt.clone() }); });
+  return hs.sort((a, b) => a.distance - b.distance); }
 function itemGroups(wi, si, idxs) { const out = []; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && idxs.includes(r.ii)) out.push(o); }); return out; }
 {
   const el = renderer.domElement, tip = $('dragTip');
@@ -1642,15 +1598,9 @@ $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : 'nice');
 // iOS settles the canvas size late (toolbar, safe areas): refit once the final size is known
-{ // initial framing: fit repeatedly while layout/fonts/textures settle (canvas hidden), then lock; later only Ракурс/Сброс/rotation/size changes refit
-  const cv = renderer.domElement; cv.style.opacity = '0'; cv.style.transition = 'opacity .35s'; let locked = false, ld = false, fn = false;
-  const late = () => { if (locked || lastCam === 'card' || window.__userCam) return; try { resize(); fitView(); } catch (e) {} };
-  const lock = () => { if (locked) return; late(); locked = true; window.__camLocked = true; cv.style.opacity = '1'; };
-  const tryLock = () => { if (ld && fn) setTimeout(lock, 250); };
-  requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late); setTimeout(lock, 2600);
-  THREE.DefaultLoadingManager.onLoad = () => { ld = true; late(); tryLock(); }; (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { fn = true; late(); tryLock(); });
-  if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (!locked) late(); }); }
-const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [3, 0.05], [0.05, 1.5], [0.05, 0.05]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+{ const late = () => { if (lastCam === 'card') return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late);
+  if (window.visualViewport) { let vt = 0; visualViewport.addEventListener('resize', () => { clearTimeout(vt); vt = setTimeout(late, 150); }); } }
+const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
 // ---------- v4 extra controls ----------
 $('rS').oninput = e => { $('fS').value = e.target.value; S.walls[cur.w].sections.forEach(x => x.w = +e.target.value); clearTimeout(dimT); dimT = setTimeout(rebuild, 40); };
@@ -1698,7 +1648,7 @@ function wbShot() {
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q);
 };
 
-$('niceBtn').onclick = () => { window.__resetInput && window.__resetInput(); lastCam = 'nice'; camTo('nice'); rebuildDims(); };
+$('niceBtn').onclick = () => { lastCam = 'nice'; camTo('nice'); rebuildDims(); };
 
 { const o = $('ceilT').onchange; $('ceilT').onchange = e => { o(e); setBg(); }; }
 // ---------- stepper ----------
@@ -1819,22 +1769,21 @@ function renderDeco() {
   const fin = S.wallFin || 'paint', fv = finVar();
   $('finVars').style.gridTemplateColumns = `repeat(${evenCols(FINS[fin].length)},1fr)`; $('finBtns').innerHTML = [['paint', 'Краска'], ['plaster', 'Штукатурка'], ['relief', 'Рельеф'], ['paper', 'Обои']].map(([k, t]) => `<button data-fin="${k}" class="${fin === k ? 'on' : ''}">${t}</button>`).join('');
   $('finVars').innerHTML = FINS[fin].map(([k, t]) => `<button data-fv="${k}" class="${fv === k ? 'on' : ''}"><i style="background-image:url(${finSwatch(k)})"></i><span>${t}</span></button>`).join('');
-  const FL = [['tile2', 'Светлая плитка', 'floor_tiles_08', ''], ['oak', 'Паркет', 'herringbone_parquet', ''], ['lam', 'Светлый ламинат', 'laminate_floor_02', ''], ['lamD', 'Темный ламинат', 'wood_floor_worn', 'filter:brightness(.62) saturate(1.1)'], ['conc', 'Бетон', 'concrete_floor_worn_001', 'filter:brightness(1.08) grayscale(.4)'], ['marble', 'Мрамор', 'marble_01', ''], ['carpet', 'Ковролин', '', '']];
+  const FL = [['oak', 'Паркет', 'herringbone_parquet', ''], ['lam', 'Светлый ламинат', 'laminate_floor_02', ''], ['lamD', 'Темный ламинат', 'wood_floor_worn', 'filter:brightness(.62) saturate(1.1)'], ['conc', 'Бетон', 'concrete_floor_worn_001', 'filter:brightness(1.08) grayscale(.4)'], ['marble', 'Мрамор', 'marble_01', ''], ['carpet', 'Ковролин', '', '']];
   $('floorBtns').style.gridTemplateColumns = `repeat(${evenCols(FL.length)},1fr)`; $('floorBtns').innerHTML = FL.map(([k, t, tx, f]) => `<button data-fl="${k}" class="${S.floor === k ? 'on' : ''}"><i style="${tx ? `background-image:url(tex/${tx}_diff.jpg);background-size:${k === 'oak' ? 160 : 120}%;${f}` : 'background:#b9ab98'}"></i><span>${t}</span></button>`).join('');
   $('finBtns').querySelectorAll('[data-fin]').forEach(b => b.onclick = () => { S.wallFin = b.dataset.fin; $('wallFin').value = S.wallFin; rebuild(); renderDeco(); });
   $('finVars').querySelectorAll('[data-fv]').forEach(b => b.onclick = () => { S.wallVar = Object.assign({}, S.wallVar, { [fin]: b.dataset.fv }); const AC = { brick: '#ffffff', beige: '#ffffff', slats: '#ffffff', woodp: '#ffffff', stone: '#ffffff', conc2: '#ffffff' }[b.dataset.fv]; if (AC && !S.wallCustom) S.wall = AC; rebuild(); renderDeco(); });
   $('floorBtns').querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { S.floor = b.dataset.fl; $('floor').value = S.floor; rebuild(); renderDeco(); });
   // rug: shape x pile
   const rg = S.rug, carpet = S.floor === 'carpet';
-  $('rugBox').innerHTML = carpet ? '' : `<div class="sz"><button data-rs="round" class="${rg && rg.shape === 'round' ? 'on' : ''}">Круглый</button><button data-rs="rect" class="${rg && rg.shape === 'rect' ? 'on' : ''}">Прямоугольный</button></div><div class="sz"><button data-rp="fluffy" class="${rg && rg.pile === 'fluffy' ? 'on' : ''}">Пушистый</button><button data-rp="flat" class="${rg && rg.pile === 'flat' ? 'on' : ''}">Плоский</button><button data-rp="jute" class="${rg && rg.pile === 'jute' ? 'on' : ''}">Джут</button><button data-rugoff="1" class="${rg ? '' : 'on'}">Убрать ковер</button></div>` + (rg ? `<div class="szlab">Размер ковра: <b id="rugKv">${Math.round((rg.k || 1) * 100)}%</b></div><input type="range" id="rugK" min="50" max="200" step="1" value="${Math.round((rg.k || 1) * 100)}"><div class="szlab">Поворот ковра: <b id="rugRv">${Math.round((rg.r ?? 0) * 180 / Math.PI)}°</b></div><input type="range" id="rugR" min="-180" max="180" step="1" value="${Math.round((rg.r ?? (decor.children.find(c => c.userData.rug) || { rotation: { y: 0 } }).rotation.y) * 180 / Math.PI)}">` : '');
-  { const rm = () => decor.children.find(c => c.userData.rug), kk = $('rugK'), rr = $('rugR');
-    if (kk) { kk.oninput = () => { const k = kk.value / 100, m = rm(); S.rug.k = k; $('rugKv').textContent = kk.value + '%'; if (m) m.scale.set(k / (m.userData.k0 || 1), 1, k / (m.userData.k0 || 1)); }; kk.onchange = () => { rebuild(); pushHist(); }; }
+  $('rugBox').innerHTML = carpet ? '' : `<div class="sz"><button data-rs="round" class="${rg && rg.shape === 'round' ? 'on' : ''}">Круглый</button><button data-rs="rect" class="${rg && rg.shape === 'rect' ? 'on' : ''}">Прямоугольный</button></div><div class="sz"><button data-rp="fluffy" class="${rg && rg.pile === 'fluffy' ? 'on' : ''}">Пушистый</button><button data-rp="flat" class="${rg && rg.pile === 'flat' ? 'on' : ''}">Плоский</button><button data-rugoff="1" class="${rg ? '' : 'on'}">Убрать ковер</button></div>`;
+  if (!carpet && rg) { $('rugBox').insertAdjacentHTML('beforeend', `<div class="szlab">Размер ковра: <b id="rugKv">${Math.round((rg.k || 1) * 100)}%</b></div><input type="range" id="rugK" min="50" max="200" step="1" value="${Math.round((rg.k || 1) * 100)}">` + (rg.shape === 'round' ? '' : `<div class="szlab">Поворот ковра: <b id="rugRv">${Math.round((rg.r || 0) * 180 / Math.PI)}°</b></div><input type="range" id="rugR" min="-90" max="90" step="1" value="${Math.round((rg.r || 0) * 180 / Math.PI)}">`));
+    const rm = () => decor.children.find(c => c.userData.rug), kk = $('rugK'), rr = $('rugR');
+    kk.oninput = () => { const k = kk.value / 100, m = rm(); S.rug.k = k; $('rugKv').textContent = kk.value + '%'; if (m) m.scale.set(k / (m.userData.k0 || 1), 1, k / (m.userData.k0 || 1)); }; kk.onchange = () => { rebuild(); pushHist(); };
     if (rr) { rr.oninput = () => { const a = rr.value * Math.PI / 180, m = rm(); S.rug.r = a; $('rugRv').textContent = rr.value + '°'; if (m) m.rotation.y = a; }; rr.onchange = () => { localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); }; } }
   $('rugNote').textContent = carpet ? 'На ковролин ковер не кладется: выберите другой пол.' : '';
   $('rugBox').querySelectorAll('[data-rs]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: b.dataset.rs, pile: (S.rug && S.rug.pile) || 'flat' }; rebuild(); renderDeco(); });
   $('rugBox').querySelectorAll('[data-rp]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: (S.rug && S.rug.shape) || 'rect', pile: b.dataset.rp }; rebuild(); renderDeco(); });
-  if (rg && !carpet) { const ex = document.createElement('div'); ex.innerHTML = '<p class="foot">Коснитесь ковра: тяните его по полу, за угловые точки меняйте размер, за круглую ручку поворачивайте.</p>'; $('rugBox').appendChild(ex);
-    const up = (k, el) => el && (el.oninput = () => { S.rug[k] = +el.value; clearTimeout(el._t); el._t = setTimeout(() => rebuild(), 60); }); up('k', $('rugK')); up('r', $('rugR')); }
   $('rugBox').querySelectorAll('[data-rugoff]').forEach(b => b.onclick = () => { S.rug = null; rebuild(); renderDeco(); });
   // openings
   $('openBtns').innerHTML = `<button data-op="win" class="${R.win ? 'on' : ''}">Окно</button><button data-op="door" class="${R.door ? 'on' : ''}">Дверной проем</button>`;
@@ -1847,11 +1796,6 @@ function renderDeco() {
     // mirror leans on the free side wall facing the system (or the back wall beside it); pouf stands in front of the system
     if (k === 'mirror') { if (F.xL != null && S.layout !== 'Lr') { px = F.xL + 0.08; pz = bbox.max.z + 0.5; pr = Math.PI / 2; } else if (F.xR != null) { px = F.xR - 0.08; pz = bbox.max.z + 0.5; pr = -Math.PI / 2; } else { px = F.x0 - 0.55; pz = 0.1; pr = 0; } }
     if (k === 'pouf') { px = F.x0 + Math.min(F.backW, 2) * 0.45; pz = Math.max(1.1, bbox.max.z - 0.2); pr = 0.25; }
-    // never on top of a door / window on that wall, and not on another item placed earlier
-    if (k === 'mirror' || k === 'pouf') { try { const ops = openingsList(F, 3); for (let t = 0; t < 6; t++) { let hit = false;
-      ops.forEach(o => { const onL = o.wall === 'L' && Math.abs(px - F.xL) < 0.6, onR = o.wall === 'R' && F.xR != null && Math.abs(px - F.xR) < 0.6, onB = o.wall === 'B' && pz < 0.6;
-        if ((onL || onR) && Math.abs(pz - o.z) < o.w / 2 + 0.45) { pz = o.z + o.w / 2 + 0.55; hit = true; } const oc = o.c ?? o.x; if (onB && oc != null && Math.abs(px - oc) < o.w / 2 + 0.45) { px = oc + o.w / 2 + 0.55; hit = true; } });
-      (S.plants || []).forEach(q => { if (Math.hypot(q.x - px, q.z - pz) < 0.6) { if (k === 'mirror') pz += 0.7; else px += 0.6; hit = true; } }); if (!hit) break; } } catch (e) {} }
     S.plants = [...(S.plants || []), { k, x: px, z: pz, s: 1, r: pr }]; plantSel = n; rebuild(); renderDeco(); });
   $('plantList').querySelectorAll('[data-ps]').forEach(el => { el.oninput = () => { const i = +el.dataset.ps; S.plants[i].s = +el.value; plantSel = i; const g = decor.children.find(c => c.userData.plant === i); if (g) g.scale.setScalar(+el.value); }; el.onchange = () => { rebuild(); }; });
   $('plantList').querySelectorAll('[data-pd]').forEach(b => b.onclick = () => { S.plants.splice(+b.dataset.pd, 1); plantSel = -1; rebuild(); renderDeco(); });
@@ -1862,7 +1806,6 @@ function renderDeco() {
 let plantSel = -1;
 function renderLight() {
   const R = S.room;
-  shSliders();
   $('shPBtns').innerHTML = [['soft', 'Мягкая'], ['left', 'Слева'], ['right', 'Справа'], ['top', 'Сверху'], ['sharp', 'Четкая'], ['sun', 'Солнечный свет'], ['none', 'Без тени']].map(([k, t]) => `<button data-shp="${k}" class="${(R.shP || 'soft') === k ? 'on' : ''}">${t}</button>`).join('');
   $('glMBtns').innerHTML = [['soft', 'Мягкие'], ['bright', 'Яркие'], ['off', 'Выкл']].map(([k, t]) => `<button data-glm="${k}" class="${(R.glareM || 'soft') === k ? 'on' : ''}">${t}</button>`).join('');
   $('winL').value = R.winL || 'off'; $('winL').disabled = !!S.studio;
@@ -1938,34 +1881,32 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest('#wallsPop
 function snap34() {
   const CW = 1800, CH = 2400, sv = { pos: camera.position.clone(), q: camera.quaternion.clone(), pr: renderer.getPixelRatio() }, sm = sun.shadow.mapSize.x;
   sun.shadow.mapSize.set(4096, 4096); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
-  const real = !!S.real, rsv = { cs: sun.castShadow, r: sun.shadow.radius, fx: localStorage.getItem('gs_fx') }; if (real) { sun.castShadow = true; sun.shadow.radius = 9; sun.shadow.needsUpdate = true; localStorage.setItem('gs_fx', '1'); }
   renderer.setPixelRatio(1); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix(); if (orb.on) applyCam();
   renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   if (photoImg && !$('showRoom').checked) { const s = Math.max(CW / photoImg.width, CH / photoImg.height), iw = photoImg.width * s, ih = photoImg.height * s; g.drawImage(photoImg, (CW - iw) / 2, (CH - ih) / 2, iw, ih); }
-  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH); { const vg = g.createRadialGradient(CW / 2, CH / 2, CH * 0.35, CW / 2, CH / 2, CH * 0.75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.22)'); g.fillStyle = vg; g.fillRect(0, 0, CW, CH); } if (real) { sun.castShadow = rsv.cs; sun.shadow.radius = rsv.r; if (rsv.fx == null) localStorage.removeItem('gs_fx'); else localStorage.setItem('gs_fx', rsv.fx); }
+  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH);
   sun.shadow.mapSize.set(sm, sm); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q); if (orb.on) applyCam();
   return out;
 }
 const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-function camShot(o, nm) {
-  const out = o || cleanShot(snap34), name = nm || 'garderob-' + new Date().toISOString().slice(0, 10) + '-1800x2400.png';
+$('camBtn').onclick = () => { try { camShot(); } catch (er) { msg('Не удалось сделать снимок'); } };
+function camShot() {
+  const out = cleanShot(snap34), name = 'garderob-' + new Date().toISOString().slice(0, 10) + '-1800x2400.png';
   if (matchMedia('(pointer: coarse)').matches || isIOS()) { showShot(out, name); return; }
-  if (false) { try { const bin = atob(out.toDataURL('image/png').split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const file = new File([u8], name, { type: 'image/png' }); if (navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(e => { if (!e || e.name !== 'AbortError') dl(); }); return; } } catch (er) {} }
+  if (isIOS() && navigator.canShare) { try { const bin = atob(out.toDataURL('image/png').split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const file = new File([u8], name, { type: 'image/png' }); if (navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(e => { if (!e || e.name !== 'AbortError') dl(); }); return; } } catch (er) {} }
   dl();
   function dl() { out.toBlob(b => { if (!b) { msg('Не удалось сделать снимок'); return; } const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); msg('Снимок сохранен'); }, 'image/png'); }
 }
 // ---- plants: drag with a finger on the floor
-{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null; { const pr_ = window.__resetDrag; window.__resetDrag = () => { pd = null; if (pr_) pr_(); }; }
+{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null;
   const ray = e => { const r = el.getBoundingClientRect(); RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); };
-  el.addEventListener('pointerdown', e => { if (TP.size > 1) { if (pd) { pd = null; window.__plantTap = false; } tapP = null; return; } if (!orb.on || e.button !== 0 || !decor.visible || !(S.plants || []).length || pd) return; ray(e);
+  el.addEventListener('pointerdown', e => { if (!orb.on || e.button !== 0 || !decor.visible || !(S.plants || []).length || pd) return; ray(e);
     const h = RC.intersectObjects(decor.children, true).find(x => x.object.userData.plant != null); if (!h) return; const mh = pickHits(e)[0]; if (mh && mh.distance < h.distance) return;
     const i = h.object.userData.plant, p = S.plants[i], q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
-    if (plantSel !== i) { tapP = { i, id: e.pointerId, x: e.clientX, y: e.clientY }; return; }
-    pd = { i, dx: p.x - q.x, dz: p.z - q.z, g: decor.children.find(c => c.userData.plant === i), id: e.pointerId }; hlOnly(pd.g); $('delBtn').classList.remove('hide'); window.__plantTap = true; el.setPointerCapture(e.pointerId); }, true);
-  let tapP = null; const tapUp = e => { const t = tapP; tapP = null; if (!t || t.id !== e.pointerId || Math.hypot(e.clientX - t.x, e.clientY - t.y) > 10) return; plantSel = t.i; window.__plantSel = t.i; hlOnly(decor.children.find(c => c.userData.plant === t.i)); $('delBtn').classList.remove('hide'); window.__plantTap = true; setTimeout(() => { window.__plantTap = false; }, 0); };
-  el.addEventListener('pointerup', tapUp, true);
+    pd = { i, dx: p.x - q.x, dz: p.z - q.z, g: decor.children.find(c => c.userData.plant === i), id: e.pointerId }; plantSel = i; window.__plantSel = i; hlOnly(pd.g); $('delBtn').classList.remove('hide'); window.__plantTap = true;
+    e.stopImmediatePropagation(); el.setPointerCapture(e.pointerId); }, true);
   el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); ray(e); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
     const p = S.plants[pd.i]; p.x = q.x + pd.dx; p.z = Math.max(0.2, Math.min(9, q.z + pd.dz)); if (ROOMB) p.x = Math.max(ROOMB.l + 0.2, Math.min(ROOMB.r - 0.2, p.x)); if (pd.g) pd.g.position.set(p.x, 0, p.z); }, true);
   const up = e => { if (!pd || e.pointerId !== pd.id) return; pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); applyGlareShadow(); renderDeco(); };
@@ -2015,7 +1956,7 @@ function fxBake(g, W, H) { if (!fxOn()) return; const p = FXP[camK()] || FXP.std
   g.putImageData(im, 0, 0); }
 $('fxBtn').onclick = () => { localStorage.setItem('gs_fx', fxOn() ? '0' : '1'); fxUI(); msg('Эффект: ' + (fxOn() ? 'вкл' : 'выкл')); };
 addEventListener('resize', () => setTimeout(fxUI, 50)); fxUI();
-{ let rt = 0; const refit = () => { clearTimeout(rt); rt = setTimeout(() => { try { resize(); fitView(); } catch (e) {} }, 150); }; let lw = innerWidth; addEventListener('resize', () => { if (!window.__camLocked) return; if (innerWidth !== lw) { lw = innerWidth; window.__userCam = false; refit(); } else resize(); }); addEventListener('orientationchange', () => { window.__userCam = false; lw = innerWidth; refit(); }); }
+{ let rt = 0; const refit = () => { clearTimeout(rt); rt = setTimeout(() => { try { resize(); fitView(); } catch (e) {} }, 150); }; addEventListener('resize', refit); addEventListener('orientationchange', refit); }
 { const o = lensUI; lensUI = function () { o(); try { fxUI(); } catch (e) {} }; }
 
 // ---- v10 props: add to the selected (or first fitting) shelf / rod, drag along it with a finger, delete with 🗑
@@ -2028,7 +1969,7 @@ function addProp(k) {
 }
 function renderPropBtns() { const el = $('propBtns'); if (!el) return; el.innerHTML = Object.entries(PROPK).map(([k, v]) => `<button data-prk="${k}">+ ${v[0]}</button>`).join(''); el.querySelectorAll('[data-prk]').forEach(b => b.onclick = () => addProp(b.dataset.prk)); }
 renderPropBtns();
-{ const el = renderer.domElement; let pd = null; { const pr_ = window.__resetDrag; window.__resetDrag = () => { pd = null; if (pr_) pr_(); }; }
+{ const el = renderer.domElement; let pd = null;
   el.addEventListener('pointerdown', e => { if (e.button !== 0 || pd) return; const h = pickHits(e)[0], pr = h && h.object.userData.prop;
     if (!pr) { if (window.__propSel) { window.__propSel = null; hlOnly(null); $('delBtn').classList.toggle('hide', !(cur.it >= 0) && !(window.__plantSel >= 0)); } return; }
     let g = h.object; while (g.parent && g.parent.userData.prop === pr) g = g.parent; const wg = WG[pr.wi]; if (!wg) return;
@@ -2041,107 +1982,9 @@ renderPropBtns();
     const lp = pd.wg.worldToLocal(q), { x0, x1, hw } = pd.pr, xa = x0 + 0.02 + hw, xb = x1 - 0.02 - hw; if (xb <= xa) return;
     const x = Math.max(xa, Math.min(xb, lp.x + pd.dx)); pd.g.position.x = x; pd.u = (x - xa) / (xb - xa); pd.moved = true; }, true);
   const up = e => { if (!pd || e.pointerId !== pd.id) return; const p = pd; pd = null; setTimeout(() => { window.__plantTap = false; }, 0);
-    // dropped onto another fitting shelf / rod: move it there (snaps along that item); dropped elsewhere: it springs back
-    if (p.moved) { const h = pickHits(e).find(x => { let g = x.object; while (g && !g.userData.ref) g = g.parent; return g && !x.object.userData.prop; }); let tg = h && h.object; while (tg && !tg.userData.ref) tg = tg.parent;
-      const src = S.walls[p.pr.wi].sections[p.pr.si].items[p.pr.ii], pv = src && src.pr && src.pr[p.pr.pi];
-      if (tg && pv) { const r = tg.userData.ref, it2 = S.walls[r.wi].sections[r.si].items[r.ii]; if (it2 && it2 !== src && propFits(pv.k, it2.t)) { const lp = WG[r.wi].worldToLocal(h.point.clone()), xs = [0]; S.walls[r.wi].sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
-        const hw = PROPK[pv.k][2] / 2, xa = xs[r.si] + 0.02 + hw, xb = xs[r.si + 1] - 0.02 - hw; src.pr.splice(p.pr.pi, 1); it2.pr = [...(it2.pr || []), { k: pv.k, u: xb > xa ? Math.max(0, Math.min(1, (lp.x - xa) / (xb - xa))) : 0.5 }];
-        window.__propSel = { wi: r.wi, si: r.si, ii: r.ii, pi: it2.pr.length - 1 }; HLG = null; rebuild(); pushHist(); return; } }
-      const f0 = pickHits(e)[0], overSelf = f0 && f0.object.userData.prop === p.pr; if (!h && !overSelf) { HLG = null; rebuild(); msg('Вещь вернулась на место'); return; } }
     if (p.moved && p.u != null) { const it = S.walls[p.pr.wi].sections[p.pr.si].items[p.pr.ii]; if (it && it.pr && it.pr[p.pr.pi]) it.pr[p.pr.pi].u = Math.round(p.u * 1000) / 1000; localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); }
     else msg((PROPK[(S.walls[p.pr.wi].sections[p.pr.si].items[p.pr.ii].pr[p.pr.pi] || {}).k] || ['Вещь'])[0] + ': выбрано, 🗑 удалит'); };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true); }
-
-// ---- room presets: one tap sets walls, floor, rug, window, light and decor (the wardrobe itself is untouched)
-const ROOMP = {
-  loft: ['Кирпичный лофт', { wallFin: 'relief', fv: 'brick', wall: '#fbf8f3', floor: 'tile2', rug: { shape: 'rect', pile: 'fluffy' }, win: true, winX: -1, shP: 'soft', metal: 'black', plants: ['mirror', 'pouf'] }],
-  beige: ['Светлый бежевый', { wallFin: 'plaster', fv: 'beige', wall: '#f4ebe3', floor: 'oak', rug: { shape: 'round', pile: 'fluffy' }, win: true, winX: 0, shP: 'sun', winL: 'both', plants: ['olive'] }],
-  scandi: ['Скандинавский', { wallFin: 'paint', fv: 'matte', wall: '#f1efea', floor: 'lam', rug: { shape: 'rect', pile: 'flat' }, win: false, shP: 'soft', plants: ['fig', 'pouf'] }],
-  conc: ['Бетон и дуб', { wallFin: 'relief', fv: 'conc2', wall: '#d9d6d1', floor: 'lamD', rug: null, win: false, shP: 'left', plants: ['monstera', 'mirror'] }] };
-function applyRoomPreset(k) { const p = ROOMP[k][1], R = S.room; S.wallFin = p.wallFin; S.wallVar = Object.assign({}, S.wallVar, { [p.wallFin]: p.fv }); S.wall = p.wall; S.wallCustom = true;
-  if (FLOORS[p.floor]) S.floor = p.floor; if (p.metal) S.metal = p.metal; S.rug = p.rug; R.win = p.win; if (p.winX != null) R.winX = p.winX; R.shP = p.shP; R.shOn = p.shP !== 'none'; R.winL = p.winL || 'off'; S.studio = false; S.decor = true;
-  S.plants = []; rebuild(); p.plants.forEach(pk => { const b = document.querySelector(`[data-pa="${pk}"]`); if (b) b.click(); });
-  S.roomPre = k; rebuild(); fillGeneral(); renderDeco(); setBg(); pushHist(); msg(ROOMP[k][0]); renderRoomPre(); }
-function renderRoomPre() { const el = $('roomPre'); if (!el) return; el.innerHTML = Object.entries(ROOMP).map(([k, v]) => `<button data-rpre="${k}" class="${S.roomPre === k ? 'on' : ''}">${v[0]}</button>`).join('') + (S.roomPre === 'loft' ? `<div class="szlab" style="width:100%">Кирпич</div><button data-lt="#fbf8f3" class="${S.wall !== '#f6f9fc' ? 'on' : ''}">Теплый белый</button><button data-lt="#f6f9fc" class="${S.wall === '#f6f9fc' ? 'on' : ''}">Холодный белый</button>` : '');
-  el.querySelectorAll('[data-lt]').forEach(b => b.onclick = () => { S.wall = b.dataset.lt; rebuild(); pushHist(); renderRoomPre(); }); el.querySelectorAll('[data-rpre]').forEach(b => b.onclick = () => applyRoomPreset(b.dataset.rpre)); }
-renderRoomPre();
-
-// ---- rug: select by tap, drag the body, resize by corner handles (round: edge handle), rotate by the round handle; camera orbit is off while dragging
-{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null, H = null, sel = null; { const pr_ = window.__resetDrag; window.__resetDrag = () => { pd = null; if (pr_) pr_(); }; }
-  const ray = e => { const r = el.getBoundingClientRect(); RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); };
-  const hm = new THREE.MeshBasicMaterial({ color: 0x2f7bff, depthTest: false, toneMapped: false }), hg = new THREE.CylinderGeometry(0.045, 0.045, 0.01, 20), rg = new THREE.SphereGeometry(0.05, 16, 10);
-  const clearH = () => { if (H) { H.parent && H.parent.remove(H); H = null; } };
-  const showH = m => { clearH(); hlOnly(m); return; H = new THREE.Group(); H.renderOrder = 20; const R = S.rug, round = R.shape === 'round', rk = R.k || 1, w = (round ? 1.5 : 1.8) * rk / 2, d = (round ? 1.5 : 1.2) * rk / 2;
-    const pts = round ? [[w, 0, 'k']] : [[w, d, 'k'], [-w, d, 'k'], [w, -d, 'k'], [-w, -d, 'k']]; pts.forEach(([x, z, t]) => { const h = new THREE.Mesh(hg, hm); h.position.set(x, 0.03, z); h.userData.rugH = t; h.renderOrder = 21; H.add(h); });
-    if (!round) { const h = new THREE.Mesh(rg, hm); h.position.set(0, 0.05, d + 0.22); h.userData.rugH = 'r'; h.renderOrder = 21; H.add(h); }
-    H.position.copy(m.position); H.rotation.y = m.rotation.y; decor.add(H); };
-  let tapR = null; el.addEventListener('pointerup', e => { const t = tapR; tapR = null; if (!t || t.id !== e.pointerId || Math.hypot(e.clientX - t.x, e.clientY - t.y) > 10) return; sel = t.m; hlOnly(t.m); showH(t.m); window.__plantTap = true; setTimeout(() => { window.__plantTap = false; }, 0); }, true);
-  el.addEventListener('pointerdown', e => { if (TP.size > 1) { if (pd) { pd = null; window.__plantTap = false; } tapR = null; return; } if (!orb.on || e.button !== 0 || !S.rug || !decor.visible || pd) return; ray(e);
-    const hits = RC.intersectObjects(decor.children, true), hh = hits.find(x => x.object.userData.rugH), h = hits[0];
-    const m = decor.children.find(c => c.userData.rug); if (!m) return;
-    if (!hh && (!h || !h.object.userData.rug)) { if (sel) { sel = null; clearH(); hlOnly(null); } return; }
-    if (!hh) { const mh = pickHits(e)[0]; if (mh && mh.distance < h.distance) return; if (sel !== m) { tapR = { m, id: e.pointerId, x: e.clientX, y: e.clientY }; return; } }
-    const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
-    pd = { m, mode: hh ? hh.object.userData.rugH : 'move', dx: m.position.x - q.x, dz: m.position.z - q.z, k0: S.rug.k || 1, d0: Math.hypot(q.x - m.position.x, q.z - m.position.z) || 1, id: e.pointerId };
-    sel = m; window.__plantTap = true; el.setPointerCapture(e.pointerId); }, true);
-  el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); ray(e); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return; const m = pd.m;
-    if (pd.mode === 'move') { let x = q.x + pd.dx, z = Math.max(0.3, Math.min(9, q.z + pd.dz)); if (ROOMB) x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, x)); m.position.x = x; m.position.z = z; S.rug.x = x; S.rug.z = z; }
-    else if (pd.mode === 'k') { const k = Math.max(0.5, Math.min(2.2, pd.k0 * Math.hypot(q.x - m.position.x, q.z - m.position.z) / pd.d0)); m.scale.set(k / pd.k0, 1, k / pd.k0); S.rug.k = k; }
-    else { const a = Math.atan2(q.x - m.position.x, q.z - m.position.z); m.rotation.y = a; S.rug.r = a; }
-    if (H) { H.position.copy(m.position); H.rotation.y = m.rotation.y; H.scale.set(m.scale.x, 1, m.scale.z); } }, true);
-  const up = e => { if (!pd || e.pointerId !== pd.id) return; const pd0m = pd.m; pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist();
-    if (pd0m) { sel = pd0m; showH(pd0m); } };
-  el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true); }
-// ---- 📷 «Визуализация»: progressive GPU path tracing (three-gpu-pathtracer) of the current view; the live editor is untouched
-function skyEquirect() { const W = 256, H = 128, d = new Float32Array(W * H * 4);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const v = 1 - y / (H - 1), el = (v - 0.5) * Math.PI, i = (y * W + x) * 4, u = x / W;
-    let r, g, b; if (el > 0) { const k = Math.pow(1 - el / (Math.PI / 2), 3); r = 0.55 + 0.6 * k; g = 0.68 + 0.5 * k; b = 0.95 + 0.25 * k; } else { r = 0.42; g = 0.4; b = 0.36; }
-    const sd = Math.hypot((u - 0.15) * 4, (el - 0.6) * 3); if (sd < 1) { const s = (1 - sd) * 4; r += s * 1.1; g += s; b += s * 0.85; }
-    d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = 1; }
-  const t = new THREE.DataTexture(d, W, H, THREE.RGBAFormat, THREE.FloatType); t.mapping = THREE.EquirectangularReflectionMapping; t.needsUpdate = true; return t; }
-async function vizShot(opt = {}) {
-  const ios = isIOS(), CW = opt.w || (ios ? 750 : 1200), CH = opt.h || (ios ? 1000 : 1600), T = opt.t || (ios ? 12000 : 22000), maxS = opt.s || (ios ? 160 : 400);
-  const ov = document.createElement('div'); ov.id = 'vizOv'; ov.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;background:rgba(20,20,22,.55);color:#fff;font:600 16px system-ui;text-align:center;padding:20px';
-  ov.textContent = 'Создаю визуализацию…'; document.body.appendChild(ov); await new Promise(r => setTimeout(r, 30));
-  let mod; try { mod = await import('three-gpu-pathtracer'); } catch (er) { ov.remove(); msg('Визуализация недоступна в этом браузере'); throw er; }
-  const sw = [], hid = [], sv = { pos: camera.position.clone(), q: camera.quaternion.clone(), pr: renderer.getPixelRatio(), env: scene.environment, bg: scene.background, ei: scene.environmentIntensity };
-  const sel = { it: cur.it, sp: selPost }; if (sel.it >= 0 || sel.sp) { cur.it = -1; selPost = null; histLock = true; rebuild(); histLock = false; }
-  flashG.visible = false; snapLine.visible = false;
-  const hide = o => { if (o.visible) { o.visible = false; hid.push(o); } };
-  scene.traverse(o => { if (o.isSprite || o.isLine || o.isLineSegments || o.isPoints || o.userData.dims || o.userData.contact || o === catcher) { hide(o); return; }
-    if (!o.isMesh || !o.material || Array.isArray(o.material)) return; const m = o.material;
-    if (m.isShadowMaterial || (m.isMeshBasicMaterial && (m.transparent || m.opacity < 1 || m.blending !== THREE.NormalBlending))) { hide(o); return; }
-    let n = null;
-    if (m.isMeshBasicMaterial) { n = m.map && m.toneMapped === false ? new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: m.map, emissiveIntensity: 1.3, side: m.side }) : new THREE.MeshStandardMaterial({ color: m.color, map: m.map, roughness: 0.9, side: m.side }); }
-    else if (m.emissive && (m.emissive.r + m.emissive.g + m.emissive.b) > 0.001) { n = m.clone(); n.emissive = new THREE.Color(0); n.emissiveMap = null; if (m.emissiveMap) n.color.multiplyScalar(1.25); }
-    if (n) { sw.push([o, m]); o.material = n; } });
-  M.rod && sw.length; scene.environment = skyEquirect(); scene.background = scene.environment; if ('environmentIntensity' in scene) scene.environmentIntensity = 1;
-  renderer.setPixelRatio(1); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix(); if (orb.on) applyCam();
-  ['environmentRotation', 'backgroundRotation'].forEach(k => { if (!(k in THREE.Scene.prototype)) Object.defineProperty(THREE.Scene.prototype, k, { configurable: true, get() { return this['_' + k] || (this['_' + k] = new THREE.Euler()); }, set(v) { this['_' + k] = v; } }); });
-  const pt = new mod.WebGLPathTracer(renderer); pt.renderToCanvas = true; pt.tiles.set(ios ? 3 : 2, ios ? 3 : 2); pt.bounces = ios ? 4 : 6; pt.filterGlossyFactor = 0.5; pt.minSamples = 1; pt.dynamicLowRes = false; pt.renderScale = 1;
-  const t0 = performance.now(); let out;
-  try { pt.setScene(scene, camera);
-    while (pt.samples < maxS && performance.now() - t0 < T) { pt.renderSample(); if ((pt.samples | 0) % 2 === 0) { ov.textContent = 'Создаю визуализацию… ' + Math.min(99, Math.round(100 * Math.max(pt.samples / maxS, (performance.now() - t0) / T))) + '%'; await new Promise(r => requestAnimationFrame(r)); } }
-    out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
-    g.filter = 'blur(0.6px)'; g.drawImage(renderer.domElement, 0, 0, CW, CH); g.filter = 'none';
-    const im = g.getImageData(0, 0, CW, CH), d = im.data; // gentle filmic grade: soft toe/shoulder, warm highlights, light vignette
-    for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) { const i = (y * CW + x) * 4, vx = (x / CW - 0.5), vy = (y / CH - 0.5), vg = 1 - 0.22 * Math.min(1, (vx * vx + vy * vy) * 2.2);
-      for (let c = 0; c < 3; c++) { let v = d[i + c] / 255; v = v * v * (3 - 2 * v) * 0.35 + v * 0.65; v = v * (c === 0 ? 1.015 : c === 2 ? 0.975 : 1) * vg; d[i + c] = Math.max(0, Math.min(255, v * 255 + 2)); } }
-    g.putImageData(im, 0, 0);
-  } finally {
-    window.__vizInfo = { samples: pt.samples, ms: Math.round(performance.now() - t0), w: CW, h: CH }; try { pt.dispose(); } catch (er) {}
-    sw.forEach(([o, m]) => { o.material.dispose(); o.material = m; }); hid.forEach(o => o.visible = true); scene.environment.dispose(); scene.environment = sv.env; scene.background = sv.bg; if (sv.ei != null) scene.environmentIntensity = sv.ei;
-    flashG.visible = true; if (sel.it >= 0 || sel.sp) { cur.it = sel.it; selPost = sel.sp; histLock = true; rebuild(); histLock = false; }
-    renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q); if (orb.on) applyCam(); ov.remove(); }
-  window.__vizOut = out; if (!opt.noSave) camShot(out, 'garderob-viz-' + new Date().toISOString().slice(0, 10) + '-' + CW + 'x' + CH + '.png');
-  return out;
-}
-{ const pop = document.createElement('div'); pop.id = 'shotPop'; pop.className = 'hide'; pop.innerHTML = '<button data-sh="snap">📷 Снимок</button><button data-sh="viz">✨ Визуализация</button><p class="foot">Визуализация — реалистичный свет, 10–30 с</p>'; document.body.appendChild(pop);
-  $('camBtn').onclick = e => { e.stopPropagation(); const r = $('camBtn').getBoundingClientRect(); pop.style.bottom = (innerHeight - r.top + 8) + 'px'; pop.style.right = Math.max(6, innerWidth - r.right) + 'px'; pop.classList.toggle('hide'); };
-  pop.querySelector('[data-sh=snap]').onclick = () => { pop.classList.add('hide'); try { camShot(); } catch (er) { msg('Не удалось сделать снимок'); } };
-  pop.querySelector('[data-sh=viz]').onclick = () => { pop.classList.add('hide'); vizShot().catch(er => { console.warn(er); msg('Не удалось создать визуализацию'); }); };
-  document.addEventListener('pointerdown', e => { if (!pop.contains(e.target) && !$('camBtn').contains(e.target)) pop.classList.add('hide'); }); }
-window.__gs && (window.__gs.viz = vizShot);
 
 // iPhone: show the shot as a plain <img>; long-press → «Сохранить в Фото» (no iCloud/Files needed); «Поделиться» as an extra
 function showShot(cv, name) { const url = cv.toDataURL('image/jpeg', 0.92), ov = document.createElement('div'); ov.id = 'shotOv';
@@ -2149,3 +1992,19 @@ function showShot(cv, name) { const url = cv.toDataURL('image/jpeg', 0.92), ov =
   ov.querySelector('img').src = url; document.body.appendChild(ov); ov.querySelector('.x').onclick = () => ov.remove();
   const shb = ov.querySelector('.sh'); if (!navigator.share) shb.remove();
   shb.onclick = () => { fetch(url).then(r => r.blob()).then(b => { const f = new File([b], name.replace(/\.png$/, '.jpg'), { type: 'image/jpeg' }); return navigator.share(navigator.canShare && navigator.canShare({ files: [f] }) ? { files: [f] } : { url: location.href }); }).catch(() => {}); }; }
+// rug: a tap selects it; only a selected rug follows one finger; a second finger always goes to the camera
+{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0), TP = new Set(); let pd = null, sel = null, tap = null;
+  addEventListener('pointerdown', e => TP.add(e.pointerId), true);
+  const clr = () => { pd = null; window.__rugDrag = false; };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => addEventListener(t, e => { TP.delete(e.pointerId); if (pd && pd.id === e.pointerId) { clr(); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); } if (!TP.size) clr(); }, true));
+  ['touchend', 'touchcancel'].forEach(t => addEventListener(t, e => { if (!e.touches || !e.touches.length) { TP.clear(); clr(); } }, true)); addEventListener('blur', () => { TP.clear(); clr(); });
+  const ray = e => { const r = el.getBoundingClientRect(); RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); };
+  el.addEventListener('pointerdown', e => { if (TP.size > 1) { clr(); tap = null; return; } if (!orb.on || e.button !== 0 || !S.rug || !decor.visible) return; ray(e);
+    const m = decor.children.find(c => c.userData.rug); if (!m) return; const h = RC.intersectObjects(decor.children, true)[0];
+    if (!h || !h.object.userData.rug) { if (sel) { sel = null; hlOnly(null); } return; }
+    const mh = pickHits(e)[0]; if (mh && mh.distance < h.distance) return;
+    if (sel !== m) { tap = { m, id: e.pointerId, x: e.clientX, y: e.clientY }; return; }
+    const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return; pd = { m, dx: m.position.x - q.x, dz: m.position.z - q.z, id: e.pointerId }; window.__rugDrag = true; }, true);
+  el.addEventListener('pointerup', e => { const t = tap; tap = null; if (!t || t.id !== e.pointerId || Math.hypot(e.clientX - t.x, e.clientY - t.y) > 10) return; sel = t.m; hlOnly(t.m); }, true);
+  el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id || TP.size > 1) return; e.stopImmediatePropagation(); ray(e); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
+    let x = q.x + pd.dx, z = Math.max(0.3, Math.min(9, q.z + pd.dz)); if (ROOMB) x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, x)); pd.m.position.x = x; pd.m.position.z = z; S.rug.x = x; S.rug.z = z; }, true); }
