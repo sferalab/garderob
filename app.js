@@ -112,7 +112,7 @@ const view = $('view');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: false });
 const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 3 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
 renderer.setPixelRatio(PR);
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = CAMEXP();
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 view.appendChild(renderer.domElement);
@@ -999,10 +999,14 @@ function syncFromCam(kind) {
 }
 function applyCam(cam = camera) {
   const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.h = Math.max(o.T.y - o.R * 20, Math.min(o.T.y + o.R * 20, o.h)); // up to ~87 deg above/below: straight-down view possible
+  o.h = Math.max(0.08, o.T.y - o.R * 20, Math.min(o.T.y + o.R * 20, o.h)); // camera never dips under the floor (floor stays visible) // up to ~87 deg above/below: straight-down view possible
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   // plain perspective: true tilt at every angle, no lens shift, free orbit all around (walls facing the camera hide via tickOcc) // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
-  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.T.y, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  // two-point perspective: level camera + vertical lens shift keeps verticals straight at normal angles;
+  // the shift is capped (30°) so the image never stretches, and from 40° to 65° it hands over smoothly to a real tilt
+  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, bt = Math.max(0, Math.min(1, (ea - 40 * D2R) / (25 * D2R))), sh = Math.min(ea, 30 * D2R) * (1 - bt * bt * (3 - 2 * bt)), p = Math.sign(a) * (ea - sh);
+  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  if (sh > 1e-4) { const yN = -Math.tan(Math.sign(a) * sh) / Math.tan(cam.fov * Math.PI / 360), H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); }
 }
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
@@ -1086,7 +1090,21 @@ let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
 function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
-renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+// live AO: plain render while anything moves; ~200 ms after the view settles render once with SAO and hold that frame
+const LV = { t: performance.now(), key: '', done: false, comp: null, w: 0, h: 0 }; window.__lv = LV;
+const liveAct = () => { LV.t = performance.now(); LV.done = false; };
+['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown', 'input', 'change', 'click', 'resize'].forEach(t => addEventListener(t, liveAct, { capture: true, passive: true }));
+function liveComp() { const W = renderer.domElement.width, H = renderer.domElement.height; if (!POST) return null;
+  if (!LV.comp || LV.w !== W || LV.h !== H) { try { LV.comp && LV.comp.dispose(); const c = new POST.EffectComposer(renderer); c.setPixelRatio(1); c.setSize(W, H); c.addPass(new POST.RenderPass(scene, camera)); const sao = new POST.SAOPass(scene, camera); Object.assign(sao.params, { saoIntensity: 0.012, saoScale: 1.0, saoKernelRadius: 24, saoBias: 0.5, saoMinResolution: 0, saoBlur: true, saoBlurRadius: 8, saoBlurStdDev: 4, saoBlurDepthCutoff: 0.01 }); c.addPass(sao); c.addPass(new POST.OutputPass()); LV.comp = c; LV.w = W; LV.h = H; } catch (e) { LV.comp = null; } }
+  return LV.comp; }
+renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc();
+  const e = camera.matrixWorld.elements, key = e.map(v => v.toFixed(4)).join() + camera.projectionMatrix.elements[0].toFixed(4); if (key !== LV.key) { LV.key = key; liveAct(); }
+  if (renderer.shadowMap.needsUpdate) liveAct();
+  const idle = performance.now() - LV.t > 220;
+  if (!idle) renderer.render(scene, camera);
+  else if (!LV.done) { const c = liveComp(); if (c) c.render(); else renderer.render(scene, camera); LV.done = true; window.__aoFrames = (window.__aoFrames || 0) + (c ? 1 : 0); }
+  adapt(); });
+const _rb0 = rebuild; rebuild = function () { liveAct(); return _rb0.apply(this, arguments); };
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -1602,7 +1620,7 @@ fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) 
 // iOS settles the canvas size late (toolbar, safe areas): refit once the final size is known
 { const late = () => { if (lastCam === 'card') return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late);
   if (window.visualViewport) { let vt = 0; visualViewport.addEventListener('resize', () => { clearTimeout(vt); vt = setTimeout(late, 150); }); } }
-const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+const _x=0;window.__gs = { vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [0.05, 1.5]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
 // ---------- v4 extra controls ----------
 $('rS').oninput = e => { $('fS').value = e.target.value; S.walls[cur.w].sections.forEach(x => x.w = +e.target.value); clearTimeout(dimT); dimT = setTimeout(rebuild, 40); };
@@ -1889,7 +1907,7 @@ function snap34() {
   if (!comp) renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   if (photoImg && !$('showRoom').checked) { const s = Math.max(CW / photoImg.width, CH / photoImg.height), iw = photoImg.width * s, ih = photoImg.height * s; g.drawImage(photoImg, (CW - iw) / 2, (CH - ih) / 2, iw, ih); }
-  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH); if (comp) comp.dispose();
+  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH); if (comp) comp.dispose(); { const vg = g.createRadialGradient(CW / 2, CH / 2, CH * 0.38, CW / 2, CH / 2, CH * 0.78); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.16)'); g.fillStyle = vg; g.fillRect(0, 0, CW, CH); }
   sun.shadow.mapSize.set(sm, sm); renderer.shadowMap.needsUpdate = true; sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q); if (orb.on) applyCam();
   return out;
@@ -2017,7 +2035,7 @@ function showShot(cv, name) { const url = cv.toDataURL('image/jpeg', 0.92), ov =
 // (debounced), not every frame; walls and floor receive it, so cast shadows of uprights/shelves/rails and the darker corner read at every angle
 var _bk = 0; function bakeShadows() { if (S.studio || (photo && !$('showRoom').checked)) { renderer.shadowMap.autoUpdate = true; return; }
   const c = bbox.getCenter(new THREE.Vector3()); renderer.shadowMap.autoUpdate = false; sun.castShadow = true;
-  sun.position.set(c.x - 2.6, c.y + 3.6, c.z + 3.4); sun.target.position.set(c.x, c.y * 0.6, 0); sun.target.updateMatrixWorld();
-  Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 0.3, far: 16 }); sun.shadow.camera.updateProjectionMatrix(); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02; sun.shadow.radius = 7; sun.shadow.blurSamples = 12;
-  clearTimeout(_bk); renderer.shadowMap.needsUpdate = true; _bk = setTimeout(() => { sun.castShadow = true; sun.position.set(c.x - 2.6, c.y + 3.6, c.z + 3.4); let n = 12; const f = () => { renderer.shadowMap.needsUpdate = true; if (--n > 0) requestAnimationFrame(f); }; f(); }, 180); }
+  const sg = S.layout === 'Lr' ? -1 : 1; sun.color.set(0xfff1e0); sun.position.set(c.x + sg * 2.4, c.y + 3.8, c.z + 3.6); sun.target.position.set(c.x - sg * 0.6, c.y * 0.6, 0.3); sun.target.updateMatrixWorld();
+  Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 0.3, far: 20 }); sun.shadow.camera.updateProjectionMatrix(); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02; sun.shadow.radius = 7; sun.shadow.blurSamples = 12;
+  clearTimeout(_bk); renderer.shadowMap.needsUpdate = true; _bk = setTimeout(() => { sun.castShadow = true; sun.color.set(0xfff1e0); sun.position.set(c.x + sg * 2.4, c.y + 3.8, c.z + 3.6); let n = 12; const f = () => { renderer.shadowMap.needsUpdate = true; if (--n > 0) requestAnimationFrame(f); }; f(); }, 180); }
 setInterval(() => { if (!renderer.shadowMap.autoUpdate && sun.castShadow && !sun.shadow.map) renderer.shadowMap.needsUpdate = true; }, 250);
