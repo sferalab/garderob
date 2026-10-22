@@ -110,9 +110,9 @@ function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v
 // ---------- renderer ----------
 const view = $('view');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: false });
-const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 3 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
+const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 2 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
 renderer.setPixelRatio(PR);
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; renderer.shadowMap.autoUpdate = false; // shadow map only re-rendered after changes
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = CAMEXP();
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 view.appendChild(renderer.domElement);
@@ -120,7 +120,7 @@ const scene = new THREE.Scene();
 const pm = new THREE.PMREMGenerator(renderer);
 scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 // indoor HDRI (Poly Haven studio_small_09, CC0) for metal/chrome reflections; background unchanged
-import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; const old = scene.environment; scene.environment = pm.fromEquirectangular(t).texture; t.dispose(); old && old.dispose && old.dispose(); })).catch(() => {});
+import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; window.HDR_ENV = pm.fromEquirectangular(t).texture; t.dispose(); try { applyGlareShadow(); } catch (e) {} })).catch(() => {});
 // SSAO only for the 📷 snapshot (loaded in the background, never used in the live view)
 let POST = null; Promise.all(['postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/SAOPass.js', 'postprocessing/OutputPass.js'].map(f => import('three/addons/' + f))).then(m => { POST = Object.assign({}, ...m); }).catch(() => {});
 const camera = new THREE.PerspectiveCamera(35, 1, 0.08, 40);
@@ -168,7 +168,7 @@ function carpetTex() {
 }
 function floorMat() {
   const [n, mx, tint, , , my] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
-  if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2 }); }
+  if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2, userData: { floor: true } }); }
   return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: S.floor === 'marble' ? 0.5 : S.floor === 'conc' ? 0.15 : 0.06, clearcoatRoughness: S.floor === 'marble' ? 0.2 : 0.5, envMapIntensity: S.floor === 'marble' ? 0.7 : 0.4, specularIntensity: S.floor === 'marble' ? 1 : 0.35 });
 }
 let PAPER;
@@ -278,8 +278,12 @@ let CONTACT;
 const CONTACTS = {};
 function contactMat(f = 18, op = 0.6) {
   CONTACT = CONTACTS[f]; if (!CONTACT) { const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(0,0,0,0.62)'); gr.addColorStop(0.3, 'rgba(0,0,0,0.42)'); gr.addColorStop(0.65, 'rgba(0,0,0,0.14)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 64);
-    const m = g.getImageData(0, 0, 128, 64); for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const k = Math.min(1, Math.min(x, 127 - x) / f); m.data[(y * 128 + x) * 4 + 3] *= k; } g.putImageData(m, 0, 0); CONTACT = CONTACTS[f] = new THREE.CanvasTexture(c); }
-  return new THREE.MeshBasicMaterial({ map: CONTACT, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -16 });
+    const m = g.getImageData(0, 0, 128, 64); for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const k = Math.min(1, Math.min(x, 127 - x) / f); m.data[(y * 128 + x) * 4 + 3] *= k; } g.putImageData(m, 0, 0); CONTACT = CONTACTS[f] = c; }
+  // fresh texture per material from the cached canvas: a shared texture got disposed by rebuild and the shadow vanished
+  const id = CONTACTS[f].getContext('2d').getImageData(0, 0, 128, 64), dd = new Uint8Array(128 * 64 * 4);
+  for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const i = (y * 128 + x) * 4, a = Math.round(255 * Math.max(0, 0.62 - 0.62 * y / 63) * Math.min(1, Math.min(x, 127 - x) / f)); dd[i] = dd[i + 1] = dd[i + 2] = 0; dd[i + 3] = a; }
+  const tx = new THREE.DataTexture(dd, 128, 64); tx.flipY = true; tx.needsUpdate = true;
+  return new THREE.MeshBasicMaterial({ map: tx, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -16 });
 }
 
 // ---------- materials ----------
@@ -649,7 +653,7 @@ function buildRoom() {
     const sh = new THREE.Shape(); sh.moveTo(-w / 2, -WH / 2); sh.lineTo(w / 2, -WH / 2); sh.lineTo(w / 2, WH / 2); sh.lineTo(-w / 2, WH / 2); sh.lineTo(-w / 2, -WH / 2);
     holes.forEach(o => { const x0 = o.c - o.w / 2, y0 = Math.max(o.b, 0.002) - WH / 2, p = new THREE.Path(); p.moveTo(x0, y0); p.lineTo(x0 + o.w, y0); p.lineTo(x0 + o.w, o.b + o.h - WH / 2); p.lineTo(x0, o.b + o.h - WH / 2); p.lineTo(x0, y0); sh.holes.push(p); });
     const geo = new THREE.ShapeGeometry(sh), grp = new THREE.Group(); grp.position.set(x, WH / 2, z); grp.rotation.y = ry; parent.add(grp);
-    if (!ST) { const wm = new THREE.Mesh(geo, wallMat()); wm.receiveShadow = true; grp.add(wm); }
+    if (!ST) { const wm = new THREE.Mesh(geo, wallMat()); wm.receiveShadow = S.room.shP === 'sun'; grp.add(wm); }
     const q = new THREE.Mesh(geo, wallShadowMat()); q.receiveShadow = true; grp.add(q);
     holes.forEach(o => buildOpening(grp, o, WH)); grp.userData.wallG = true; return grp;
   };
@@ -1090,21 +1094,7 @@ let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
 function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
-// live AO: plain render while anything moves; ~200 ms after the view settles render once with SAO and hold that frame
-const LV = { t: performance.now(), key: '', done: false, comp: null, w: 0, h: 0 }; window.__lv = LV;
-const liveAct = () => { LV.t = performance.now(); LV.done = false; };
-['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown', 'input', 'change', 'click', 'resize'].forEach(t => addEventListener(t, liveAct, { capture: true, passive: true }));
-function liveComp() { const W = renderer.domElement.width, H = renderer.domElement.height; if (!POST) return null;
-  if (!LV.comp || LV.w !== W || LV.h !== H) { try { LV.comp && LV.comp.dispose(); const c = new POST.EffectComposer(renderer); c.setPixelRatio(1); c.setSize(W, H); c.addPass(new POST.RenderPass(scene, camera)); const sao = new POST.SAOPass(scene, camera); Object.assign(sao.params, { saoIntensity: 0.012, saoScale: 1.0, saoKernelRadius: 24, saoBias: 0.5, saoMinResolution: 0, saoBlur: true, saoBlurRadius: 8, saoBlurStdDev: 4, saoBlurDepthCutoff: 0.01 }); c.addPass(sao); c.addPass(new POST.OutputPass()); LV.comp = c; LV.w = W; LV.h = H; } catch (e) { LV.comp = null; } }
-  return LV.comp; }
-renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc();
-  const e = camera.matrixWorld.elements, key = e.map(v => v.toFixed(4)).join() + camera.projectionMatrix.elements[0].toFixed(4); if (key !== LV.key) { LV.key = key; liveAct(); }
-  if (renderer.shadowMap.needsUpdate) liveAct();
-  const idle = performance.now() - LV.t > 220;
-  if (!idle) renderer.render(scene, camera);
-  else if (!LV.done) { const c = liveComp(); if (c) c.render(); else renderer.render(scene, camera); LV.done = true; window.__aoFrames = (window.__aoFrames || 0) + (c ? 1 : 0); }
-  adapt(); });
-const _rb0 = rebuild; rebuild = function () { liveAct(); return _rb0.apply(this, arguments); };
+renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -1184,9 +1174,9 @@ function applyGlareShadow() {
   // metal highlights: a key light from the front right that the powder coat and chrome catch as the view turns
   specL.intensity = gmode === 'bright' ? 2.2 : gmode === 'soft' ? 0.5 : 0; specL.target.position.copy(c); tickSpec();
   const gm = { soft: 1, bright: 1, off: 0.35 }[gmode];
-  scene.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial && !o.material.isMeshPhysicalMaterial && o.material !== M.chrome && !o.material.userData.wall) o.material.envMapIntensity = (o.material.metalness > 0.6 ? 1.0 : 0.9) * gm; });
+  scene.traverse(o => { if (!o.isMesh || !o.material || !o.material.isMeshStandardMaterial) return; const m = o.material; if (m.metalness > 0.5 && window.HDR_ENV && m.envMap !== window.HDR_ENV) { m.envMap = window.HDR_ENV; m.needsUpdate = true; } if (m.userData.floor) { m.envMapIntensity = 0.2; return; } if (!m.isMeshPhysicalMaterial && m !== M.chrome && !m.userData.wall) m.envMapIntensity = (m.metalness > 0.6 ? 1.0 : 0.9) * gm; });
   sunMode();
-  bakeShadows();
+  renderer.shadowMap.needsUpdate = true; setTimeout(() => { renderer.shadowMap.needsUpdate = true; }, 120);
 }
 function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(S.studio ? (S.bg || '#e2ded7') : S.room && S.room.ceiling ? '#fbfbf9' : '#e9e6e0'); }
 
@@ -1668,7 +1658,9 @@ function wbShot() {
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q);
 };
 
-$('niceBtn').onclick = () => { lastCam = 'nice'; camTo('nice'); rebuildDims(); };
+$('niceBtn').onclick = () => { lastCam = 'nice'; if (!orb.on) { camTo('nice'); rebuildDims(); return; } const a0 = { az: orb.az, el: Math.atan2(orb.h - orb.T.y, orb.R) }, T0 = orb.T.clone(), D0 = Math.hypot(orb.R, orb.h - orb.T.y);
+  camTo('nice'); const a1 = { az: orb.az, el: Math.atan2(orb.h - orb.T.y, orb.R) }; orb.T.copy(T0); let da = a1.az - a0.az; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; const t0 = performance.now();
+  const st = () => { const k = Math.min(1, (performance.now() - t0) / 450), e = k * k * (3 - 2 * k), el = a0.el + (a1.el - a0.el) * e; orb.az = a0.az + da * e; orb.R = D0 * Math.cos(el); orb.h = orb.T.y + D0 * Math.sin(el); if (k < 1) requestAnimationFrame(st); else rebuildDims(); }; st(); };
 
 { const o = $('ceilT').onchange; $('ceilT').onchange = e => { o(e); setBg(); }; }
 // ---------- stepper ----------
@@ -1903,7 +1895,7 @@ function snap34() {
   sun.shadow.mapSize.set(4096, 4096); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(1); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix(); if (orb.on) applyCam();
   renderer.shadowMap.needsUpdate = true; let comp = null;
-  try { if (POST) { comp = new POST.EffectComposer(renderer); comp.setSize(CW, CH); comp.addPass(new POST.RenderPass(scene, camera)); const sao = new POST.SAOPass(scene, camera); Object.assign(sao.params, { saoIntensity: 0.025, saoScale: 3, saoKernelRadius: 28, saoBias: 0.5, saoMinResolution: 0, saoBlur: true, saoBlurRadius: 6 }); comp.addPass(sao); comp.addPass(new POST.OutputPass()); comp.render(); } } catch (er) { comp = null; }
+  try { if (POST && !isIOS() && !matchMedia('(pointer: coarse)').matches) { comp = new POST.EffectComposer(renderer); comp.setSize(CW, CH); comp.addPass(new POST.RenderPass(scene, camera)); const sao = new POST.SAOPass(scene, camera); Object.assign(sao.params, { saoIntensity: 0.025, saoScale: 3, saoKernelRadius: 28, saoBias: 0.5, saoMinResolution: 0, saoBlur: true, saoBlurRadius: 6 }); comp.addPass(sao); comp.addPass(new POST.OutputPass()); comp.render(); } } catch (er) { comp = null; }
   if (!comp) renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   if (photoImg && !$('showRoom').checked) { const s = Math.max(CW / photoImg.width, CH / photoImg.height), iw = photoImg.width * s, ih = photoImg.height * s; g.drawImage(photoImg, (CW - iw) / 2, (CH - ih) / 2, iw, ih); }
