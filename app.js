@@ -119,6 +119,10 @@ view.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const pm = new THREE.PMREMGenerator(renderer);
 scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+// indoor HDRI (Poly Haven studio_small_09, CC0) for metal/chrome reflections; background unchanged
+import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; const old = scene.environment; scene.environment = pm.fromEquirectangular(t).texture; t.dispose(); old && old.dispose && old.dispose(); })).catch(() => {});
+// SSAO only for the 📷 snapshot (loaded in the background, never used in the live view)
+let POST = null; Promise.all(['postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/SAOPass.js', 'postprocessing/OutputPass.js'].map(f => import('three/addons/' + f))).then(m => { POST = Object.assign({}, ...m); }).catch(() => {});
 const camera = new THREE.PerspectiveCamera(35, 1, 0.08, 40);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minPolarAngle = 0.05; controls.maxPolarAngle = Math.PI - 0.05; controls.minDistance = 0.5; controls.maxDistance = 30;
@@ -645,7 +649,7 @@ function buildRoom() {
     const sh = new THREE.Shape(); sh.moveTo(-w / 2, -WH / 2); sh.lineTo(w / 2, -WH / 2); sh.lineTo(w / 2, WH / 2); sh.lineTo(-w / 2, WH / 2); sh.lineTo(-w / 2, -WH / 2);
     holes.forEach(o => { const x0 = o.c - o.w / 2, y0 = Math.max(o.b, 0.002) - WH / 2, p = new THREE.Path(); p.moveTo(x0, y0); p.lineTo(x0 + o.w, y0); p.lineTo(x0 + o.w, o.b + o.h - WH / 2); p.lineTo(x0, o.b + o.h - WH / 2); p.lineTo(x0, y0); sh.holes.push(p); });
     const geo = new THREE.ShapeGeometry(sh), grp = new THREE.Group(); grp.position.set(x, WH / 2, z); grp.rotation.y = ry; parent.add(grp);
-    if (!ST) { const wm = new THREE.Mesh(geo, wallMat()); wm.receiveShadow = S.room.shP === 'sun'; grp.add(wm); }
+    if (!ST) { const wm = new THREE.Mesh(geo, wallMat()); wm.receiveShadow = true; grp.add(wm); }
     const q = new THREE.Mesh(geo, wallShadowMat()); q.receiveShadow = true; grp.add(q);
     holes.forEach(o => buildOpening(grp, o, WH)); grp.userData.wallG = true; return grp;
   };
@@ -1164,6 +1168,7 @@ function applyGlareShadow() {
   const gm = { soft: 1, bright: 1, off: 0.35 }[gmode];
   scene.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial && !o.material.isMeshPhysicalMaterial && o.material !== M.chrome && !o.material.userData.wall) o.material.envMapIntensity = (o.material.metalness > 0.6 ? 1.0 : 0.9) * gm; });
   sunMode();
+  bakeShadows();
 }
 function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(S.studio ? (S.bg || '#e2ded7') : S.room && S.room.ceiling ? '#fbfbf9' : '#e9e6e0'); }
 
@@ -1879,11 +1884,13 @@ function snap34() {
   const CW = 1800, CH = 2400, sv = { pos: camera.position.clone(), q: camera.quaternion.clone(), pr: renderer.getPixelRatio() }, sm = sun.shadow.mapSize.x;
   sun.shadow.mapSize.set(4096, 4096); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(1); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix(); if (orb.on) applyCam();
-  renderer.render(scene, camera);
+  renderer.shadowMap.needsUpdate = true; let comp = null;
+  try { if (POST) { comp = new POST.EffectComposer(renderer); comp.setSize(CW, CH); comp.addPass(new POST.RenderPass(scene, camera)); const sao = new POST.SAOPass(scene, camera); Object.assign(sao.params, { saoIntensity: 0.025, saoScale: 3, saoKernelRadius: 28, saoBias: 0.5, saoMinResolution: 0, saoBlur: true, saoBlurRadius: 6 }); comp.addPass(sao); comp.addPass(new POST.OutputPass()); comp.render(); } } catch (er) { comp = null; }
+  if (!comp) renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   if (photoImg && !$('showRoom').checked) { const s = Math.max(CW / photoImg.width, CH / photoImg.height), iw = photoImg.width * s, ih = photoImg.height * s; g.drawImage(photoImg, (CW - iw) / 2, (CH - ih) / 2, iw, ih); }
-  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH);
-  sun.shadow.mapSize.set(sm, sm); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
+  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH); if (comp) comp.dispose();
+  sun.shadow.mapSize.set(sm, sm); renderer.shadowMap.needsUpdate = true; sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q); if (orb.on) applyCam();
   return out;
 }
@@ -2005,3 +2012,12 @@ function showShot(cv, name) { const url = cv.toDataURL('image/jpeg', 0.92), ov =
   el.addEventListener('pointerup', e => { const t = tap; tap = null; if (!t || t.id !== e.pointerId || Math.hypot(e.clientX - t.x, e.clientY - t.y) > 10) return; sel = t.m; hlOnly(t.m); }, true);
   el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id || TP.size > 1) return; e.stopImmediatePropagation(); ray(e); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
     let x = q.x + pd.dx, z = Math.max(0.3, Math.min(9, q.z + pd.dz)); if (ROOMB) x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, x)); pd.m.position.x = x; pd.m.position.z = z; S.rug.x = x; S.rug.z = z; }, true); }
+
+// baked soft shadows: the sun shadow map (light from the upper front left) is rendered only after a configuration change
+// (debounced), not every frame; walls and floor receive it, so cast shadows of uprights/shelves/rails and the darker corner read at every angle
+var _bk = 0; function bakeShadows() { if (S.studio || (photo && !$('showRoom').checked)) { renderer.shadowMap.autoUpdate = true; return; }
+  const c = bbox.getCenter(new THREE.Vector3()); renderer.shadowMap.autoUpdate = false; sun.castShadow = true;
+  sun.position.set(c.x - 2.6, c.y + 3.6, c.z + 3.4); sun.target.position.set(c.x, c.y * 0.6, 0); sun.target.updateMatrixWorld();
+  Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 0.3, far: 16 }); sun.shadow.camera.updateProjectionMatrix(); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02; sun.shadow.radius = 7; sun.shadow.blurSamples = 12;
+  clearTimeout(_bk); renderer.shadowMap.needsUpdate = true; _bk = setTimeout(() => { sun.castShadow = true; sun.position.set(c.x - 2.6, c.y + 3.6, c.z + 3.4); let n = 12; const f = () => { renderer.shadowMap.needsUpdate = true; if (--n > 0) requestAnimationFrame(f); }; f(); }, 180); }
+setInterval(() => { if (!renderer.shadowMap.autoUpdate && sun.castShadow && !sun.shadow.map) renderer.shadowMap.needsUpdate = true; }, 250);
