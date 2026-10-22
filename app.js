@@ -935,7 +935,7 @@ function rebuild() {
   buildDecor(bbox.getCenter(new THREE.Vector3()));
   { const sz = bbox.getSize(new THREE.Vector3()), k = S.layout.replace('Lr', 'L') + ':' + sz.x.toFixed(2) + ':' + sz.z.toFixed(2); if (window.__fitK && window.__fitK !== k && orb.on && !histLock) setTimeout(fitView, 0); window.__fitK = k; } // width / type changed: refit
   rebuildDims();
-  if (cur.it >= 0) model.traverse(o => { const r = o.userData.ref; if (r && r.wi === cur.w && r.si === cur.s && r.ii === cur.it) o.traverse(m => { if (m.isMesh && m.material && m.material.emissive && !m.userData.contact) { m.material = m.material.clone(); m.material.emissive.set(0x2f7bff); m.material.emissiveIntensity = 0.5; } }); });
+  if (cur.it >= 0) model.traverse(o => { const r = o.userData.ref; if (r && r.wi === cur.w && r.si === cur.s && r.ii === cur.it) hlOn(o); });
   const c = bbox.getCenter(new THREE.Vector3());
   sun.position.set(c.x + 2.5, 4.5, 5); sun.target.position.copy(c); applyLights(); applyGlareShadow(); pushHist();
   catcher.visible = !!photo && !$('showRoom').checked;
@@ -998,7 +998,7 @@ function applyCam(cam = camera) {
   o.h = Math.max(0.05, Math.min(o.T.y + o.R * 4, Math.max(o.h, o.T.y - o.R * 3)));
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   if (ROOMB && !S.studio) { cam.position.x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, cam.position.x)); cam.position.z = Math.max(0.4, cam.position.z); }
-  const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 0.42);
+  const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 0.62); // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   const yN = -Math.tan(a - p) / Math.tan(cam.fov * Math.PI / 360);
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
@@ -1057,6 +1057,11 @@ function fitView() { if (!orb.on || !WG.length) return; const b = meshBox(); if 
     const k = Math.max(0.5, Math.min(2, s)); orb.h = orb.T.y + (orb.h - orb.T.y) * k; orb.R *= k;
     if (Math.abs(s - 1) < 0.02 && Math.abs(dx) < 0.005 && Math.abs(dy) < 0.005) break; }
   applyCam(); if (WG.length) rebuildDims(); }
+// selection highlight: blue tint in the color itself plus emissive, so it reads on white (clamped) and black metal alike
+function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.contact || m.userData.hlOrig || Array.isArray(m.material)) return; const o = m.material, c = o.clone(); m.userData.hlOrig = o;
+  if (c.color) c.color.set(0x5b9bff); if (c.emissive) { c.emissive.set(0x1f66ff); c.emissiveIntensity = 0.55; } if (c.map && c.color) c.color.set(0x8fbaff); if ('sheen' in c) c.sheen = 0; m.material = c; }); }
+function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
+let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
 function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') fitView(); }
 function camTo0(kind) {
   if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
@@ -1078,7 +1083,7 @@ let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
 function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
-renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else controls.update(); tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -1602,7 +1607,7 @@ function deselectAll() { const had = cur.it >= 0 || selPost; selPost = null; $('
   }, true); }
 function handleTap(e) {
     if (window.__plantTap) { window.__plantTap = false; return; }
-    if (window.__plantSel >= 0) { window.__plantSel = -1; $('delBtn').classList.add('hide'); }
+    if (window.__plantSel >= 0) { window.__plantSel = -1; hlOnly(null); $('delBtn').classList.add('hide'); }
     const hits = pickHits(e); closeMenus();
     if (!hits.length) { const t = performance.now(), L = window.__lastEmpty; window.__lastEmpty = { t, x: e.clientX, y: e.clientY }; if (L && t - L.t < 380 && Math.hypot(e.clientX - L.x, e.clientY - L.y) < 40) { window.__lastEmpty = null; $('niceBtn').click(); } return deselectAll(); }
     const h0 = hits[0];
@@ -1885,7 +1890,7 @@ function camShot() {
   el.addEventListener('pointerdown', e => { if (!orb.on || e.button !== 0 || !decor.visible || !(S.plants || []).length || pd) return; ray(e);
     const h = RC.intersectObjects(decor.children, true).find(x => x.object.userData.plant != null); if (!h) return; const mh = pickHits(e)[0]; if (mh && mh.distance < h.distance) return;
     const i = h.object.userData.plant, p = S.plants[i], q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
-    pd = { i, dx: p.x - q.x, dz: p.z - q.z, g: decor.children.find(c => c.userData.plant === i), id: e.pointerId }; plantSel = i; window.__plantSel = i; $('delBtn').classList.remove('hide'); window.__plantTap = true;
+    pd = { i, dx: p.x - q.x, dz: p.z - q.z, g: decor.children.find(c => c.userData.plant === i), id: e.pointerId }; plantSel = i; window.__plantSel = i; hlOnly(pd.g); $('delBtn').classList.remove('hide'); window.__plantTap = true;
     e.stopImmediatePropagation(); el.setPointerCapture(e.pointerId); }, true);
   el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); ray(e); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
     const p = S.plants[pd.i]; p.x = q.x + pd.dx; p.z = Math.max(0.2, Math.min(9, q.z + pd.dz)); if (ROOMB) p.x = Math.max(ROOMB.l + 0.2, Math.min(ROOMB.r - 0.2, p.x)); if (pd.g) pd.g.position.set(p.x, 0, p.z); }, true);
@@ -1951,11 +1956,11 @@ function renderPropBtns() { const el = $('propBtns'); if (!el) return; el.innerH
 renderPropBtns();
 { const el = renderer.domElement; let pd = null;
   el.addEventListener('pointerdown', e => { if (e.button !== 0 || pd) return; const h = pickHits(e)[0], pr = h && h.object.userData.prop;
-    if (!pr) { if (window.__propSel) { window.__propSel = null; $('delBtn').classList.toggle('hide', !(cur.it >= 0) && !(window.__plantSel >= 0)); } return; }
+    if (!pr) { if (window.__propSel) { window.__propSel = null; hlOnly(null); $('delBtn').classList.toggle('hide', !(cur.it >= 0) && !(window.__plantSel >= 0)); } return; }
     let g = h.object; while (g.parent && g.parent.userData.prop === pr) g = g.parent; const wg = WG[pr.wi]; if (!wg) return;
     wg.updateMatrixWorld(true); const n = V(0, 0, 1).transformDirection(wg.matrixWorld), plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, h.point), lp = wg.worldToLocal(h.point.clone());
     pd = { pr, g, wg, plane, dx: g.position.x - lp.x, id: e.pointerId, moved: false };
-    window.__propSel = { wi: pr.wi, si: pr.si, ii: pr.ii, pi: pr.pi }; window.__plantSel = -1; window.__plantTap = true; $('delBtn').classList.remove('hide');
+    window.__propSel = { wi: pr.wi, si: pr.si, ii: pr.ii, pi: pr.pi }; window.__plantSel = -1; hlOnly(g); window.__plantTap = true; $('delBtn').classList.remove('hide');
     e.stopImmediatePropagation(); el.setPointerCapture(e.pointerId); }, true);
   el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); const r = el.getBoundingClientRect();
     RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(pd.plane, q)) return;
