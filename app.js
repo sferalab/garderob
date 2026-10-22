@@ -329,11 +329,12 @@ function makeMats() {
   M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: S.metal === 'black' ? 0.45 : 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
   const dark = S.metal === 'black', pt = slotTex(false, dark).clone(); pt.needsUpdate = true; pt.repeat.set(1, S.postH / 32);
   // uprights: crisp perforation as color + bump relief, powder grain in the roughness
-  M.post = new THREE.MeshPhysicalMaterial({ ...PB, map: pt, bumpMap: pt, bumpScale: 2.2, roughnessMap: rep(G.rough, 1, S.postH / 60) });
+  M.postF = new THREE.MeshPhysicalMaterial({ ...PB, map: pt, bumpMap: pt, bumpScale: 2.2, roughnessMap: rep(G.rough, 1, S.postH / 60), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  M.post = new THREE.MeshPhysicalMaterial({ ...PB, roughnessMap: rep(G.rough, 1, S.postH / 60) }); // solid sides; slots only on the front face
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, emissive: new THREE.Color(0x5a5e64), envMap: chromeEnv(), envMapIntensity: 2 * Math.max(0.8, gm), userData: { chrome: true } });
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.01, specularIntensity: 1, emissive: new THREE.Color(0x0c0d0f), envMap: chromeEnv(), envMapIntensity: 1.7, userData: { chrome: true } });
   M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
@@ -395,7 +396,7 @@ function buildWall(wi) {
   const pt = (S.railTop * 10 - 10) * MM;
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   // uprights (catalog 32 x 34 mm, drawn about 1.5x heavier so they read in photos) with hook head and end cap
-  xs.forEach((x, pi) => { const pb = pt - postLen(wi, pi) * MM, sel = selPost && selPost.wi === wi && selPost.i === pi, pm = new THREE.Mesh(new RoundedBoxGeometry(0.046, pt - pb, 0.042, 3, 0.0065), sel ? M.post.clone() : M.post); if (sel) { pm.material.emissive.set(0x2f7bff); pm.material.emissiveIntensity = 0.6; } pm.userData.post = { wi, i: pi }; pm.position.set(x, (pt + pb) / 2, 0.0225); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm);
+  xs.forEach((x, pi) => { const pb = pt - postLen(wi, pi) * MM, sel = selPost && selPost.wi === wi && selPost.i === pi, pm = new THREE.Mesh(new RoundedBoxGeometry(0.046, pt - pb, 0.042, 3, 0.0065), sel ? M.post.clone() : M.post); if (sel) { pm.material.emissive.set(0x2f7bff); pm.material.emissiveIntensity = 0.6; } pm.userData.post = { wi, i: pi }; pm.position.set(x, (pt + pb) / 2, 0.0225); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm); { const ff = new THREE.Mesh(new THREE.PlaneGeometry(0.034, pt - pb), M.postF); ff.position.set(x, (pt + pb) / 2, 0.0436); ff.userData.post = { wi, i: pi }; ff.userData.frame = true; ff.receiveShadow = true; g.add(ff); }
     const hk = new THREE.Mesh(new RoundedBoxGeometry(0.05, 0.034, 0.03, 2, 0.004), M.metal); hk.position.set(x, pt - 0.012, 0.0165); hk.castShadow = true; hk.userData.frame = true; g.add(hk);
     const cap = new THREE.Mesh(new RoundedBoxGeometry(0.048, 0.014, 0.044, 2, 0.004), M.plastic); cap.position.set(x, pb + 0.007, 0.0225); cap.userData.frame = true; g.add(cap);
     // painted contact darkening on the wall where the upright meets it (both sides), no SSAO pass needed
@@ -421,8 +422,8 @@ const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), H
 let _GRM = null, _GRK = null; function gridMat() { if (_GRM && _GRK === M.metal) return _GRM; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 9); g.fillRect(0, 0, 9, 64);
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(34, 15); t.anisotropy = 4; _GRK = M.metal; _GRM = M.metal.clone(); _GRM.alphaMap = t; _GRM.alphaTest = 0.5; _GRM.side = THREE.DoubleSide; _GRM.normalMap = null; return _GRM; }
 let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#fdfdfd'); gr.addColorStop(0.36, '#c9ced4'); gr.addColorStop(0.49, '#8d9298'); gr.addColorStop(0.55, '#6a6e74'); gr.addColorStop(0.75, '#b4b8bd'); gr.addColorStop(1, '#8a8d91'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
-  g.fillStyle = '#ffffff'; [[40, 50], [200, 30], [330, 60], [450, 24]].forEach(([x, w]) => g.fillRect(x, 30, w, 70));
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.3, '#dfe3e8'); gr.addColorStop(0.46, '#4a4e54'); gr.addColorStop(0.5, '#101113'); gr.addColorStop(0.56, '#6d7177'); gr.addColorStop(0.8, '#9a9ea3'); gr.addColorStop(1, '#55585c'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
+  g.fillStyle = '#ffffff'; [[30, 40], [150, 22], [250, 56], [380, 30], [470, 18]].forEach(([x, w]) => g.fillRect(x, 10, w, 105)); g.fillStyle = '#1a1b1d'; [[100, 14], [215, 10], [330, 16], [440, 10]].forEach(([x, w]) => g.fillRect(x, 0, w, 256));
   const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; _CHE = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; return _CHE; }
 function rodHolder(g, x, by, ry, zr) {
   // Titan-GS: pressed-steel strap riveted to the underside of the shelf bracket, ~100 mm drop, ending in a round cup that holds the chrome rod (system color)
@@ -966,6 +967,7 @@ function rebuild() {
   catcher.visible = !!photo && !$('showRoom').checked;
   room.visible = !photo || $('showRoom').checked;
   summary(); fillDims(); localStorage.setItem('gs_auto', JSON.stringify(S));
+  try { linkUI(); } catch (er) {}
   $('delBtn').classList.toggle('hide', !window.__propSel && !(window.__plantSel >= 0) && !(cur.it >= 0 && S.walls[cur.w].sections[cur.s] && S.walls[cur.w].sections[cur.s].items[cur.it]));
 }
 function setDims(on) { dimsG.visible = !!on && dimsOn(); }
@@ -1168,7 +1170,7 @@ const _sc = new THREE.OrthographicCamera();
 // the highlight light rides with the camera (up and to the right), so edge highlights travel as the view turns
 const _cr = new THREE.Vector3(), _cu = new THREE.Vector3(), _co = new THREE.Vector3();
 // walls and ceiling between the camera and the wardrobe disappear, so the view can go anywhere
-function tickOcc() { const cp = camera.position, und = cp.y < 0.002;  decor.children.forEach(c => { if (c.userData.rug) c.visible = !und; }); room.children.forEach(c => { const u = c.userData; if (u.floorM) { const fm = c.material; if (fm && !fm.isShadowMaterial && fm.userData.und !== und) { fm.userData.und = und; fm.side = THREE.DoubleSide; fm.transparent = und; fm.opacity = und ? 0.35 : 1; fm.depthWrite = !und; fm.needsUpdate = true; } return; } if (u.occ) { _co.copy(cp); u.occ.worldToLocal(_co); c.visible = _co.z > -0.08; } else if (u.occC != null) c.visible = cp.y < u.occC - 0.005; }); }
+function tickOcc() { const cp = camera.position, und = cp.y < 0.002;  decor.children.forEach(c => { if (c.userData.rug) c.visible = !und; }); room.children.forEach(c => { const u = c.userData; if (u.floorM) { if (!u.fb) u.fb = { p: c.position.clone(), r: c.rotation.x }; const th = cp.y < 0.15 ? Math.min(1.45, Math.atan2(0.15 - cp.y, Math.max(0.3, cp.z)) * 1.25) : 0, s = Math.sin(th), k = Math.cos(th); c.rotation.x = u.fb.r + th; c.position.set(u.fb.p.x, u.fb.p.y - u.fb.p.z * s, u.fb.p.z * k); return; } if (u.occ) { _co.copy(cp); u.occ.worldToLocal(_co); c.visible = _co.z > -0.08; } else if (u.occC != null) c.visible = cp.y < u.occC - 0.005; }); }
 function tickSpec() { if (!specL.intensity) return; _cr.set(1, 0, 0).applyQuaternion(camera.quaternion); _cu.set(0, 1, 0).applyQuaternion(camera.quaternion); specL.position.copy(camera.position).addScaledVector(_cr, 1.6).addScaledVector(_cu, 1.4); }
 function applyGlareShadow() {
   const R = S.room || {}, c = bbox.getCenter(new THREE.Vector3()), P = SHP[R.shP] || SHP.soft, ST = !!S.studio && !photo, gmode = R.glareM || 'soft';
@@ -1387,6 +1389,20 @@ function placeFree(sec, os, y0) {
   for (let y = y0 + 1; y <= hi; y++) if (ok(y)) return true;
   return false;
 }
+function linkUI() { let L = $('linkBar'); if (!L) { L = document.createElement('span'); L.id = 'linkBar'; L.style.cssText = 'display:inline-flex;gap:6px;margin-right:6px'; $('delBtn').before(L); }
+  const sc = S.walls[cur.w] && S.walls[cur.w].sections[cur.s], o = sc && cur.it >= 0 && sc.items[cur.it]; let h = '';
+  if (o && !window.__propSel && !(window.__plantSel >= 0)) {
+    if (o.g) h = '<button class="rnd lk" data-lk="rm">Убрать штангу</button><button class="rnd lk" data-lk="un">Отцепить штангу</button>';
+    else if (o.t === 'rail' && !o.lk) { const p = nearShelf(sc, o); if (p) h = '<button class="rnd lk" data-lk="at">Прикрепить к полке</button>'; }
+    else if (!isBasket(o.t) && o.t !== 'rail' && o.t !== 'trouser') h = '<button class="rnd lk" data-lk="add">Добавить штангу</button>'; }
+  if (L.innerHTML !== h) { L.innerHTML = h; L.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => linkAct(b.dataset.lk)); } }
+function nearShelf(sc, r) { return sc.items.filter(p => !p.g && !p.lk && p.t !== 'rail' && !isBasket(p.t) && p.y > r.y && p.y - r.y <= 40).sort((a, b) => a.y - b.y)[0]; }
+function linkAct(k) { const sc = S.walls[cur.w].sections[cur.s], o = sc.items[cur.it]; if (!o) return;
+  if (k === 'add') { S.q = (S.q || 0) + 1; o.g = 'g' + S.q; const r = it('rail', 30, o.y - 10); r.lk = o.g; sc.items.push(r); }
+  else if (k === 'rm') { const g = o.g; sc.items = sc.items.filter(p => p.lk !== g); delete o.g; cur.it = sc.items.indexOf(o); }
+  else if (k === 'un') { const r = sc.items.find(p => p.lk === o.g); if (r) { delete r.lk; r.q = (S.q = (S.q || 0) + 1); } delete o.g; }
+  else if (k === 'at') { const p = nearShelf(sc, o); if (!p) return; S.q = (S.q || 0) + 1; p.g = 'g' + S.q; o.lk = p.g; cur.it = sc.items.indexOf(p); }
+  syncLinks(sc); rebuild(); renderSec(); }
 function removeItem(sec, i) { const o = sec.items[i]; sec.items.splice(i, 1); if (o && o.g) sec.items = sec.items.filter(p => p.lk !== o.g); }
 function secHint(wi) { const sc = S.walls[wi].sections, g = {}; sc.forEach(x => g[x.w] = (g[x.w] || 0) + 1); const word = n => n % 10 === 1 && n % 100 !== 11 ? 'секция' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'секции' : 'секций'; return Object.entries(g).map(([w, n]) => `${n} ${word(n)} по ${w} см`).join(' + ') + ` = ${Math.round(wallWidth(wi) / 10)} см`; }
 function renderSizes() {
@@ -1449,7 +1465,7 @@ function renderSec() {
     e += `<div class="item${coll.has(i) ? ' warn' : ''}${cur.it === i ? ' sel' : ''}" data-row="${i}"><div class="top"><b class="num">${k + 1}</b><span class="mico">${ICO[c]}</span><select data-i="${i}" data-k="var">${VARS[c].map(([kk, v]) => `<option value="${kk}" ${kk === vv ? 'selected' : ''}>${v}</option>`).join('')}</select>
     ${isBasket(o.t) ? `<select data-i="${i}" data-k="h" class="dsel">${[85, 181, 285].map(v => `<option value="${v}" ${v === (o.h || 85) ? 'selected' : ''}>${v} мм</option>`).join('')}</select>` : ''}
     <button class="mini" data-sw="${i}" data-dir="-1" ${k === 0 ? 'disabled' : ''}>↑</button><button class="mini" data-sw="${i}" data-dir="1" ${k === ord.length - 1 ? 'disabled' : ''}>↓</button><button class="mini danger" data-del="${i}">✕</button></div>
-    ${isBasket(o.t) ? `<div class="btype">Выбрано: <b>${(VARS[c].find(([kk]) => kk === vv) || [0, ''])[1]}</b></div><div class="ld"><span>Глубина корзины</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div><div class="ld"><span>Ширина корзины</span><div class="sz">${[...new Set((LENS[o.t] || [603, 903]).map(l => Math.round((l + 30) / 100) * 10))].map(w => `<button data-bw="${w}" class="${s.w === w ? 'on' : ''}">${w}</button>`).join('')}</div></div>` : ''}
+    ${isBasket(o.t) ? `<div class="btype">Выбрано: <b>${(VARS[c].find(([kk]) => kk === vv) || [0, ''])[1]}</b></div><div class="ld"><span>Глубина от стены</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div><div class="ld"><span>Длина (вдоль стены)</span><div class="sz">${[...new Set((LENS[o.t] || [603, 903]).map(l => Math.round((l + 30) / 100) * 10))].map(w => `<button data-bw="${w}" class="${s.w === w ? 'on' : ''}">${w}</button>`).join('')}</div></div><div class="ld"><span>Высота корзины</span><div class="sz">${[[100, 'Низкая 10'], [200, 'Средняя 20'], [300, 'Высокая 30']].map(([h, t]) => `<button data-bh="${i}:${h}" class="${Math.abs((o.h || 85) - h) < 40 ? 'on' : ''}" title="${h} мм">${t}</button>`).join('')}</div></div>` : ''}
     <div class="ld"><span>Длина</span><div class="sz">${lensOf(o).map(mm => `<button data-len="${i}:${mm}" class="${secW(mm) === s.w ? 'on' : ''}" title="${mm} мм">${Math.round(mm / 10)}</button>`).join('')}</div></div>${o.t === 'rail' || isBasket(o.t) ? '' : `<div class="ld"><span>Глубина</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div>`}
     <div class="yrow"><input type="range" data-i="${i}" data-k="yr" min="${lo}" max="${hi}" step="1" value="${o.y}"><label class="yn"><input type="number" data-i="${i}" data-k="y" value="${o.y}" min="${lo}" max="${hi}"> см</label></div>
     ${coll.has(i) ? '<div class="wtxt">Пересекается с соседним элементом</div>' : ''}</div>`;
@@ -1478,6 +1494,7 @@ function renderSec() {
   E.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { const i = +b.dataset.sw, k = ord.findIndex(p => p[1] === i), j = ord[k + +b.dataset.dir]; if (!j) return; const o = s.items[i], p = j[0], t = o.y; o.y = p.y; p.y = t; cur.it = i; go(); });
   E.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { removeItem(s, +b.dataset.del); cur.it = -1; go(); });
   E.querySelectorAll('[data-len]').forEach(b => b.onclick = () => { const [i, mm] = b.dataset.len.split(':').map(Number); cur.it = i; s.w = secW(mm); go(); });
+  E.querySelectorAll('[data-bh]').forEach(b => b.onclick = () => { const [i, h] = b.dataset.bh.split(':').map(Number); cur.it = i; s.items[i].h = h; go(); });
   E.querySelectorAll('[data-bw]').forEach(b => b.onclick = () => { s.w = +b.dataset.bw; go(); });
   E.querySelectorAll('[data-dep]').forEach(b => b.onclick = () => { const [i, d] = b.dataset.dep.split(':').map(Number), o = s.items[i]; cur.it = i; o.d = d; s.items.forEach(p => { if (o.g && p.lk === o.g && DEPTHS[p.t].includes(d)) p.d = d; }); go(); });
 }
