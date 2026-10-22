@@ -1023,7 +1023,7 @@ function applyCam(cam = camera) {
   o.h = Math.max(0.05, Math.min(o.T.y + o.R * 4, Math.max(o.h, o.T.y - o.R * 3)));
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   if (ROOMB && !S.studio) { cam.position.x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, cam.position.x)); cam.position.z = Math.max(0.4, cam.position.z); }
-  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), E1 = 20 * Math.PI / 180, E2 = 38 * Math.PI / 180, bt = Math.max(0, Math.min(1, (ea - E1) / (E2 - E1))), bs = bt * bt * (3 - 2 * bt), p = Math.sign(a) * Math.max(ea - E1 * (1 - bs) - 0 * bs, 0) * (bs > 0 ? 1 : 0); // eye level: pitch 0 + lens shift (straight verticals); from 20° to 38° hand over smoothly to a real tilt, lens shift capped at the 20° amount // level camera + lens shift (two-point perspective): uprights stay vertical; real pitch only for near-top views
+  const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 0.42);
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   const yN = -Math.tan(a - p) / Math.tan(cam.fov * Math.PI / 360);
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
@@ -1058,7 +1058,7 @@ function applyCam(cam = camera) {
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
-function camK() { const k = localStorage.getItem('gs_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'int'; } // default: «Интерьер» photo preset, closest to the client renders
+function camK() { const k = localStorage.getItem('gs_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'std'; }
 var CAMS = [['std', 'Стандарт'], ['int', 'Интерьер'], ['por', 'Портрет'], ['top3', 'Сверху 3/4']];
 const LENSF = () => 28;
 function CAMEXP() { return { int: 1.1, por: 1.03 }[camK()] || 1.0; }
@@ -1089,7 +1089,7 @@ function fitView() { if (!orb.on || !WG.length) return; const b = meshBox(); if 
     const k = Math.max(0.5, Math.min(2, s)); orb.h = orb.T.y + (orb.h - orb.T.y) * k; orb.R *= k;
     if (Math.abs(s - 1) < 0.02 && Math.abs(dx) < 0.005 && Math.abs(dy) < 0.005) break;
     // the room walls stop the camera from backing off sideways: turn a little more frontal instead
-    if (it >= 3 && s > 1.03) orb.az *= 0.75; }
+    }
   applyCam(); if (WG.length) rebuildDims(); }
 // selection highlight: blue tint in the color itself plus emissive, so it reads on white (clamped) and black metal alike
 function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.contact || m.userData.hlOrig || Array.isArray(m.material)) return; const o = m.material, c = o.clone(); m.userData.hlOrig = o;
@@ -1124,7 +1124,7 @@ let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
 function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
-renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else controls.update(); tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
