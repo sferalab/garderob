@@ -6,7 +6,7 @@ import { CATALOG, RULES } from './catalog.js';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
-const METAL = { white: 0xf7f9fc, black: 0x202124, silver: 0xc3c6c8 };
+const METAL = { white: 0xf7f9fc, black: 0x111111, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
 const FLOORS = { tile2: ['floor_tiles_08', 1.6, 0xfffaf2, null, 0, 1.6], oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
@@ -308,18 +308,18 @@ function makeMats() {
   const PB = {
     white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.6, clearcoatRoughness: bright ? 0.05 : 0.16, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xeef4ff), emissive: new THREE.Color(0x181c22), envMapIntensity: 0.95 * gm },
     silver: { color: METAL.silver, metalness: 0.62, roughness: 0.4, clearcoat: bright ? 0.6 : 0.25, clearcoatRoughness: bright ? 0.12 : 0.4, specularIntensity: 0.75, envMapIntensity: 1.35 * gm },
-    black: { color: METAL.black, metalness: 0.25, roughness: 0.48, clearcoat: bright ? 1 : 0.45, clearcoatRoughness: bright ? 0.1 : 0.32, specularIntensity: 0.9, sheen: 0.5, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
+    black: { color: METAL.black, metalness: 0.85, roughness: 0.45, clearcoat: bright ? 0.5 : 0.15, clearcoatRoughness: 0.35, specularIntensity: 0.9, sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
   }[S.metal] || {};
   const G = grainTex();
   M.metal = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 6, 6), normalScale: new THREE.Vector2(0.22, 0.22), roughnessMap: rep(G.rough, 6, 6) });
-  M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
+  M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: S.metal === 'black' ? 0.45 : 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
   const dark = S.metal === 'black', pt = slotTex(false, dark).clone(); pt.needsUpdate = true; pt.repeat.set(1, S.postH / 32);
   // uprights: crisp perforation as color + bump relief, powder grain in the roughness
   M.post = new THREE.MeshPhysicalMaterial({ ...PB, map: pt, bumpMap: pt, bumpScale: 2.2, roughnessMap: rep(G.rough, 1, S.postH / 60) });
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.03, emissive: new THREE.Color(0x2a2d31), envMap: chromeEnv(), envMapIntensity: 1.5 * Math.max(0.7, gm) });
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xe5e5e5, metalness: 0.95, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, emissive: new THREE.Color(0x2a2d31), envMap: chromeEnv(), envMapIntensity: 1.5 * Math.max(0.7, gm) });
   M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
