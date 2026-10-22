@@ -9,7 +9,7 @@ const MM = 0.001;
 const METAL = { white: 0xf7f9fc, black: 0x202124, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
-const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
+const FLOORS = { tile2: ['floor_tiles_08', 1.6, 0xfffaf2, null, 0, 1.6], oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
   basket: 'Корзина стационарная', pull: 'Корзина выдвижная', rail: 'Штанга для вешалок', shoe: 'Полка для обуви', trouser: 'Брючница выдвижная'
@@ -256,7 +256,12 @@ function normalTex(v, str) {
 // lit wall: emissive carries the chosen color (stable), a dim diffuse part picks up relief, corners and sunlight
 function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).multiplyScalar(m.userData.kd); m.emissive.copy(col).multiplyScalar(m.userData.ke); }
 const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
-function wallMat() { const v = finVar(), t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
+// real CC0 photo textures (Poly Haven, 1k) with normal + roughness maps for the key finishes; procedural for the rest
+const PHW = { brick: ['painted_brick', 2.0, 1.4], beige: ['beige_wall_001', 2.4, 1, 1.1], lime: ['white_plaster_02', 2.2, 1] };
+function wallMat() { const v = finVar(), ph = PHW[v];
+  if (ph) { const rp = (1 / ph[1]).toFixed(4), sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: tex(ph[0] + '_diff', true, rp), emissiveMap: tex(ph[0] + '_diff', true, rp), normalMap: tex(ph[0] + '_nor_gl', false, rp), normalScale: new THREE.Vector2(ph[2], ph[2]), roughnessMap: tex(ph[0] + '_rough', false, rp), roughness: 1, metalness: 0, envMapIntensity: 0.35, toneMapped: false });
+    const gn = ph[3] || 1; m.userData = { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; setWallCol(m, S.wall); return m; }
+  const t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
   const sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, normalMap: n, roughness: 0.93, metalness: 0, envMapIntensity: 0.25, toneMapped: false });
   m.userData = { wall: true, kd: sunM ? 0.55 : 0.62, ke: sunM ? 0.4 : 0.42 }; /* lit PBR wall: relief reads in the light, emissive keeps the color clean */ setWallCol(m, S.wall); return m; }
 // small tile preview of a finish, tinted by the wall color
@@ -1615,7 +1620,7 @@ fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) 
 // iOS settles the canvas size late (toolbar, safe areas): refit once the final size is known
 { const late = () => { if (lastCam === 'card') return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late);
   if (window.visualViewport) { let vt = 0; visualViewport.addEventListener('resize', () => { clearTimeout(vt); vt = setTimeout(late, 150); }); } }
-const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [3, 0.05], [0.05, 1.5], [0.05, 0.05]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
 // ---------- v4 extra controls ----------
 $('rS').oninput = e => { $('fS').value = e.target.value; S.walls[cur.w].sections.forEach(x => x.w = +e.target.value); clearTimeout(dimT); dimT = setTimeout(rebuild, 40); };
@@ -1784,7 +1789,7 @@ function renderDeco() {
   const fin = S.wallFin || 'paint', fv = finVar();
   $('finVars').style.gridTemplateColumns = `repeat(${evenCols(FINS[fin].length)},1fr)`; $('finBtns').innerHTML = [['paint', 'Краска'], ['plaster', 'Штукатурка'], ['relief', 'Рельеф'], ['paper', 'Обои']].map(([k, t]) => `<button data-fin="${k}" class="${fin === k ? 'on' : ''}">${t}</button>`).join('');
   $('finVars').innerHTML = FINS[fin].map(([k, t]) => `<button data-fv="${k}" class="${fv === k ? 'on' : ''}"><i style="background-image:url(${finSwatch(k)})"></i><span>${t}</span></button>`).join('');
-  const FL = [['oak', 'Паркет', 'herringbone_parquet', ''], ['lam', 'Светлый ламинат', 'laminate_floor_02', ''], ['lamD', 'Темный ламинат', 'wood_floor_worn', 'filter:brightness(.62) saturate(1.1)'], ['conc', 'Бетон', 'concrete_floor_worn_001', 'filter:brightness(1.08) grayscale(.4)'], ['marble', 'Мрамор', 'marble_01', ''], ['carpet', 'Ковролин', '', '']];
+  const FL = [['tile2', 'Светлая плитка', 'floor_tiles_08', ''], ['oak', 'Паркет', 'herringbone_parquet', ''], ['lam', 'Светлый ламинат', 'laminate_floor_02', ''], ['lamD', 'Темный ламинат', 'wood_floor_worn', 'filter:brightness(.62) saturate(1.1)'], ['conc', 'Бетон', 'concrete_floor_worn_001', 'filter:brightness(1.08) grayscale(.4)'], ['marble', 'Мрамор', 'marble_01', ''], ['carpet', 'Ковролин', '', '']];
   $('floorBtns').style.gridTemplateColumns = `repeat(${evenCols(FL.length)},1fr)`; $('floorBtns').innerHTML = FL.map(([k, t, tx, f]) => `<button data-fl="${k}" class="${S.floor === k ? 'on' : ''}"><i style="${tx ? `background-image:url(tex/${tx}_diff.jpg);background-size:${k === 'oak' ? 160 : 120}%;${f}` : 'background:#b9ab98'}"></i><span>${t}</span></button>`).join('');
   $('finBtns').querySelectorAll('[data-fin]').forEach(b => b.onclick = () => { S.wallFin = b.dataset.fin; $('wallFin').value = S.wallFin; rebuild(); renderDeco(); });
   $('finVars').querySelectorAll('[data-fv]').forEach(b => b.onclick = () => { S.wallVar = Object.assign({}, S.wallVar, { [fin]: b.dataset.fv }); const AC = { brick: '#ffffff', beige: '#ffffff', slats: '#ffffff', woodp: '#ffffff', stone: '#ffffff', conc2: '#ffffff' }[b.dataset.fv]; if (AC && !S.wallCustom) S.wall = AC; rebuild(); renderDeco(); });
@@ -1795,7 +1800,7 @@ function renderDeco() {
   $('rugNote').textContent = carpet ? 'На ковролин ковер не кладется: выберите другой пол.' : '';
   $('rugBox').querySelectorAll('[data-rs]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: b.dataset.rs, pile: (S.rug && S.rug.pile) || 'flat' }; rebuild(); renderDeco(); });
   $('rugBox').querySelectorAll('[data-rp]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: (S.rug && S.rug.shape) || 'rect', pile: b.dataset.rp }; rebuild(); renderDeco(); });
-  if (rg && !carpet) { const ex = document.createElement('div'); ex.innerHTML = `<label class="rng">Размер<input type="range" id="rugK" min="0.5" max="2" step="0.05" value="${rg.k || 1}"></label>` + (rg.shape === 'round' ? '' : `<label class="rng">Поворот<input type="range" id="rugR" min="-1.57" max="1.57" step="0.02" value="${rg.r || 0}"></label>`) + '<p class="foot">Ковер можно двигать пальцем по полу.</p>'; $('rugBox').appendChild(ex);
+  if (rg && !carpet) { const ex = document.createElement('div'); ex.innerHTML = '<p class="foot">Коснитесь ковра: тяните его по полу, за угловые точки меняйте размер, за круглую ручку поворачивайте.</p>'; $('rugBox').appendChild(ex);
     const up = (k, el) => el && (el.oninput = () => { S.rug[k] = +el.value; clearTimeout(el._t); el._t = setTimeout(() => rebuild(), 60); }); up('k', $('rugK')); up('r', $('rugR')); }
   $('rugBox').querySelectorAll('[data-rugoff]').forEach(b => b.onclick = () => { S.rug = null; rebuild(); renderDeco(); });
   // openings
@@ -1809,6 +1814,11 @@ function renderDeco() {
     // mirror leans on the free side wall facing the system (or the back wall beside it); pouf stands in front of the system
     if (k === 'mirror') { if (F.xL != null && S.layout !== 'Lr') { px = F.xL + 0.08; pz = bbox.max.z + 0.5; pr = Math.PI / 2; } else if (F.xR != null) { px = F.xR - 0.08; pz = bbox.max.z + 0.5; pr = -Math.PI / 2; } else { px = F.x0 - 0.55; pz = 0.1; pr = 0; } }
     if (k === 'pouf') { px = F.x0 + Math.min(F.backW, 2) * 0.45; pz = Math.max(1.1, bbox.max.z - 0.2); pr = 0.25; }
+    // never on top of a door / window on that wall, and not on another item placed earlier
+    if (k === 'mirror' || k === 'pouf') { try { const ops = openingsList(F, 3); for (let t = 0; t < 6; t++) { let hit = false;
+      ops.forEach(o => { const onL = o.wall === 'L' && Math.abs(px - F.xL) < 0.6, onR = o.wall === 'R' && F.xR != null && Math.abs(px - F.xR) < 0.6, onB = o.wall === 'B' && pz < 0.6;
+        if ((onL || onR) && Math.abs(pz - o.z) < o.w / 2 + 0.45) { pz = o.z + o.w / 2 + 0.55; hit = true; } const oc = o.c ?? o.x; if (onB && oc != null && Math.abs(px - oc) < o.w / 2 + 0.45) { px = oc + o.w / 2 + 0.55; hit = true; } });
+      (S.plants || []).forEach(q => { if (Math.hypot(q.x - px, q.z - pz) < 0.6) { if (k === 'mirror') pz += 0.7; else px += 0.6; hit = true; } }); if (!hit) break; } } catch (e) {} }
     S.plants = [...(S.plants || []), { k, x: px, z: pz, s: 1, r: pr }]; plantSel = n; rebuild(); renderDeco(); });
   $('plantList').querySelectorAll('[data-ps]').forEach(el => { el.oninput = () => { const i = +el.dataset.ps; S.plants[i].s = +el.value; plantSel = i; const g = decor.children.find(c => c.userData.plant === i); if (g) g.scale.setScalar(+el.value); }; el.onchange = () => { rebuild(); }; });
   $('plantList').querySelectorAll('[data-pd]').forEach(b => b.onclick = () => { S.plants.splice(+b.dataset.pd, 1); plantSel = -1; rebuild(); renderDeco(); });
@@ -2009,25 +2019,39 @@ renderPropBtns();
 
 // ---- room presets: one tap sets walls, floor, rug, window, light and decor (the wardrobe itself is untouched)
 const ROOMP = {
-  loft: ['Кирпичный лофт', { wallFin: 'relief', fv: 'brick', wall: '#f4f2ee', floor: 'marble', rug: { shape: 'rect', pile: 'jute' }, win: true, winX: -1, shP: 'soft', plants: ['mirror', 'pouf'] }],
-  beige: ['Светлый бежевый', { wallFin: 'plaster', fv: 'beige', wall: '#e9dcc8', floor: 'oak', rug: { shape: 'round', pile: 'fluffy' }, win: true, winX: 0, shP: 'sun', winL: 'both', plants: ['olive'] }],
+  loft: ['Кирпичный лофт', { wallFin: 'relief', fv: 'brick', wall: '#f4f2ee', floor: 'tile2', rug: { shape: 'rect', pile: 'jute' }, win: true, winX: -1, shP: 'soft', metal: 'black', plants: ['mirror', 'pouf'] }],
+  beige: ['Светлый бежевый', { wallFin: 'plaster', fv: 'beige', wall: '#fff8ee', floor: 'oak', rug: { shape: 'round', pile: 'fluffy' }, win: true, winX: 0, shP: 'sun', winL: 'both', plants: ['olive'] }],
   scandi: ['Скандинавский', { wallFin: 'paint', fv: 'matte', wall: '#f1efea', floor: 'lam', rug: { shape: 'rect', pile: 'flat' }, win: false, shP: 'soft', plants: ['fig', 'pouf'] }],
   conc: ['Бетон и дуб', { wallFin: 'relief', fv: 'conc2', wall: '#d9d6d1', floor: 'lamD', rug: null, win: false, shP: 'left', plants: ['monstera', 'mirror'] }] };
 function applyRoomPreset(k) { const p = ROOMP[k][1], R = S.room; S.wallFin = p.wallFin; S.wallVar = Object.assign({}, S.wallVar, { [p.wallFin]: p.fv }); S.wall = p.wall; S.wallCustom = true;
-  if (FLOORS[p.floor]) S.floor = p.floor; S.rug = p.rug; R.win = p.win; if (p.winX != null) R.winX = p.winX; R.shP = p.shP; R.shOn = p.shP !== 'none'; R.winL = p.winL || 'off'; S.studio = false; S.decor = true;
+  if (FLOORS[p.floor]) S.floor = p.floor; if (p.metal) S.metal = p.metal; S.rug = p.rug; R.win = p.win; if (p.winX != null) R.winX = p.winX; R.shP = p.shP; R.shOn = p.shP !== 'none'; R.winL = p.winL || 'off'; S.studio = false; S.decor = true;
   S.plants = []; rebuild(); p.plants.forEach(pk => { const b = document.querySelector(`[data-pa="${pk}"]`); if (b) b.click(); });
   S.roomPre = k; rebuild(); fillGeneral(); renderDeco(); setBg(); pushHist(); msg(ROOMP[k][0]); renderRoomPre(); }
 function renderRoomPre() { const el = $('roomPre'); if (!el) return; el.innerHTML = Object.entries(ROOMP).map(([k, v]) => `<button data-rpre="${k}" class="${S.roomPre === k ? 'on' : ''}">${v[0]}</button>`).join(''); el.querySelectorAll('[data-rpre]').forEach(b => b.onclick = () => applyRoomPreset(b.dataset.rpre)); }
 renderRoomPre();
 
-// ---- rug: drag on the floor with a finger (tap selects it, blue highlight)
-{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null;
+// ---- rug: select by tap, drag the body, resize by corner handles (round: edge handle), rotate by the round handle; camera orbit is off while dragging
+{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null, H = null, sel = null;
   const ray = e => { const r = el.getBoundingClientRect(); RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); };
+  const hm = new THREE.MeshBasicMaterial({ color: 0x2f7bff, depthTest: false, toneMapped: false }), hg = new THREE.CylinderGeometry(0.045, 0.045, 0.01, 20), rg = new THREE.SphereGeometry(0.05, 16, 10);
+  const clearH = () => { if (H) { H.parent && H.parent.remove(H); H = null; } };
+  const showH = m => { clearH(); H = new THREE.Group(); H.renderOrder = 20; const R = S.rug, round = R.shape === 'round', rk = R.k || 1, w = (round ? 1.5 : 1.8) * rk / 2, d = (round ? 1.5 : 1.2) * rk / 2;
+    const pts = round ? [[w, 0, 'k']] : [[w, d, 'k'], [-w, d, 'k'], [w, -d, 'k'], [-w, -d, 'k']]; pts.forEach(([x, z, t]) => { const h = new THREE.Mesh(hg, hm); h.position.set(x, 0.03, z); h.userData.rugH = t; h.renderOrder = 21; H.add(h); });
+    if (!round) { const h = new THREE.Mesh(rg, hm); h.position.set(0, 0.05, d + 0.22); h.userData.rugH = 'r'; h.renderOrder = 21; H.add(h); }
+    H.position.copy(m.position); H.rotation.y = m.rotation.y; decor.add(H); };
   el.addEventListener('pointerdown', e => { if (!orb.on || e.button !== 0 || !S.rug || !decor.visible || pd) return; ray(e);
-    const h = RC.intersectObjects(decor.children, true)[0]; if (!h || !h.object.userData.rug) return; const mh = pickHits(e)[0]; if (mh && mh.distance < h.distance) return;
-    const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return; const m = h.object; pd = { m, dx: m.position.x - q.x, dz: m.position.z - q.z, id: e.pointerId }; hlOnly(m); window.__plantTap = true;
-    e.stopImmediatePropagation(); el.setPointerCapture(e.pointerId); }, true);
-  el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); ray(e); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
-    let x = q.x + pd.dx, z = Math.max(0.3, Math.min(9, q.z + pd.dz)); if (ROOMB) x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, x)); pd.m.position.x = x; pd.m.position.z = z; S.rug.x = x; S.rug.z = z; }, true);
-  const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); };
+    const hits = RC.intersectObjects(decor.children, true), hh = hits.find(x => x.object.userData.rugH), h = hits[0];
+    const m = decor.children.find(c => c.userData.rug); if (!m) return;
+    if (!hh && (!h || !h.object.userData.rug)) { if (sel) { sel = null; clearH(); hlOnly(null); } return; }
+    if (!hh) { const mh = pickHits(e)[0]; if (mh && mh.distance < h.distance) return; }
+    const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
+    pd = { m, mode: hh ? hh.object.userData.rugH : 'move', dx: m.position.x - q.x, dz: m.position.z - q.z, k0: S.rug.k || 1, d0: Math.hypot(q.x - m.position.x, q.z - m.position.z) || 1, id: e.pointerId };
+    sel = m; hlOnly(m); showH(m); window.__plantTap = true; e.stopImmediatePropagation(); el.setPointerCapture(e.pointerId); }, true);
+  el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); ray(e); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return; const m = pd.m;
+    if (pd.mode === 'move') { let x = q.x + pd.dx, z = Math.max(0.3, Math.min(9, q.z + pd.dz)); if (ROOMB) x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, x)); m.position.x = x; m.position.z = z; S.rug.x = x; S.rug.z = z; }
+    else if (pd.mode === 'k') { const k = Math.max(0.5, Math.min(2.2, pd.k0 * Math.hypot(q.x - m.position.x, q.z - m.position.z) / pd.d0)); m.scale.set(k / pd.k0, 1, k / pd.k0); S.rug.k = k; }
+    else { const a = Math.atan2(q.x - m.position.x, q.z - m.position.z); m.rotation.y = a; S.rug.r = a; }
+    if (H) { H.position.copy(m.position); H.rotation.y = m.rotation.y; H.scale.set(m.scale.x, 1, m.scale.z); } }, true);
+  const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); const mode = pd.mode; pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist();
+    if (mode !== 'move') { HLG = null; rebuild(); const m = decor.children.find(c => c.userData.rug); if (m) { sel = m; hlOnly(m); showH(m); } } };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true); }
