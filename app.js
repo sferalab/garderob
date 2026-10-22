@@ -1017,10 +1017,10 @@ function syncFromCam(kind) {
 }
 function applyCam(cam = camera) {
   const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.h = Math.max(0.05, Math.min(o.T.y + o.R * 4, Math.max(o.h, o.T.y - o.R * 3)));
+  o.h = Math.max(0.05, Math.min(o.T.y + o.R * 2.4, Math.max(o.h, o.T.y - o.R * 2.4))); // keep |elevation| < 1.2 rad: pitch stays exactly 0 (lean came from the near-top pitch branch when zoomed close / dragged high)
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   if (ROOMB && !S.studio) { cam.position.x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, cam.position.x)); cam.position.z = Math.max(0.4, cam.position.z); }
-  const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 1.2); // level camera + lens shift (two-point perspective): uprights stay vertical; real pitch only for near-top views
+  const a = Math.atan2(o.h - o.T.y, o.R), p = 0; // level camera + lens shift (two-point perspective): uprights stay vertical; real pitch only for near-top views
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   const yN = -Math.tan(a - p) / Math.tan(cam.fov * Math.PI / 360);
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
@@ -1028,12 +1028,12 @@ function applyCam(cam = camera) {
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
   el.addEventListener('contextmenu', e => e.preventDefault());
-  el.addEventListener('pointerdown', e => { if (!orb.on) return; orb.snapAz = false; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
+  el.addEventListener('pointerdown', e => { if (!orb.on || window.__plantTap) return; window.__userCam = true; orb.snapAz = false; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
   // straight and U: a near-frontal view settles exactly frontal, so the ceiling and floor edges read level
   const end = e => { P.delete(e.pointerId); last = null; pinch = null; if (!P.size && (S.layout === 'straight' || S.layout === 'U') && Math.abs(orb.az) < 0.16) orb.snapAz = true; };
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   el.addEventListener('pointermove', e => {
-    if (!orb.on || !P.has(e.pointerId)) return; const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+    if (!orb.on || !P.has(e.pointerId)) return; if (window.__plantTap) { P.clear(); return; } const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
     const hpx = el.clientHeight || 600, unit = orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
     if (P.size >= 2) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -1622,7 +1622,7 @@ $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : 'nice');
 // iOS settles the canvas size late (toolbar, safe areas): refit once the final size is known
-{ const late = () => { if (lastCam === 'card') return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late);
+{ const late = () => { if (lastCam === 'card' || window.__userCam) return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); setTimeout(late, 1800); setTimeout(late, 3200); addEventListener('load', late); THREE.DefaultLoadingManager.onLoad = () => setTimeout(late, 60); addEventListener('orientationchange', () => { window.__userCam = false; setTimeout(late, 400); });
   if (window.visualViewport) { let vt = 0; visualViewport.addEventListener('resize', () => { clearTimeout(vt); vt = setTimeout(late, 150); }); } }
 const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [3, 0.05], [0.05, 1.5], [0.05, 0.05]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
@@ -2055,8 +2055,8 @@ renderRoomPre();
     else if (pd.mode === 'k') { const k = Math.max(0.5, Math.min(2.2, pd.k0 * Math.hypot(q.x - m.position.x, q.z - m.position.z) / pd.d0)); m.scale.set(k / pd.k0, 1, k / pd.k0); S.rug.k = k; }
     else { const a = Math.atan2(q.x - m.position.x, q.z - m.position.z); m.rotation.y = a; S.rug.r = a; }
     if (H) { H.position.copy(m.position); H.rotation.y = m.rotation.y; H.scale.set(m.scale.x, 1, m.scale.z); } }, true);
-  const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); const mode = pd.mode; pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist();
-    if (mode !== 'move') { HLG = null; rebuild(); const m = decor.children.find(c => c.userData.rug); if (m) { sel = m; hlOnly(m); showH(m); } } };
+  const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); const pd0m = pd.m; pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist();
+    if (pd0m) { sel = pd0m; showH(pd0m); } };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true); }
 // ---- 📷 «Визуализация»: progressive GPU path tracing (three-gpu-pathtracer) of the current view; the live editor is untouched
 function skyEquirect() { const W = 256, H = 128, d = new Float32Array(W * H * 4);
