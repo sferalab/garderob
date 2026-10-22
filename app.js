@@ -691,7 +691,7 @@ function blobMat(op) { if (!BLOBT) { const c = document.createElement('canvas');
 // tall floor mirror in a slim black frame, leaning on the wall; the glass reflects the room environment
 function mirrorModel() { const g = new THREE.Group(), W = 0.62, H = 1.72, f = 0.035, lean = 0.075, tilt = Math.atan2(lean, H);
   const fm = new THREE.MeshPhysicalMaterial({ color: 0x18181a, roughness: 0.42, metalness: 0.3, clearcoat: 0.3, clearcoatRoughness: 0.4 });
-  const gm = new THREE.MeshStandardMaterial({ color: 0xdfe3e2, metalness: 1, roughness: 0.04, envMapIntensity: 1.25 });
+  const gm = new THREE.MeshStandardMaterial({ color: 0xe9eeee, metalness: 1, roughness: 0.06, envMapIntensity: 2.6, emissive: new THREE.Color(0x8d9494) });
   const in_ = new THREE.Group(); in_.rotation.x = -tilt; in_.position.z = -lean; g.add(in_);
   const add = (w, h, d, x, y, z, m) => { const o = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, 0.006), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; in_.add(o); return o; };
   add(f, H, 0.03, -W / 2 + f / 2, H / 2, 0, fm); add(f, H, 0.03, W / 2 - f / 2, H / 2, 0, fm); add(W, f, 0.03, 0, H - f / 2, 0, fm); add(W, f, 0.03, 0, f / 2, 0, fm);
