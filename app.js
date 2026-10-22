@@ -35,7 +35,7 @@ function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    __fresh: true, v4: 1, v5: 1, v7: 1, v8: 1, layout: 'L', metal: 'white', wall: '#a9a49c', wallFin: 'paint', wallVar: { paint: 'matte', plaster: 'koroed', paper: 'linen' }, floor: 'oak', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 213, plants: [], dims: false, dm: { o: false, s: false, h: false, g: false, sd: false }, dimC: 'white', dimStyle: 'bold', studio: false, rug: null, room: { shOn: true, shP: 'soft', winL: 'off', glareM: 'soft', glare: 0.3, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true, extra: 250 },
+    __fresh: true, v10: 1, v4: 1, v5: 1, v7: 1, v8: 1, layout: 'L', metal: 'white', wall: '#a9a49c', wallFin: 'paint', wallVar: { paint: 'matte', plaster: 'koroed', paper: 'linen' }, floor: 'oak', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 213, plants: [], dims: false, dm: { o: false, s: false, h: false, g: false, sd: false }, dimC: 'auto', dimStyle: 'bold', studio: false, rug: null, room: { shOn: true, shP: 'soft', winL: 'off', glareM: 'soft', glare: 0.3, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true, extra: 250 },
     walls: [
       { gap: 0, gapR: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), Object.assign(it('pull', 40, 75, 181), { v: 'mesh' }), Object.assign(it('pull', 40, 52, 181), { v: 'mesh' })])] },
       { gap: 50, sections: [sec(60, [it('mesh', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)])] },
@@ -44,7 +44,7 @@ function defaults() {
   };
 }
 const ROOMDEF = { shP: 'soft', winL: 'off', glareM: 'soft', win: false, door: false, winX: 0, cornice: false, extra: 250, ceiling: false, ceilH: 275, skirting: true, lamps: false, glare: 0.3, shadow: 0.5, angle: 90, skirtColor: '#ffffff', lampType: 'spot', glow: 'none', shOn: true, shAng: 20, shBlur: 4, shDist: 0.12, shadow: 0.55 };
-function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.v7) { S.v7 = 1; const d = S.dm || {}; S.dm = { o: !!(d.t || d.v), s: !!d.s, h: false, g: !!d.c, sd: false }; S.room.shAng = Math.max(-35, Math.min(35, S.room.shAng ?? 20)); S.room.shBlur = Math.min(8, S.room.shBlur ?? 4); S.room.shadow = Math.max(0.2, Math.min(0.8, S.room.shadow ?? 0.55)); } if (S.metal === 'graphite') S.metal = 'black'; if (!METAL[S.metal]) S.metal = 'white'; if (S.rod && S.rod !== 'white') S.rod = 'chrome'; if (!S.dm || !('o' in S.dm)) S.dm = { o: false, s: false, h: false, g: false, sd: false }; S.dimC = S.dimC === 'black' ? 'black' : 'white'; S.dimStyle = S.dimStyle === 'thin' ? 'thin' : 'bold'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40;
+function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v10) { S.v10 = 1; if (S.dimC === 'white') S.dimC = 'auto'; delete S.dims; } if (!Array.isArray(S.props)) S.props = []; if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.v7) { S.v7 = 1; const d = S.dm || {}; S.dm = { o: !!(d.t || d.v), s: !!d.s, h: false, g: !!d.c, sd: false }; S.room.shAng = Math.max(-35, Math.min(35, S.room.shAng ?? 20)); S.room.shBlur = Math.min(8, S.room.shBlur ?? 4); S.room.shadow = Math.max(0.2, Math.min(0.8, S.room.shadow ?? 0.55)); } if (S.metal === 'graphite') S.metal = 'black'; if (!METAL[S.metal]) S.metal = 'white'; if (S.rod && S.rod !== 'white') S.rod = 'chrome'; if (!S.dm || !('o' in S.dm)) S.dm = { o: false, s: false, h: false, g: false, sd: false }; S.dimC = S.dimC === 'black' ? 'black' : 'white'; S.dimStyle = S.dimStyle === 'thin' ? 'thin' : 'bold'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40;
   if (!S.v8) { S.v8 = 1; if (S.wall === '#b3b1ad') S.wall = '#a9a49c'; S.room.shP = S.room.shOn === false ? 'none' : 'soft'; S.room.extra = Math.max(250, S.room.extra || 0); S.room.glareM = 'soft'; if (S.rug === true) S.rug = { shape: 'rect', pile: 'flat' }; }
   if (S.floor === 'tile') S.floor = 'marble'; if (S.rug && typeof S.rug !== 'object') S.rug = { shape: 'rect', pile: 'flat' }; if (!S.plants) S.plants = []; if (!S.wallVar) S.wallVar = { paint: 'matte', plaster: 'koroed', paper: 'linen' }; if (!['soft', 'left', 'right', 'top', 'sharp', 'sun', 'none'].includes(S.room.shP)) S.room.shP = 'soft'; if (!['off', 'wall', 'floor', 'both'].includes(S.room.winL)) S.room.winL = 'off'; if (!['soft', 'bright', 'off'].includes(S.room.glareM)) S.room.glareM = 'soft';
   // v9: ceiling always on (a bit higher), walls at full width, short attached shadows
@@ -366,14 +366,13 @@ function bracket(g, x, y, L) {
   g.add(box(0.03, 0.005, L, x, y - 0.0025, ZB + L / 2, M.metal));
   g.add(box(0.016, 0.02, 0.01, x, y - 0.01, ZB + L - 0.005, M.metal));
 }
-const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0195, 0.0028, 10, 28, Math.PI * 1.25);
+const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0195, 0.0032, 10, 28, Math.PI * 1.25), RIV_G = new THREE.CylinderGeometry(0.0035, 0.0035, 0.007, 12);
 function rodHolder(g, x, by, ry, zr) {
-  // saddle over the bracket top flange, flat strap down, open hook cradling the rod
-  const top = by + 0.002, len = Math.max(0.02, top - ry + 0.004);
-  g.add(box(0.015, 0.0028, 0.034, x, top + 0.0014, zr, M.metal));
-  [-1, 1].forEach(s => g.add(box(0.0028, 0.018, 0.034, x + s * 0.0062, top - 0.008, zr, M.metal)));
-  g.add(box(0.0028, len, 0.034, x + 0.0062, top - len / 2, zr, M.metal));
-  const hk = new THREE.Mesh(HOOK_G, M.metal); hk.rotation.y = Math.PI / 2; hk.rotation.x = Math.PI * 0.917; hk.scale.set(1, 1, 6); hk.position.set(x + 0.0062, ry, zr); hk.castShadow = true; g.add(hk);
+  // Titan-GS: pressed-steel strap riveted to the underside of the shelf bracket, ~100 mm drop, ending in a round cup that holds the chrome rod (system color)
+  const top = by - 0.014, bot = ry + 0.012, len = Math.max(0.02, top - bot);
+  const st = new THREE.Mesh(new RoundedBoxGeometry(0.004, len + 0.012, 0.024, 2, 0.0015), M.metal); st.position.set(x, bot + len / 2 + 0.004, zr); st.castShadow = true; g.add(st);
+  [top - 0.004, top - 0.022].forEach(yy => { const r = new THREE.Mesh(RIV_G, M.metal); r.rotation.z = Math.PI / 2; r.position.set(x, yy, zr); g.add(r); });
+  const cup = new THREE.Mesh(HOOK_G, M.metal); cup.rotation.y = Math.PI / 2; cup.rotation.x = Math.PI * 0.375 + Math.PI; cup.scale.set(1, 1, 5.5); cup.position.set(x, ry, zr); cup.castShadow = true; g.add(cup);
 }
 function buildItem(g, item, x0, x1, sec) {
   const y = item.y * 10 * MM, dep = (REAL_DEPTH[item.t][item.d] || 400) * MM, z0 = ZI, zf = z0 + dep;
@@ -677,9 +676,12 @@ function buildDecor(c) {
 }
 
 // ---------- dimensions ----------
-const dimCol = () => S.dimC === 'black' ? '#1e1e1e' : '#ffffff';
+// «Авто» (default): dark lines on a light background (Студия, white brick), white otherwise, so dimensions never vanish
+function dimBlack() { if (S.dimC === 'black') return true; if (S.dimC === 'white') return false; if (photo && !$('showRoom').checked) return false;
+  const c = new THREE.Color(S.studio ? (S.bg || '#e2ded7') : (S.wall || '#a9a49c')); return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b > 0.62; }
+const dimCol = () => dimBlack() ? '#1e1e1e' : '#ffffff';
 function labelSprite(text, mode) {
-  const bold = S.dimStyle !== 'thin', white = S.dimC !== 'black';
+  const bold = S.dimStyle !== 'thin', white = !dimBlack();
   const c = document.createElement('canvas'), g = c.getContext('2d'), fs = 40, font = `${bold ? 700 : 600} ${fs}px Manrope,Arial,sans-serif`;
   g.font = font; const w = Math.ceil(g.measureText(text).width) + 30; c.width = w; c.height = 60; g.font = font;
   g.fillStyle = white ? `rgba(24,24,26,${bold ? 0.62 : 0.42})` : `rgba(255,255,255,${bold ? 0.94 : 0.8})`; g.beginPath(); g.roundRect(0, 0, w, 60, 16); g.fill();
@@ -694,7 +696,7 @@ function labelSprite(text, mode) {
 let DM = null, DTH = 0.003;
 function segs(g, pts) {
   const bold = S.dimStyle !== 'thin';
-  if (!DM || DM.k !== S.dimC + S.dimStyle) DM = { k: S.dimC + S.dimStyle, m: bold ? new THREE.MeshBasicMaterial({ color: dimCol(), depthTest: false, transparent: true, toneMapped: false }) : new THREE.LineDashedMaterial({ color: dimCol(), dashSize: 0.018, gapSize: 0.012, transparent: true, opacity: 0.8, depthTest: false, toneMapped: false }) };
+  if (!DM || DM.k !== dimCol() + S.dimStyle) DM = { k: dimCol() + S.dimStyle, m: bold ? new THREE.MeshBasicMaterial({ color: dimCol(), depthTest: false, transparent: true, toneMapped: false }) : new THREE.LineDashedMaterial({ color: dimCol(), dashSize: 0.018, gapSize: 0.012, transparent: true, opacity: 0.8, depthTest: false, toneMapped: false }) };
   if (!bold) { const geo = new THREE.BufferGeometry().setFromPoints(pts); const l = new THREE.LineSegments(geo, DM.m); l.computeLineDistances(); l.renderOrder = 9; g.add(l); return; }
   const th = DTH, q = new THREE.Quaternion(), X = V(1, 0, 0);
   for (let i = 0; i < pts.length; i += 2) { const a = pts[i], b = pts[i + 1], d = b.clone().sub(a), L = d.length(); if (L < 1e-5) continue; const m = new THREE.Mesh(BOX, DM.m); m.scale.set(L + th, th, th); m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.copy(q.setFromUnitVectors(X, d.normalize())); m.renderOrder = 9; g.add(m); }
@@ -754,7 +756,7 @@ function buildDims(g, wi) {
 const WG = [];
 function dimsOn() { const d = S.dm || {}; return !!(d.o || d.s || d.h || d.g || d.sd); }
 function rebuildDims() {
-  dimsG.clear(); const on = dimsOn() && S.dims !== false; dimsG.visible = on; if (!on) return;
+  dimsG.clear(); const on = dimsOn(); dimsG.visible = on; if (!on) return;
   { const d = camera.position.distanceTo(bbox.getCenter(new THREE.Vector3())); DTH = Math.max(0.0025, d * 2 * Math.tan(camera.fov * Math.PI / 360) * 1.7 / Math.max(300, view.clientHeight || 600)); }
   model.updateMatrixWorld(true); const inv = model.matrixWorld.clone().invert(), camR = V(1, 0, 0).applyQuaternion(camera.quaternion);
   wallsBuilt().forEach(wi => { const g = WG[wi]; if (!g) return;
@@ -1543,7 +1545,7 @@ function renderDimPop() {
   const ck = (k, t) => `<label class="chk"><input type="checkbox" data-dk="${k}" ${(k === 'all' ? all : D[k]) ? 'checked' : ''}> ${t}</label>`;
   $('dimPop').innerHTML = `<b>Размеры</b>${ck('all', 'Все')}${ck('o', 'Общая высота и ширина')}${ck('s', 'Ширина секций')}${ck('h', 'Высота полок от пола (↑)')}${ck('g', 'Расстояние между полками')}${ck('sd', 'Ширина × глубина полок')}
   <div class="szlab">Линии</div><div class="sz"><button data-ds="bold" class="${S.dimStyle !== 'thin' ? 'on' : ''}">Жирные</button><button data-ds="thin" class="${S.dimStyle === 'thin' ? 'on' : ''}">Тонкие</button></div>
-  <div class="szlab">Цвет</div><div class="sz"><button data-dcl="white" class="${S.dimC !== 'black' ? 'on' : ''}">Белый</button><button data-dcl="black" class="${S.dimC === 'black' ? 'on' : ''}">Черный</button></div>
+  <div class="szlab">Цвет</div><div class="sz"><button data-dcl="auto" class="${S.dimC !== 'black' && S.dimC !== 'white' ? 'on' : ''}">Авто</button><button data-dcl="white" class="${S.dimC === 'white' ? 'on' : ''}">Белый</button><button data-dcl="black" class="${S.dimC === 'black' ? 'on' : ''}">Черный</button></div>
   <div class="btns"><button class="mini danger" id="dimOff">Выключить размеры</button></div>`;
   const P = $('dimPop'), upd = () => { rebuildDims(); dimBtnUI(); renderDimPop(); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); };
   P.querySelectorAll('[data-dk]').forEach(c => c.onchange = () => { const k = c.dataset.dk; if (k === 'all') ['o', 's', 'h', 'g', 'sd'].forEach(x => D[x] = c.checked); else D[k] = c.checked; upd(); });
