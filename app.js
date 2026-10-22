@@ -2,14 +2,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { Reflector } from 'three/addons/objects/Reflector.js';
 import { CATALOG, RULES } from './catalog.js';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
-const METAL = { white: 0xeef1f4, black: 0x111111, silver: 0xc3c6c8 };
+const METAL = { white: 0xfdfdfd, black: 0x111111, silver: 0xdadde0 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
-const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_light', 3.0, 0xffffff, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
+const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_light', 3.0, 0xffffff, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x9c8573, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
   basket: 'Корзина стационарная', pull: 'Корзина выдвижная', rail: 'Штанга для вешалок', shoe: 'Полка для обуви', trouser: 'Брючница выдвижная'
@@ -17,7 +18,7 @@ const TYPES = {
 const DEPTHS = { mesh: [30, 40, 50], metal: [30, 40], ldsp: [30, 40], basket: [30, 40], pull: [30, 40], rail: [30], shoe: [30, 40], trouser: [40] };
 const REAL_DEPTH = { mesh: { 30: 306, 40: 406, 50: 506 }, metal: { 30: 327, 40: 427 }, ldsp: { 30: 330, 40: 430 }, basket: { 30: 340, 40: 440 }, pull: { 30: 340, 40: 440 }, rail: { 30: 300 }, shoe: { 30: 306, 40: 406 }, trouser: { 40: 440 } };
 // catalog lengths (mm) per element; the section width follows the chosen length
-const LENS = { mesh: [463, 603, 903, 1203], metal: [597], ldsp: [446, 587, 887], basket: [603, 903], pull: [563, 863], fine: [535], shoe: [604, 904], trouser: [463, 603], rail: [520, 640, 940, 1240] };
+const LENS = { mesh: [463, 603, 903, 1203], metal: [597], ldsp: [446, 587, 887], basket: [603, 903], pull: [563, 863], fine: [535], shoe: [603, 903], trouser: [463, 603], rail: [520, 640, 940, 1240] };
 const lensOf = o => o.t === 'pull' && o.v === 'fine' ? LENS.fine : LENS[o.t];
 const depthsOf = o => o.t === 'pull' && o.v === 'fine' ? [40] : DEPTHS[o.t];
 const secW = mm => nearest([45, 60, 90, 120], mm / 10);
@@ -35,7 +36,7 @@ function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    __fresh: true, v10: 1, v4: 1, v5: 1, v7: 1, v8: 1, layout: 'L', metal: 'black', wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', wallVar: { paint: 'matte', plaster: 'koroed', paper: 'linen', relief: 'brick' }, v11m: 1, floor: 'lam', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 213, plants: [], dims: false, dm: { o: false, s: false, h: false, g: false, sd: false }, dimC: 'auto', dimStyle: 'bold', studio: false, rug: null, room: { shOn: true, shP: 'soft', winL: 'off', glareM: 'soft', glare: 0.3, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true, extra: 250 },
+    __fresh: true, v10: 1, v4: 1, v5: 1, v7: 1, v8: 1, layout: 'Lr', metal: 'black', wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', wallVar: { paint: 'matte', plaster: 'koroed', paper: 'linen', relief: 'brick' }, v11m: 1, floor: 'lam', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 213, plants: [], dims: false, dm: { o: false, s: false, h: false, g: false, sd: false }, dimC: 'auto', dimStyle: 'bold', studio: false, rug: null, room: { shOn: true, shP: 'soft', winL: 'off', glareM: 'soft', glare: 0.3, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true, extra: 250 },
     walls: [
       { gap: 0, gapR: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), Object.assign(it('pull', 40, 75, 181), { v: 'mesh' }), Object.assign(it('pull', 40, 52, 181), { v: 'mesh' })])] },
       { gap: 50, sections: [sec(60, [it('mesh', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)])] },
@@ -44,13 +45,16 @@ function defaults() {
   };
 }
 const ROOMDEF = { shP: 'soft', winL: 'off', glareM: 'soft', win: false, door: false, winX: 0, cornice: false, extra: 250, ceiling: false, ceilH: 275, skirting: true, lamps: false, glare: 0.3, shadow: 0.5, angle: 90, skirtColor: '#ffffff', lampType: 'spot', glow: 'none', shOn: true, shAng: 20, shBlur: 4, shDist: 0.12, shadow: 0.55 };
-function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v11m) { S.v11m = 1; Object.assign(S, { wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', floor: 'lam', metal: 'black' }); S.wallVar = Object.assign({}, S.wallVar, { relief: 'brick' }); } if (!S.v10) { S.v10 = 1; if (S.dimC === 'white') S.dimC = 'auto'; delete S.dims; } if (!Array.isArray(S.props)) S.props = []; if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.v7) { S.v7 = 1; const d = S.dm || {}; S.dm = { o: !!(d.t || d.v), s: !!d.s, h: false, g: !!d.c, sd: false }; S.room.shAng = Math.max(-35, Math.min(35, S.room.shAng ?? 20)); S.room.shBlur = Math.min(8, S.room.shBlur ?? 4); S.room.shadow = Math.max(0.2, Math.min(0.8, S.room.shadow ?? 0.55)); } if (S.metal === 'graphite') S.metal = 'black'; if (!METAL[S.metal]) S.metal = 'white'; if (S.rod && S.rod !== 'white') S.rod = 'chrome'; if (!S.dm || !('o' in S.dm)) S.dm = { o: false, s: false, h: false, g: false, sd: false }; S.dimC = S.dimC === 'black' ? 'black' : 'white'; S.dimStyle = S.dimStyle === 'thin' ? 'thin' : 'bold'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40;
+function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v11m) { S.v11m = 1; Object.assign(S, { wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', floor: 'lam', metal: 'black' }); S.wallVar = Object.assign({}, S.wallVar, { relief: 'brick' }); } if (!S.v10) { S.v10 = 1; if (S.dimC === 'white') S.dimC = 'auto'; delete S.dims; } if (!Array.isArray(S.props)) S.props = []; if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.v7) { S.v7 = 1; const d = S.dm || {}; S.dm = { o: !!(d.t || d.v), s: !!d.s, h: false, g: !!d.c, sd: false }; S.room.shAng = Math.max(-35, Math.min(35, S.room.shAng ?? 20)); S.room.shBlur = Math.min(8, S.room.shBlur ?? 4); S.room.shadow = Math.max(0.2, Math.min(0.8, S.room.shadow ?? 0.55)); } if (S.metal === 'graphite') S.metal = 'black'; if (!METAL[S.metal]) S.metal = 'white'; S.rod = 'chrome'; if (!S.dm || !('o' in S.dm)) S.dm = { o: false, s: false, h: false, g: false, sd: false }; S.dimC = S.dimC === 'black' ? 'black' : 'white'; S.dimStyle = S.dimStyle === 'thin' ? 'thin' : 'bold'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40;
   if (!S.v8) { S.v8 = 1; if (S.wall === '#b3b1ad') S.wall = '#a9a49c'; S.room.shP = S.room.shOn === false ? 'none' : 'soft'; S.room.extra = Math.max(250, S.room.extra || 0); S.room.glareM = 'soft'; if (S.rug === true) S.rug = { shape: 'rect', pile: 'flat' }; }
-  if (S.floor === 'tile') S.floor = 'marble'; if (S.rug && typeof S.rug !== 'object') S.rug = { shape: 'rect', pile: 'flat' }; if (!S.plants) S.plants = []; if (!S.wallVar) S.wallVar = { paint: 'matte', plaster: 'koroed', paper: 'linen' }; if (!['soft', 'left', 'right', 'top', 'sharp', 'sun', 'none'].includes(S.room.shP)) S.room.shP = 'soft'; if (!['off', 'wall', 'floor', 'both'].includes(S.room.winL)) S.room.winL = 'off'; if (!['soft', 'bright', 'off'].includes(S.room.glareM)) S.room.glareM = 'soft';
+  if (S.floor === 'tile') S.floor = 'marble'; if (S.rug && typeof S.rug !== 'object') S.rug = { shape: 'rect', pile: 'fluffy' }; if (!S.plants) S.plants = []; if (!S.wallVar) S.wallVar = { paint: 'matte', plaster: 'koroed', paper: 'linen' }; if (!['soft', 'left', 'right', 'top', 'sharp', 'sun', 'none'].includes(S.room.shP)) S.room.shP = 'soft'; if (!['off', 'wall', 'floor', 'both'].includes(S.room.winL)) S.room.winL = 'off'; if (!['soft', 'bright', 'off'].includes(S.room.glareM)) S.room.glareM = 'soft';
   // v9: ceiling always on (a bit higher), walls at full width, short attached shadows
   if (!S.v9) { S.v9 = 1; S.room.ceilH = Math.max(285, S.room.ceilH || 0); if (S.room.glareM === 'bright') S.room.glareM = 'soft'; }
   if (!S.v91) { S.v91 = 1; S.room.ceilH = Math.max(300, S.room.ceilH || 0); S.__gapFix = true; }
   S.room.ceiling = true; S.room.extra = 400; S.room.ceilH = Math.max(230, Math.min(400, S.room.ceilH || 300));
+  // v11p: keep projects; striped/flat rug -> fluffy, basket heights onto 85/185/288, rod always chrome
+  if (!S.v11p) { S.v11p = 1; if (S.rug && typeof S.rug === 'object' && S.rug.pile !== 'jute') S.rug.pile = 'fluffy'; if (S.room && S.room.skirting == null) S.room.skirting = true;
+    (S.walls || []).forEach(w => (w.sections || []).forEach(sc => (sc.items || []).forEach(o => { if (typeof isBasket === 'function' && isBasket(o.t) && o.h) o.h = [85, 185, 288].reduce((a, b) => Math.abs(b - o.h) < Math.abs(a - o.h) ? b : a); }))); }
   S.walls.forEach(w => { if (w.gap == null) w.gap = 0; }); if (S.walls[0].gapR == null) S.walls[0].gapR = 0; return S; }
 function setTemplate(t) {
   const m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y: y + 3 }), sh = y => ({ t: 'shoe', d: 40, y }), pu = (y, h) => ({ t: 'pull', d: 40, y, h });
@@ -124,7 +128,7 @@ scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; window.HDR_ENV = pm.fromEquirectangular(t).texture; t.dispose(); try { applyGlareShadow(); } catch (e) {} })).catch(() => {});
 // SSAO only for the 📷 snapshot (loaded in the background, never used in the live view)
 let POST = null; Promise.all(['postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/SAOPass.js', 'postprocessing/OutputPass.js'].map(f => import('three/addons/' + f))).then(m => { POST = Object.assign({}, ...m); }).catch(() => {});
-const camera = new THREE.PerspectiveCamera(35, 1, 0.08, 40);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.08, 160);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minPolarAngle = 0.05; controls.maxPolarAngle = Math.PI - 0.05; controls.minDistance = 0.5; controls.maxDistance = 30;
 const hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc2, 0.6); scene.add(hemi);
@@ -161,14 +165,14 @@ function canvasTex(w, h, draw, rep) { const c = document.createElement('canvas')
 let CARPET;
 function carpetTex() {
   if (!CARPET) { let sd = 3; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-    const col = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#b9ab98'; g.fillRect(0, 0, w, h); for (let i = 0; i < 60000; i++) { const l = 150 + rnd() * 50; g.fillStyle = `rgba(${l + 25},${l + 12},${l - 6},0.55)`; g.fillRect(rnd() * w, rnd() * h, 1.6, 1.6); } }, 6);
+    const col = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#b9ab98'; g.fillRect(0, 0, w, h); for (let i = 0; i < 60000; i++) { const l = 150 + rnd() * 50; g.fillStyle = `rgba(${l + 25},${l + 12},${l - 6},0.55)`; g.fillRect(rnd() * w, rnd() * h, 1.6, 1.6); } }, 24);
     col.colorSpace = THREE.SRGBColorSpace;
-    const nor = canvasTex(512, 512, (g, w, h) => { g.fillStyle = 'rgb(128,128,255)'; g.fillRect(0, 0, w, h); for (let i = 0; i < 40000; i++) { g.fillStyle = `rgb(${100 + rnd() * 56},${100 + rnd() * 56},255)`; g.fillRect(rnd() * w, rnd() * h, 2, 2); } }, 6);
+    const nor = canvasTex(512, 512, (g, w, h) => { g.fillStyle = 'rgb(128,128,255)'; g.fillRect(0, 0, w, h); for (let i = 0; i < 40000; i++) { g.fillStyle = `rgb(${100 + rnd() * 56},${100 + rnd() * 56},255)`; g.fillRect(rnd() * w, rnd() * h, 2, 2); } }, 24);
     CARPET = [col, nor]; }
   return CARPET;
 }
 function floorMat() {
-  const [n, mx, tint, , , my] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
+  const [n, mx, tint, , , my] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (240 / mx).toFixed(3) + 'x' + (240 / (my || mx)).toFixed(3);
   if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2, userData: { floor: true } }); }
   return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: S.floor === 'marble' ? 0.5 : S.floor === 'conc' ? 0.15 : 0.06, clearcoatRoughness: S.floor === 'marble' ? 0.2 : 0.5, envMapIntensity: S.floor === 'marble' ? 0.7 : 0.4, specularIntensity: S.floor === 'marble' ? 1 : 0.35 });
 }
@@ -264,7 +268,7 @@ const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, k
 const PHW = { brick: ['painted_brick', 1.04, 1.6], beige: ['beige_wall_001', 2.4, 1, 1.1], lime: ['white_plaster_02', 2.2, 1] };
 function wallMat() { const v = finVar(), ph = PHW[v];
   if (ph) { const rp = (1 / ph[1]).toFixed(4), sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: tex(ph[0] + '_diff', true, rp), emissiveMap: tex(ph[0] + '_diff', true, rp), normalMap: tex(ph[0] + '_nor_gl', false, rp), normalScale: new THREE.Vector2(ph[2], ph[2]), roughnessMap: tex(ph[0] + '_rough', false, rp), roughness: 1, metalness: 0, envMapIntensity: 0.35, toneMapped: false });
-    const gn = ph[3] || 1, lf = v === 'brick'; m.userData = lf ? { wall: true, kd: 0.52, ke: 0.52 } : { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; if (lf) m.roughness = 0.85; setWallCol(m, S.wall); return m; }
+    const gn = ph[3] || 1, lf = v === 'brick'; m.userData = lf ? { wall: true, kd: 0.3, ke: 0.7 } : { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; if (lf) m.roughness = 0.85; setWallCol(m, S.wall); return m; }
   const t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
   const sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, normalMap: n, roughness: 0.93, metalness: 0, envMapIntensity: 0.25, toneMapped: false });
   m.userData = { wall: true, kd: sunM ? 0.55 : 0.62, ke: sunM ? 0.4 : 0.42 }; /* lit PBR wall: relief reads in the light, emissive keeps the color clean */ setWallCol(m, S.wall); return m; }
@@ -334,8 +338,8 @@ function makeMats() {
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.01, specularIntensity: 1, emissive: new THREE.Color(0x0c0d0f), envMap: chromeEnv(), envMapIntensity: 1.7, userData: { chrome: true } });
-  M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.01, specularIntensity: 1, emissive: new THREE.Color(0x0c0d0f), envMap: chromeEnv(), envMapIntensity: 2.1, userData: { chrome: true } });
+  M.rod = M.chrome; /* v11p: rods are always chrome */ void (S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : 0);
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
   M.ldsp = new THREE.MeshStandardMaterial({ color: dark ? 0x3b3836 : 0xf3f1ec, roughness: 0.6, metalness: 0 });
@@ -359,6 +363,7 @@ function rods(list, mat) {
 }
 function box(w, h, d, x, y, z, mat) { const b = new THREE.Mesh(BOX, mat); b.scale.set(w, h, d); b.position.set(x, y, z); b.castShadow = b.receiveShadow = true; return b; }
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const SHOE_DROP = 0.07;
 
 // ---------- build ----------
 function postLen(wi, i) { const L = S.walls[wi].postL; return (L && L[i]) || S.postH; }
@@ -422,8 +427,8 @@ const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), H
 let _GRM = null, _GRK = null; function gridMat() { if (_GRM && _GRK === M.metal) return _GRM; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 9); g.fillRect(0, 0, 9, 64);
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(34, 15); t.anisotropy = 4; _GRK = M.metal; _GRM = M.metal.clone(); _GRM.alphaMap = t; _GRM.alphaTest = 0.5; _GRM.side = THREE.DoubleSide; _GRM.normalMap = null; return _GRM; }
 let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.3, '#dfe3e8'); gr.addColorStop(0.46, '#4a4e54'); gr.addColorStop(0.5, '#101113'); gr.addColorStop(0.56, '#6d7177'); gr.addColorStop(0.8, '#9a9ea3'); gr.addColorStop(1, '#55585c'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
-  g.fillStyle = '#ffffff'; [[30, 40], [150, 22], [250, 56], [380, 30], [470, 18]].forEach(([x, w]) => g.fillRect(x, 10, w, 105)); g.fillStyle = '#1a1b1d'; [[100, 14], [215, 10], [330, 16], [440, 10]].forEach(([x, w]) => g.fillRect(x, 0, w, 256));
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.3, '#f1f4f7'); gr.addColorStop(0.44, '#a9aeb4'); gr.addColorStop(0.495, '#2c2f33'); gr.addColorStop(0.53, '#c9ccd0'); gr.addColorStop(0.8, '#e2e5e8'); gr.addColorStop(1, '#8c8f93'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
+  g.fillStyle = '#ffffff'; [[30, 40], [150, 22], [250, 56], [380, 30], [470, 18]].forEach(([x, w]) => g.fillRect(x, 10, w, 105)); g.fillStyle = '#1a1b1d'; [[100, 7], [215, 5], [330, 8], [440, 5]].forEach(([x, w]) => g.fillRect(x, 0, w, 256));
   const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; _CHE = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; return _CHE; }
 function rodHolder(g, x, by, ry, zr) {
   // Titan-GS: pressed-steel strap riveted to the underside of the shelf bracket, ~100 mm drop, ending in a round cup that holds the chrome rod (system color)
@@ -476,7 +481,7 @@ function buildItem(g, item, x0, x1, sec) {
   } else if (item.t === 'trouser') {
     // Titan-GS pull-out trouser rack 463 / 603 x 440 x 45: flat frame on roller runners under the brackets,
     // the bars run from the wall to the front (trousers hang over them), rubber rings stop slipping
-    const h = 0.045, aa = a + 0.006, bb = b - 0.006, n = Math.max(4, Math.round(L / 0.072)), yb = y - h + 0.009;
+    const h = 0.045, aa = a + 0.006, bb = b - 0.006, n = L < 0.53 ? 6 : L < 0.75 ? 8 : Math.round(L / 0.075), yb = y - h + 0.009;
     [[x0 + 0.003, aa], [x1 - 0.003, bb]].forEach(([xa, xb]) => g.add(box(Math.abs(xb - xa) + 0.006, 0.022, dep, (xa + xb) / 2, y - 0.011, z0 + dep / 2, M.metal)));
     [aa, bb].forEach(x => g.add(box(0.012, 0.024, dep - 0.02, x, y - 0.02, z0 + dep / 2, M.metal)));
     g.add(box(bb - aa + 0.012, 0.03, 0.012, (aa + bb) / 2, y - 0.022, z0 + 0.012, M.metal));
@@ -485,16 +490,19 @@ function buildItem(g, item, x0, x1, sec) {
     for (let k = 0; k < n; k++) { const x = aa + 0.03 + (bb - aa - 0.06) * k / (n - 1); r.push([V(x, yb, z0 + 0.018), V(x, yb, zf - 0.016), 0.0055]); for (let zz = z0 + 0.05; zz < zf - 0.05; zz += 0.05) rings.push([V(x, yb, zz), V(x, yb, zz + 0.008), 0.0078]); }
     g.add(rods(r, M.metal)); g.add(rods(rings, M.rubber));
   } else if (item.t === 'shoe') {
-    const drop = 0.11, r = [], n = Math.max(2, Math.round(L / 0.03));
-    const P = t => V(0, y + 0.004 - drop * t, z0 + dep * t);
-    for (let i = 0; i <= n; i++) { const x = a + L * i / n, p0 = P(0), p1 = P(1); r.push([V(x, p0.y, p0.z), V(x, p1.y, p1.z), 0.0034]); r.push([V(x, p1.y, p1.z), V(x, p1.y + 0.04, p1.z + 0.003), 0.0034]); }
-    [0, 0.33, 0.66, 1].forEach(t => { const p = P(t); r.push([V(x0, p.y, p.z), V(x1, p.y, p.z), 0.005]); });
-    const p1 = P(1); r.push([V(a, p1.y + 0.04, p1.z + 0.003), V(b, p1.y + 0.04, p1.z + 0.003), 0.0055]);
+    // v11p Titan-style shoe shelf: level brackets (added above), the mesh tilts inside them (back high, front ~7 cm lower),
+    // heel trough at the front, straight level stop bar and a zigzag support wire under it
+    const drop = SHOE_DROP, r = [], n = Math.max(2, Math.round(L / 0.03)), zF = z0 + dep - 0.03;
+    const P = t => V(0, y - 0.004 - drop * t, z0 + 0.01 + (zF - z0 - 0.01) * t);
+    const p0 = P(0), p1 = P(1), tb = V(0, p1.y - 0.012, p1.z + 0.014), tl = V(0, p1.y + 0.012, p1.z + 0.028);
+    for (let i = 0; i <= n; i++) { const x = a + L * i / n; r.push([V(x, p0.y, p0.z), V(x, p1.y, p1.z), 0.0032]); r.push([V(x, p1.y, p1.z), V(x, tb.y, tb.z), 0.0032]); r.push([V(x, tb.y, tb.z), V(x, tl.y, tl.z), 0.0032]); }
+    [0, 0.33, 0.66, 1].forEach(t => { const p = P(t); r.push([V(a, p.y, p.z), V(b, p.y, p.z), 0.0045]); });
+    r.push([V(a, tb.y, tb.z), V(b, tb.y, tb.z), 0.0045]); r.push([V(a, tl.y, tl.z), V(b, tl.y, tl.z), 0.005]);
+    // side frames along the level brackets carry the tilted mesh
+    [a, b].forEach(x => { r.push([V(x, y - 0.004, z0 + 0.01), V(x, y - 0.004, zf - 0.006), 0.005]); r.push([V(x, y - 0.004, zf - 0.006), V(x, tl.y, tl.z), 0.004]); });
+    const zs = zf - 0.006; r.push([V(x0 + 0.004, y - 0.004, zs), V(x1 - 0.004, y - 0.004, zs), 0.0058]); // straight front stop bar
+    const nz = Math.max(4, Math.round(L / 0.05)); for (let k = 0; k < nz; k++) { const xa = a + L * k / nz, xb = a + L * (k + 1) / nz, up = k % 2 === 0; r.push([V(xa, up ? tl.y : y - 0.006, up ? tl.z : zs), V(xb, up ? y - 0.006 : tl.y, up ? zs : tl.z), 0.0028]); }
     g.add(rods(r, M.metal));
-    // angled shoe brackets: the same slope as the mesh, hooked into the uprights at the back
-    const ang = Math.atan2(drop, dep), Lb = Math.hypot(dep, drop);
-    [x0, x1].forEach(x => { const br = box(0.006, 0.026, Lb, x, y + 0.004 - drop / 2 - 0.016, z0 + dep / 2, M.metal); br.rotation.x = ang; br.castShadow = true; g.add(br);
-      g.add(box(0.006, 0.07, 0.012, x, y - 0.025, z0 + 0.006, M.metal)); });
   } else if (item.t === 'rail') {
     // Titan-GS rod holder: sheet-steel hook 101 x 31 x 30 mm hung on the shelf bracket (before the shelf), seat for the d25 rod
     const sh = sec && sec.items.filter(o => o !== item && o.t !== 'rail' && o.t !== 'shoe' && o.y > item.y && o.y - item.y <= 25).sort((p, q) => p.y - q.y)[0];
@@ -567,7 +575,7 @@ function buildProps(ig, item, x0, x1, ref) {
   item.pr.forEach((p, pi) => { if (!PROPK[p.k] || !propFits(p.k, item.t)) return; const g = propModel(p.k, pi, item), hw = PROPK[p.k][2] / 2;
     const xa = x0 + 0.02 + hw, xb = x1 - 0.02 - hw, x = xb > xa ? xa + (xb - xa) * Math.max(0, Math.min(1, p.u ?? 0.5)) : (x0 + x1) / 2;
     if (item.t === 'rail') { const zr = ig.userData.rodZ ?? 0.3; g.position.set(x, y, zr); }
-    else if (item.t === 'shoe') { const drop = 0.11, ang = Math.atan2(drop, dep), t = 0.18; g.rotation.x = ang; g.position.set(x, y + 0.008 - drop * t, z0 + dep * t); }
+    else if (item.t === 'shoe') { const drop = SHOE_DROP, sd = dep - 0.04, ang = Math.atan2(drop, sd), t = 0.22; g.rotation.x = ang; g.position.set(x, y + 0.002 - drop * t, z0 + 0.01 + sd * t); }
     else { const top = y + (item.t === 'ldsp' ? 0.018 : item.t === 'metal' ? 0.0045 : 0.0125), d0 = p.k === 'box' ? 0.36 : 0.27; g.position.set(x, top, z0 + Math.max(d0 / 2 + 0.01, dep - d0 / 2 - 0.03)); }
     g.userData.prop = { ...ref, pi, x0, x1, hw }; g.traverse(o => { o.userData.prop = g.userData.prop; }); ig.add(g); });
 }
@@ -663,9 +671,9 @@ function buildRoom() {
   const floorM = ST ? new THREE.ShadowMaterial({ opacity: 0 }) : (fm0 => fm0.isMeshStandardMaterial ? new THREE.MeshLambertMaterial({ color: fm0.color, map: fm0.map, normalMap: fm0.normalMap, normalScale: fm0.normalScale, userData: { floor: true } }) : fm0)(floorMat()); // matte floor: no glare
   // floor laid from the corner: tiles and parquet at 45 deg, laminate along the main wall (real scale, see FLOORS)
   const fc = cl ? left : cr ? right : F.x0, FD = FLOORS[S.floor] || FLOORS.oak, fRot = FD[4] ? Math.PI / 4 : 0;
-  const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorM); fl.rotation.set(-Math.PI / 2, 0, fRot); fl.position.set(fc, 0, 0); fl.receiveShadow = !ST; fl.userData.floorM = true; room.add(fl);
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), floorM); fl.rotation.set(-Math.PI / 2, 0, fRot); fl.position.set(fc, 0, 0); fl.receiveShadow = !ST; fl.userData.floorM = true; room.add(fl);
   const FJ = FLOORS[S.floor] && FLOORS[S.floor][3];
-  if (!ST && FJ) { const jt = jointTex(S.floor).clone(); jt.needsUpdate = true; jt.repeat.set(60 / FJ[0], 60 / FJ[1]); const j = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshBasicMaterial({ map: jt, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); j.rotation.set(-Math.PI / 2, 0, fRot); j.position.set(fc, 0.0005, 0); room.add(j); }
+  if (!ST && FJ) { const jt = jointTex(S.floor).clone(); jt.needsUpdate = true; jt.repeat.set(240 / FJ[0], 240 / FJ[1]); const j = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshBasicMaterial({ map: jt, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); j.rotation.set(-Math.PI / 2, 0, fRot); j.position.set(fc, 0.0005, 0); room.add(j); }
   const ops = ST ? [] : openingsList(F, CH), WH = CH + 0.03, bk = new THREE.Group(); room.add(bk);
   const wallPlane = (w, x, z, ry, parent, holes) => {
     const sh = new THREE.Shape(); sh.moveTo(-w / 2, -WH / 2); sh.lineTo(w / 2, -WH / 2); sh.lineTo(w / 2, WH / 2); sh.lineTo(-w / 2, WH / 2); sh.lineTo(-w / 2, -WH / 2);
@@ -677,10 +685,10 @@ function buildRoom() {
   };
   const bo = ops.filter(o => o.wall === 'B').map(o => ({ ...o, c: o.x - cx }));
   bk.userData.occ = wallPlane(right - left, cx, 0, 0, bk, bo);
-  const skM = new THREE.MeshStandardMaterial({ color: '#f6f5f2', roughness: 1, metalness: 0, envMapIntensity: 0 });
+  const skC = new THREE.Color(S.room.skirtColor || '#f6f5f2'), skM = new THREE.MeshLambertMaterial({ color: skC.clone().multiplyScalar(0.3), emissive: skC.clone().multiplyScalar(0.68) }); // v11p: mostly self-lit, no gray shading while orbiting
   // skirting runs along u (local x of a wall frame), cut at doors
-  const skirt = (parent, u0, u1, cuts, place) => { let segs = [[u0, u1]]; cuts.forEach(([a, b]) => { segs = segs.flatMap(([s, e]) => b <= s || a >= e ? [[s, e]] : [[s, a], [b, e]].filter(([p, q]) => q - p > 0.01)); });
-    segs.forEach(([s, e]) => { const g = new THREE.Group(); place(g); [[0.016, 0.08, 0.04, 0.008], [0.022, 0.012, 0.074, 0.011]].forEach(([d, h, y, z]) => { const m = box(e - s, h, d, (s + e) / 2, y, z, skM); m.castShadow = false; g.add(m); }); parent.add(g); }); };
+  const skirt = (parent, u0, u1, cuts, place) => { if (S.room.skirting === false) return; let segs = [[u0, u1]]; cuts.forEach(([a, b]) => { segs = segs.flatMap(([s, e]) => b <= s || a >= e ? [[s, e]] : [[s, a], [b, e]].filter(([p, q]) => q - p > 0.01)); });
+    segs.forEach(([s, e]) => { const g = new THREE.Group(); place(g); [[0.016, 0.08, 0.04, 0.008], [0.022, 0.012, 0.074, 0.011]].forEach(([d, h, y, z]) => { const m = box(e - s, h, d, (s + e) / 2, y, z, skM); m.castShadow = m.receiveShadow = false; g.add(m); }); parent.add(g); }); };
   const doorCuts = (list, key) => list.filter(o => o.kind === 'door').map(o => [o[key] - o.w / 2 - 0.08, o[key] + o.w / 2 + 0.08]);
   const cmM = new THREE.MeshStandardMaterial({ color: S.room.cornColor || '#fbfaf6', roughness: 0.7 });
   const cornice = (len, place, parent) => { const g = new THREE.Group(); place(g); [[0.012, 0.09, 0.006], [0.03, 0.05, 0.02], [0.05, 0.022, 0.04]].forEach(([d, hh, zz]) => { const m = box(len, hh, d, 0, CH - hh / 2, zz - d / 2 + 0.006, cmM); m.castShadow = false; g.add(m); }); parent.add(g); };
@@ -721,7 +729,7 @@ function rugTex(fluffy) {
   const n = document.createElement('canvas'); n.width = n.height = 512; const q = n.getContext('2d'); q.fillStyle = 'rgb(128,128,255)'; q.fillRect(0, 0, 512, 512);
   if (fluffy) { g.fillStyle = '#b3a285'; g.fillRect(0, 0, 512, 512); for (let i = 0; i < 70000; i++) { const x = rnd() * 512, y = rnd() * 512, a = rnd() * 6.3, L = 3 + rnd() * 7, l = 170 + rnd() * 55; g.strokeStyle = `rgba(${l},${l - 8},${l - 22},0.55)`; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * L, y + Math.sin(a) * L); g.stroke(); q.strokeStyle = `rgb(${128 + Math.cos(a) * 70},${128 + Math.sin(a) * 70},230)`; q.lineWidth = 1.5; q.beginPath(); q.moveTo(x, y); q.lineTo(x + Math.cos(a) * L, y + Math.sin(a) * L); q.stroke(); } }
   else { g.fillStyle = '#b9ab94'; g.fillRect(0, 0, 512, 512); for (let y = 0; y < 512; y += 6) for (let x = 0; x < 512; x += 6) { const l = 140 + rnd() * 45, o = ((x + y) / 6) % 2; g.fillStyle = `rgba(${l + 30},${l + 20},${l},0.95)`; if (o) g.fillRect(x, y, 6, 4); else g.fillRect(x, y, 4, 6); q.fillStyle = o ? 'rgb(128,150,255)' : 'rgb(150,128,255)'; if (o) q.fillRect(x, y, 6, 2); else q.fillRect(x, y, 2, 6); }
-    g.fillStyle = 'rgba(80,72,62,0.55)'; for (let k2 = 0; k2 < 3; k2++) { g.fillRect(0, 60 + k2 * 10, 512, 4); g.fillRect(0, 448 - k2 * 10, 512, 4); } }
+  }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
   const tn = new THREE.CanvasTexture(n); tn.wrapS = tn.wrapT = THREE.RepeatWrapping;
   RUGT[k] = [t, tn]; return RUGT[k];
@@ -743,13 +751,14 @@ let BLOBT = null;
 function blobMat(op) { if (!BLOBT) { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, 'rgba(30,24,20,1)'); gr.addColorStop(0.55, 'rgba(30,24,20,0.55)'); gr.addColorStop(1, 'rgba(30,24,20,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); BLOBT = new THREE.CanvasTexture(c); }
   return new THREE.MeshBasicMaterial({ map: BLOBT, transparent: true, opacity: op, depthWrite: false, toneMapped: false }); }
 // tall floor mirror in a slim black frame, leaning on the wall; the glass reflects the room environment
+const REFL = []; let REFLi = 0; // reused Reflectors (no render-target leak on rebuild)
 function mirrorModel() { const g = new THREE.Group(), W = 0.62, H = 1.72, f = 0.035, lean = 0.075, tilt = Math.atan2(lean, H);
   const fm = new THREE.MeshPhysicalMaterial({ color: 0x18181a, roughness: 0.42, metalness: 0.3, clearcoat: 0.3, clearcoatRoughness: 0.4 });
   const gm = new THREE.MeshStandardMaterial({ color: 0xe9eeee, metalness: 1, roughness: 0.06, envMapIntensity: 2.6, emissive: new THREE.Color(0x8d9494) });
   const in_ = new THREE.Group(); in_.rotation.x = -tilt; in_.position.z = -lean; g.add(in_);
   const add = (w, h, d, x, y, z, m) => { const o = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, 0.006), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; in_.add(o); return o; };
   add(f, H, 0.03, -W / 2 + f / 2, H / 2, 0, fm); add(f, H, 0.03, W / 2 - f / 2, H / 2, 0, fm); add(W, f, 0.03, 0, H - f / 2, 0, fm); add(W, f, 0.03, 0, f / 2, 0, fm);
-  const gl = new THREE.Mesh(new THREE.PlaneGeometry(W - 2 * f + 0.004, H - 2 * f + 0.004), gm); gl.position.set(0, H / 2, 0.004); in_.add(gl);
+  const gG = new THREE.PlaneGeometry(W - 2 * f + 0.004, H - 2 * f + 0.004); let gl; try { gl = REFL[REFLi]; if (!gl) gl = REFL[REFLi] = new Reflector(gG, { textureWidth: 512, textureHeight: 1024, color: 0xcfd6d6, clipBias: 0.003 }); REFLi++; gl.rotation.set(0, 0, 0); } catch (e) { gl = new THREE.Mesh(gG, gm); } gl.position.set(0, H / 2, 0.004); in_.add(gl); // v11p: real reflection
   const back = new THREE.Mesh(new THREE.PlaneGeometry(W, H), fm); back.rotation.y = Math.PI; back.position.set(0, H / 2, -0.012); in_.add(back);
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.24, 0.36), blobMat(0.35)); sh.rotation.x = -Math.PI / 2; sh.position.set(0, 0.0025, 0.02); g.add(sh);
   g.position.z = 0; return g; }
@@ -779,12 +788,14 @@ function bladeGeo(len, wid, f, droop, cup, segU = 10, segV = 6) {
   for (let i = 0; i < segU; i++) for (let j = 0; j < segV; j++) { const a = i * (segV + 1) + j, b = a + segV + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
 }
-function monsteraGeo(sz) {
-  const sh = new THREE.Shape(), N = 90, slits = [0.5, 0.85, 1.2, 1.55, 1.95, 2.35], pts = [];
+const MONG = {};
+function monsteraGeo(sz) { const kk = sz.toFixed(2); return MONG[kk] || (MONG[kk] = monsteraGeo0(sz)); }
+function monsteraGeo0(sz) {
+  const sh = new THREE.Shape(), N = 60, slits = [0.5, 0.85, 1.2, 1.55, 1.95, 2.35], pts = [];
   for (let i = 0; i <= N; i++) { const t = i / N * Math.PI * 2, x = 16 * Math.pow(Math.sin(t), 3), y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); pts.push([x, y + 5, t]); }
   const out = []; pts.forEach(([x, y, t], i) => { const tt = t > Math.PI ? 2 * Math.PI - t : t; out.push([x, y]); slits.forEach(s => { if (Math.abs(tt - s) < Math.PI / N) { const ix = x * 0.38, iy = y * 0.85 + 2; out.push([ix, iy], [x * 1.0 + (t > Math.PI ? 0.6 : -0.6), y + 0.6]); } }); });
   out.forEach(([x, y], i) => i ? sh.lineTo(x, y) : sh.moveTo(x, y));
-  const g = new THREE.ShapeGeometry(sh, 2), p = g.attributes.position, k = sz / 22;
+  const g = new THREE.ShapeGeometry(sh, 1), p = g.attributes.position, k = sz / 22;
   for (let i = 0; i < p.count; i++) { const x = p.getX(i) * k, y = p.getY(i) * k; p.setXYZ(i, x, -0.35 * y * y / sz + 0.12 * x * x / sz, y); }
   g.computeVertexNormals(); return g;
 }
@@ -823,7 +834,7 @@ function plantModel(k) {
 const PLC = {};
 function plantSpot(i) { const F = frame(), cl = F.xL != null, cr = F.xR != null; const spots = []; if (S.layout === 'Lr' || S.layout === 'straight') spots.push([F.x0 - 0.45, 0.4]); if (!cr) spots.push([F.x0 + F.backW + 0.45, 0.4]); else spots.push([F.xR - 0.4, 2.2]); if (cl) spots.push([F.xL + 0.4, 2.4]); spots.push([F.x0 + F.backW / 2 + 0.9, 1.6]); return spots[i % spots.length]; }
 function buildPlants() {
-  (S.plants || []).forEach((p, i) => { if (!PLC[p.k]) PLC[p.k] = plantModel(p.k); const g = PLC[p.k].clone(); g.position.set(p.x, 0, p.z); g.rotation.y = p.r || 0; g.scale.setScalar(p.s || 1); g.userData.plant = i; g.traverse(o => { o.userData.plant = i; }); decor.add(g); });
+  (S.plants || []).forEach((p, i) => { if (!PLC[p.k] && p.k !== 'mirror') PLC[p.k] = plantModel(p.k); const g = p.k === 'mirror' ? plantModel(p.k) : PLC[p.k].clone(); /* mirror: own pooled Reflector (a clone would sample a never-rendered target) */ g.position.set(p.x, 0, p.z); g.rotation.y = p.r || 0; g.scale.setScalar(p.s || 1); g.userData.plant = i; g.traverse(o => { o.userData.plant = i; }); decor.add(g); });
 }
 // window light: soft window-shaped patch with mullions on the wall and / or floor (additive, works on the unlit walls)
 let WLT = null;
@@ -880,7 +891,7 @@ function dimV(g, labels, x, ya, yb, z, text, xPart, side) {
 }
 const cm = mm => String(Math.round(mm / 10 * 10) / 10).replace('.', ',');
 function itemTop(o) { return o.y * 10 * MM + (o.t === 'rail' ? 0.017 : 0); }
-function itemBot(o) { const y = o.y * 10 * MM; return o.t === 'basket' || o.t === 'pull' ? y - (o.h || 85) * MM : o.t === 'trouser' ? y - 0.045 : o.t === 'shoe' ? y - 0.11 : o.t === 'rail' ? y - 0.017 : y - 0.042; }
+function itemBot(o) { const y = o.y * 10 * MM; return o.t === 'basket' || o.t === 'pull' ? y - (o.h || 85) * MM : o.t === 'trouser' ? y - 0.045 : o.t === 'shoe' ? y - 0.09 : o.t === 'rail' ? y - 0.017 : y - 0.042; }
 function buildDims(g, wi) {
   const labels = [], W = S.walls[wi], z = 0.006, railY = S.railTop * 10 * MM, D = S.dm || {};
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
@@ -940,6 +951,7 @@ function restoreHist(j) { histLock = true; setTimeout(() => { renderDeco(); setB
 function undo() { clearTimeout(histT); if (HIST.length < 2) return; RED.push(HIST.pop()); restoreHist(HIST[HIST.length - 1]); }
 function redo() { if (!RED.length) return; const j = RED.pop(); HIST.push(j); restoreHist(j); }
 function rebuild() {
+  REFLi = 0;
   // fresh start / reset: corner shifts sit on the red dot (no shelves crossing in the corner)
   if (S.__gapFix) { delete S.__gapFix; const ks = gapKeys(); if (ks.length && !ks.some(([k]) => gapGet(k) >= optGap(k))) S.__fresh = true; }
   if (S.__fresh) { delete S.__fresh; if (S.layout !== 'straight') gapKeys().forEach(([k]) => gapSet(k, Math.min(300, optGap(k)))); }
@@ -1015,7 +1027,7 @@ function levelCam(cam, tg, k) {
 // ---- level orbit: pitch always 0, height + lens shift ----
 const orb = { on: false, T: V(0, 1, 0), az: 0, R: 4, h: 1.5 };
 function syncFromCam(kind) {
-  orb.on = kind !== 'top'; controls.enabled = !orb.on;
+  orb.on = true; controls.enabled = !orb.on;
   if (!orb.on) { camera.clearViewOffset(); return; }
   const T = controls.target.clone(), p = camera.position;
   orb.T.copy(T); orb.az = Math.atan2(p.x - T.x, p.z - T.z); orb.R = Math.max(0.5, Math.hypot(p.x - T.x, p.z - T.z)); orb.h = p.y; applyCam();
@@ -1027,7 +1039,7 @@ function applyCam(cam = camera) {
   // plain perspective: true tilt at every angle, no lens shift, free orbit all around (walls facing the camera hide via tickOcc) // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
   // two-point perspective: level camera + vertical lens shift keeps verticals straight at normal angles;
   // the shift is capped (30°) so the image never stretches, and from 40° to 65° it hands over smoothly to a real tilt
-  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, bt = Math.max(0, Math.min(1, (ea - 15 * D2R) / (15 * D2R))), sh = Math.min(ea, 18 * D2R) * (1 - bt * bt * (3 - 2 * bt)), p = Math.sign(a) * (ea - sh);
+  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, sh = Math.min(ea, 80 * D2R), p = Math.sign(a) * (ea - sh);
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   if (sh > 1e-4) { const yN = -Math.tan(Math.sign(a) * sh) / Math.tan(cam.fov * Math.PI / 360), H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); }
 }
@@ -1070,12 +1082,12 @@ function camPhoto(k) {
 function lensUI() { const k = camK(), b = document.getElementById('lensBtn'); if (!b) return; b.classList.toggle('on', k !== 'std'); b.title = 'Камера: ' + CAMS.find(c => c[0] === k)[1]; }
 // auto-fit: keep the angle, set distance and target so the whole system (with props) fits the free canvas area
 // between the top bar and the bottom toolbar with ~11% margin on each side
-function safeNdc() { const r = renderer.domElement.getBoundingClientRect(), H = r.height || 1, tb = $('topbar'), fb = $('floatBar');
+function safeNdc(M) { const r = renderer.domElement.getBoundingClientRect(), H = r.height || 1, tb = $('topbar'), fb = $('floatBar');
   const top = tb ? Math.max(0, tb.getBoundingClientRect().bottom - r.top) : 0, bot = fb ? Math.max(0, r.bottom - fb.getBoundingClientRect().top) : 0;
-  const yT = 1 - 2 * top / H, yB = -1 + 2 * bot / H, m = 0.19, hy = (yT - yB) * m; return { x0: -1 + 2 * m, x1: 1 - 2 * m, y0: yB + hy, y1: yT - hy }; }
-function fitView() { if (!orb.on || !WG.length) return; const b = meshBox(); if (b.isEmpty()) return;
+  const yT = 1 - 2 * top / H, yB = -1 + 2 * bot / H, mx = M ? M[0] : 0.19, m = M ? M[1] : 0.19, hy = (yT - yB) * m; return { x0: -1 + 2 * mx, x1: 1 - 2 * mx, y0: yB + hy, y1: yT - hy }; }
+function fitView(M) { if (!orb.on || !WG.length) return; const b = meshBox(); if (b.isEmpty()) return;
   const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
-  const sf = safeNdc(), q = new THREE.Vector3();
+  const sf = safeNdc(M), q = new THREE.Vector3();
   for (let it = 0; it < 12; it++) { applyCam(); camera.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
     pts.forEach(p => { q.copy(p).project(camera); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); });
     const s = Math.max((x1 - x0) / (sf.x1 - sf.x0), (y1 - y0) / (sf.y1 - sf.y0)); if (!isFinite(s) || s <= 0) return;
@@ -1085,14 +1097,19 @@ function fitView() { if (!orb.on || !WG.length) return; const b = meshBox(); if 
     const k = Math.max(0.5, Math.min(2, s)); orb.h = orb.T.y + (orb.h - orb.T.y) * k; orb.R *= k;
     if (Math.abs(s - 1) < 0.02 && Math.abs(dx) < 0.005 && Math.abs(dy) < 0.005) break;
     // the room walls stop the camera from backing off sideways: turn a little more frontal instead
-    if (it >= 3 && s > 1.03) orb.az *= 0.75; }
+    if (it >= 3 && s > 1.03 && !M) orb.az *= 0.75; }
   applyCam(); if (WG.length) rebuildDims(); }
 // selection highlight: blue tint in the color itself plus emissive, so it reads on white (clamped) and black metal alike
 function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.contact || m.userData.hlOrig || Array.isArray(m.material)) return; const o = m.material, c = o.clone(); m.userData.hlOrig = o;
   if (c.color) c.color.set(0x5b9bff); if (c.emissive) { c.emissive.set(0x1f66ff); c.emissiveIntensity = 0.55; } if (c.map && c.color) c.color.set(0x8fbaff); if ('sheen' in c) c.sheen = 0; m.material = c; }); }
 function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
 let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
-function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') fitView(); }
+function camTo(kind) { if (kind === 'iso') kind = 'nice'; if (kind === 'front' || kind === 'top' || kind === 'card') return camLevel(kind); camTo0(kind); fitView(); }
+// v11p: Готово views - level camera (full lens shift) + fit with air margins
+function camLevel(kind) { const c = bbox.getCenter(new THREE.Vector3()), sg = S.layout === 'Lr' ? -1 : 1, corner = S.layout === 'L' || S.layout === 'Lr';
+  const P = { front: { az: corner ? sg * Math.PI / 4 : 0, el: 0.04, m: [0.17, 0.2] }, top: { az: corner ? sg * 0.5 : 0, el: 1.0, m: [0.2, 0.17] }, card: { az: corner ? sg * 0.62 : 0.3, el: 0.2, m: [0.16, 0.22] } }[kind];
+  camera.fov = LENSF(); camera.updateProjectionMatrix(); orb.on = true; controls.enabled = false; orb.snapAz = false; orb.T.copy(c); orb.az = P.az; orb.R = 6; orb.h = c.y + 6 * Math.tan(P.el);
+  fitView(P.m); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); applyLights && applyLights(); }
 function camTo0(kind) {
   if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
@@ -1293,7 +1310,7 @@ function specData() {
       if (o.t === 'basket') { add(fill, `Корзина ${bk} стационарная ${nearest([603, 903], w)}x${d}x${o.h || 85}`); add(card, `Корзина ${nom}`); }
       if (o.t === 'pull') { add(fill, `Корзина ${bk} выдвижная ${nearest([563, 863], w)}x${d}x${o.h || 85}`); add(card, `Корзина выдвижная ${nom}`); }
       if (o.t === 'trouser') { add(fill, `Брючница выдвижная ${nearest([463, 603], w)}x440x45`); add(card, `Брючница ${nom}`); }
-      if (o.t === 'shoe') { add(fill, `Полка обувная сетчатая ${nearest([604, 904], w)}x${o.d === 30 ? 306 : 406}`); add(card, `Полка для обуви ${nom}`); }
+      if (o.t === 'shoe') { add(fill, `Полка обувная сетчатая ${nearest([603, 903], w)}x${o.d === 30 ? 306 : 406}`); add(card, `Полка для обуви ${nom}`); }
       if (o.t === 'rail') { add(fill, `Перекладина ${nearest([520, 640, 940, 1240, 2000], w)} мм`); add(fill, 'Кронштейн для перекладины 30×30×100', 2); add(fill, 'Заглушка перекладины 15×23×23', 2); add(card, 'Штанга'); const ry = s.items.some(p => p !== o && p.t !== 'rail' && p.t !== 'shoe' && p.y > o.y && p.y - o.y <= 25) ? null : o.y + 9; if (ry != null) [si, si + 1].forEach(p => { const k = `${wi}:${p}:${ry}`; if (!brk.has(k)) { brk.add(k); add(fill, 'Кронштейн 335 мм'); add(card, 'Кронштейн для полки'); } }); }
       else [si, si + 1].forEach(p => { const k = `${wi}:${p}:${o.y}`; if (!brk.has(k)) { brk.add(k); add(fill, `Кронштейн ${br} мм`); add(card, 'Кронштейн для полки'); } });
     }));
@@ -1364,7 +1381,7 @@ function presetItems(t) {
   const T = { shelves: () => { const a = []; for (let y = top; y >= lo; y -= 36) a.push(M_(y)); return a; }, rod: () => [...C_(top), M_(lo + 20)], two: () => [...C_(top), ...C_(mid)], baskets: () => [M_(top), M_(top - 38), M_(top - 76), B_(lo + 70), B_(lo + 45), B_(lo + 20)], shoes: () => [M_(top), M_(top - 38), M_(top - 76), it('shoe', 40, lo + 50), it('shoe', 40, lo + 25)] };
   const r = { items: T[t]().map(o => (o.y = clampY(o.y), o)) }; syncLinks(r); return r.items;
 }
-function syncLinks(sec) { sec.items = sec.items.filter(o => !o.lk || sec.items.some(p => p.g === o.lk)); sec.items.forEach(o => { if (o.lk) { const p = sec.items.find(q => q.g === o.lk); o.y = clampY(p.y - 10); } }); }
+function syncLinks(sec) { sec.items = sec.items.filter(o => !o.lk || sec.items.some(p => p.g === o.lk)); sec.items.forEach(o => { if (o.lk) { const p = sec.items.find(q => q.g === o.lk); o.y = clampY(p.y - (o.lo == null ? 10 : o.lo)); } }); }
 function newItem(c) {
   S.q = (S.q || 0) + 1;
   if (c === 'combo') { const g = 'g' + S.q, sh = it('mesh', S.depth || 40, 100), r = it('rail', 30, 90); sh.g = g; sh.q = S.q; r.lk = g; return [sh, r]; }
@@ -1392,9 +1409,7 @@ function placeFree(sec, os, y0) {
 function linkUI() { let L = $('linkBar'); if (!L) { L = document.createElement('span'); L.id = 'linkBar'; L.style.cssText = 'display:inline-flex;gap:6px;margin-right:6px'; $('delBtn').before(L); }
   const sc = S.walls[cur.w] && S.walls[cur.w].sections[cur.s], o = sc && cur.it >= 0 && sc.items[cur.it]; let h = '';
   if (o && !window.__propSel && !(window.__plantSel >= 0)) {
-    if (o.g) h = '<button class="rnd lk" data-lk="rm">Убрать штангу</button><button class="rnd lk" data-lk="un">Отцепить штангу</button>';
-    else if (o.t === 'rail' && !o.lk) { const p = nearShelf(sc, o); if (p) h = '<button class="rnd lk" data-lk="at">Прикрепить к полке</button>'; }
-    else if (!isBasket(o.t) && o.t !== 'rail' && o.t !== 'trouser') h = '<button class="rnd lk" data-lk="add">Добавить штангу</button>'; }
+    /* v11p: no rod text buttons; tap the rod to select it, «Удалить» removes it */ }
   if (L.innerHTML !== h) { L.innerHTML = h; L.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => linkAct(b.dataset.lk)); } }
 function nearShelf(sc, r) { return sc.items.filter(p => !p.g && !p.lk && p.t !== 'rail' && !isBasket(p.t) && p.y > r.y && p.y - r.y <= 40).sort((a, b) => a.y - b.y)[0]; }
 function linkAct(k) { const sc = S.walls[cur.w].sections[cur.s], o = sc.items[cur.it]; if (!o) return;
@@ -1444,7 +1459,7 @@ function renderSec() {
   h += '<div class="tabs secchips">' + W.sections.map((s, i) => `<button data-s="${i}" class="${i === cur.s ? 'on' : ''}">Секция ${i + 1}<small>${s.w} см · ${s.items.length} эл.</small></button>`).join('') + '</div>';
   $('secTabs').innerHTML = h;
   $('secTabs').querySelectorAll('[data-w]').forEach(b => b.onclick = () => { cur = { w: +b.dataset.w, s: 0, it: -1 }; renderSec(); rebuild(); flashWall(cur.w); });
-  $('secTabs').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { cur.s = +b.dataset.s; cur.it = -1; renderSec(); rebuild(); });
+  $('secTabs').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { cur.s = +b.dataset.s; cur.it = -1; renderSec(); rebuild(); flashWall(cur.w, cur.s); });
   renderGaps();
   renderSizes();
   if (W.off) { $('secEdit').innerHTML = `<div class="offbox"><b>${act.length > 2 ? ['Основная стена', 'Левая стена', 'Правая стена'][cur.w] : WALLNAMES[cur.w]}: конструкция убрана</b><p class="foot">Стена комнаты осталась. Стойки, рельс и наполнение можно вернуть.</p><button class="acc" data-restore="${cur.w}">Вернуть конструкцию</button></div>`; $('secEdit').querySelector('[data-restore]').onclick = () => { W.off = false; rebuild(); renderSec(); renderWallsPop(); }; return; }
@@ -1457,16 +1472,14 @@ function renderSec() {
   e += '<div class="szlab">Готовые наборы</div><div class="chips">' + [['shelves', 'Только полки'], ['rod', 'Штанга + полки'], ['two', 'Две штанги'], ['baskets', 'Полки + корзины'], ['shoes', 'Полки + обувь']].map(([k, t]) => `<button data-pre="${k}">${t}</button>`).join('') + '<button data-empty="1">Очистить</button></div>';
   const icoBtn = c => `<div class="ico"><button class="big" data-app="${c}" title="Добавить ниже последнего">${ICO[c]}<span class="${c === 'combo' ? 'two' : ''}">${c === 'combo' ? 'Полка<br>со штангой' : CATS[c]}</span></button><div class="cnt"><button data-dec="${c}">−</button><b>${cnt(c)}</b><button data-inc="${c}">+</button></div></div>`;
   e += '<div class="szlab">Элементы</div><div class="icons">' + ['shelf', 'rod', 'combo', 'trouser'].map(icoBtn).join('') + '</div>';
-  e += '<div class="bgroup"><div class="icons">' + icoBtn('basket') + '<div class="bnote">Тип корзины: нажмите на картинку, чтобы выбрать тип и добавить корзину</div></div><div class="btiles">' + BK.map(([k, t, svg]) => `<button data-bk="${k}" class="${(S.bKind || 'pull|mesh') === k ? 'on' : ''}"><svg viewBox="0 0 48 32">${svg}</svg><span>${t}</span></button>`).join('') + '</div></div>';
+  e += '<div class="bgroup"><div class="icons">' + icoBtn('basket') + '<div class="bnote">Тип корзины: нажмите на картинку, чтобы выбрать тип и добавить корзину</div></div><div class="btiles">' + BK.map(([k, t, svg]) => `<button data-bk="${k}" class="${(S.bKind || 'pull|mesh') === k ? 'on' : ''}"><svg viewBox="0 0 48 32">${svg}</svg><span>${t}</span></button>`).join('') + '</div>' + basketBlock(s) + '</div>';
   const ord = s.items.map((o, i) => [o, i]).filter(p => !p[0].lk).sort((a, b) => b[0].y - a[0].y), coll = collisions(s);
   if (!s.items.length) e += '<p class="sum">Секция пустая. Нажимайте на значки выше: каждый новый элемент встает ниже предыдущего.</p>';
   ord.forEach(([o, i], k) => {
     const c = rowCat(o), vv = c === 'basket' ? o.t + '|' + (o.v || 'mesh') : o.t;
-    e += `<div class="item${coll.has(i) ? ' warn' : ''}${cur.it === i ? ' sel' : ''}" data-row="${i}"><div class="top"><b class="num">${k + 1}</b><span class="mico">${ICO[c]}</span><select data-i="${i}" data-k="var">${VARS[c].map(([kk, v]) => `<option value="${kk}" ${kk === vv ? 'selected' : ''}>${v}</option>`).join('')}</select>
-    ${isBasket(o.t) ? `<select data-i="${i}" data-k="h" class="dsel">${[85, 181, 285].map(v => `<option value="${v}" ${v === (o.h || 85) ? 'selected' : ''}>${v} мм</option>`).join('')}</select>` : ''}
+    e += `<div class="item${coll.has(i) ? ' warn' : ''}${cur.it === i ? ' sel' : ''}" data-row="${i}"><div class="top"><b class="num">${k + 1}</b><span class="mico">${ICO[c]}</span>${isBasket(o.t) ? `<span class="bname">${(VARS[c].find(([kk]) => kk === vv) || [0, 'Корзина'])[1]} · ${o.h || 85} мм</span>` : `<select data-i="${i}" data-k="var">${VARS[c].map(([kk, v]) => `<option value="${kk}" ${kk === vv ? 'selected' : ''}>${v}</option>`).join('')}</select>`}
     <button class="mini" data-sw="${i}" data-dir="-1" ${k === 0 ? 'disabled' : ''}>↑</button><button class="mini" data-sw="${i}" data-dir="1" ${k === ord.length - 1 ? 'disabled' : ''}>↓</button><button class="mini danger" data-del="${i}">✕</button></div>
-    ${isBasket(o.t) ? `<div class="btype">Выбрано: <b>${(VARS[c].find(([kk]) => kk === vv) || [0, ''])[1]}</b></div><div class="ld"><span>Глубина от стены</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div><div class="ld"><span>Длина (вдоль стены)</span><div class="sz">${[...new Set((LENS[o.t] || [603, 903]).map(l => Math.round((l + 30) / 100) * 10))].map(w => `<button data-bw="${w}" class="${s.w === w ? 'on' : ''}">${w}</button>`).join('')}</div></div><div class="ld"><span>Высота корзины</span><div class="sz">${[[100, 'Низкая 10'], [200, 'Средняя 20'], [300, 'Высокая 30']].map(([h, t]) => `<button data-bh="${i}:${h}" class="${Math.abs((o.h || 85) - h) < 40 ? 'on' : ''}" title="${h} мм">${t}</button>`).join('')}</div></div>` : ''}
-    <div class="ld"><span>Длина</span><div class="sz">${lensOf(o).map(mm => `<button data-len="${i}:${mm}" class="${secW(mm) === s.w ? 'on' : ''}" title="${mm} мм">${Math.round(mm / 10)}</button>`).join('')}</div></div>${o.t === 'rail' || isBasket(o.t) ? '' : `<div class="ld"><span>Глубина</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div>`}
+    ${c === 'shelf' || isBasket(o.t) ? '' : `<div class="ld"><span>Длина</span><div class="sz">${lensOf(o).map(mm => `<button data-len="${i}:${mm}" class="${secW(mm) === s.w ? 'on' : ''}" title="${mm} мм">${Math.round(mm / 10)}</button>`).join('')}</div></div>`}${o.t === 'rail' || isBasket(o.t) ? '' : `<div class="ld"><span>Глубина</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div>`}
     <div class="yrow"><input type="range" data-i="${i}" data-k="yr" min="${lo}" max="${hi}" step="1" value="${o.y}"><label class="yn"><input type="number" data-i="${i}" data-k="y" value="${o.y}" min="${lo}" max="${hi}"> см</label></div>
     ${coll.has(i) ? '<div class="wtxt">Пересекается с соседним элементом</div>' : ''}</div>`;
   });
@@ -1499,6 +1512,11 @@ function renderSec() {
   E.querySelectorAll('[data-dep]').forEach(b => b.onclick = () => { const [i, d] = b.dataset.dep.split(':').map(Number), o = s.items[i]; cur.it = i; o.d = d; s.items.forEach(p => { if (o.g && p.lk === o.g && DEPTHS[p.t].includes(d)) p.d = d; }); go(); });
 }
 
+// v11p: all basket settings in one block right under the basket tiles (length = section width)
+function basketBlock(s) { const bi = s.items.map((o, i) => [o, i]).filter(p => isBasket(p[0].t)); if (!bi.length) return '';
+  const [o, i] = (bi.find(p => p[1] === cur.it) || bi[bi.length - 1]);
+  return `<div class="bset" data-bset="${i}"><div class="szlab">Корзина ${bi.length > 1 ? (bi.findIndex(p => p[1] === i) + 1) + ' из ' + bi.length : ''} · длина = ширина секции ${s.w} см</div><div class="ld"><span>Глубина от стены</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div><div class="ld"><span>Высота корзины</span><div class="sz">${BKH.map(h => `<button data-bh="${i}:${h}" class="${(o.h || 85) === h ? 'on' : ''}">${h}</button>`).join('')}</div></div></div>`; }
+const BKH = [85, 185, 288];
 let lastCam = 'front';
 // ---------- collisions, dims fields, mirror, catalog ----------
 function collisions(sec) {
@@ -1527,7 +1545,7 @@ function setLift(v, live) { const d = Math.round(v) - liftCm(); if (!d) return; 
 [['W', setWidth], ['H', setHeight], ['D', setDepth]].forEach(([k, f]) => { $('r' + k).oninput = e => f(+e.target.value, true); $('r' + k).onchange = e => f(+e.target.value); $('f' + k).onchange = e => f(+e.target.value || 0); });
 $('lift').oninput = e => setLift(+e.target.value, true); $('lift').onchange = e => setLift(+e.target.value);
 $('layout').innerHTML = Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
-$('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); fillDims(); };
+$('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); fillDims(); lastCam = 'nice'; window.__userCam = false; camTo('nice'); };
 // «Зеркально» keeps the framing: same zoom, height and target offset, mirrored azimuth around the construction
 function mirrorKeep() { const c0 = bbox.getCenter(new THREE.Vector3()), o = { dx: orb.T.x - c0.x, ty: orb.T.y, tz: orb.T.z, az: orb.az, R: orb.R, h: orb.h, on: orb.on, p: camera.position.clone(), t: controls.target.clone() };
   mirror(); const put = () => { const c1 = bbox.getCenter(new THREE.Vector3());
@@ -1597,7 +1615,7 @@ function itemGroups(wi, si, idxs) { const out = []; model.traverse(o => { const 
   el.addEventListener('pointerdown', e => {
     if (!orb.on || e.button !== 0 || cur.it < 0) return;
     // the selected item can be grabbed even if another item overlaps it
-    const hit = pickHits(e).find(h => { const g = findRef(h.object); if (!g) return false; const { wi, si, ii } = g.userData.ref; return wi === cur.w && si === cur.s && mainIdx(wi, si, ii) === cur.it; });
+    const hit = pickHits(e).find(h => { const g = findRef(h.object); if (!g) return false; const { wi, si, ii } = g.userData.ref; return wi === cur.w && si === cur.s && (ii === cur.it || mainIdx(wi, si, ii) === cur.it); });
     if (!hit) return; const sc = S.walls[cur.w].sections[cur.s], o = sc.items[cur.it]; if (!o) return;
     const linked = sc.items.map((p, i) => [p, i]).filter(([p]) => o.g && p.lk === o.g), r = el.getBoundingClientRect();
     drag = { cx: e.clientX, cy: e.clientY, t0: performance.now(), drop: o.y - itemBot(o) * 100, o, linked: linked.map(p => p[0]), gs: itemGroups(cur.w, cur.s, [cur.it, ...linked.map(p => p[1])]), y0: o.y, ly0: linked.map(p => p[0].y), py: e.clientY, unit: hit.distance * Math.tan(camera.fov * Math.PI / 360) * 2 / (el.clientHeight || 600) * 100, wi: cur.w, si: cur.s };
@@ -1612,7 +1630,7 @@ function itemGroups(wi, si, idxs) { const out = []; model.traverse(o => { const 
     // alignment with a shelf in another section: haptic tick + brief guide line, no snapping
     { let best = null; wallsBuilt().forEach(wi => S.walls[wi].sections.forEach((sc, si) => { if (wi === drag.wi && si === drag.si) return; sc.items.forEach(p => { if (!p.lk && p.t !== 'rail' && p.y === ny) best = p.y; }); }));
       if (best != null) { if (drag.snap !== best) { drag.snap = best; haptic(); showSnap(best, drag.wi); } } else drag.snap = null; }
-    const dy = ny - drag.y0; drag.o.y = ny; drag.linked.forEach((p, k) => p.y = drag.ly0[k] + dy);
+    const dy = ny - drag.y0; drag.o.y = ny; if (drag.o.lk) { const pp = S.walls[drag.wi].sections[drag.si].items.find(q => q.g === drag.o.lk); if (pp) drag.o.lo = pp.y - ny; } drag.linked.forEach((p, k) => p.y = drag.ly0[k] + dy);
     drag.gs.forEach(g => g.position.y = dy / 100);
     if (dimsOn() && !drag.t) drag.t = setTimeout(() => { if (drag) { drag.t = 0; rebuildDims(); } }, 60);
     tip.textContent = `от пола ${ny} см${drag.snap === ny ? ' · вровень' : ''}`; nbTip(drag, e, r); placeTips(drag, e, r);
@@ -1637,7 +1655,7 @@ $('bStyle').onchange = e => { S.basketStyle = e.target.value; rebuild(); };
 [['ceilT', 'ceiling'], ['skirtT', 'skirting'], ['lampT', 'lamps'], ['shOnT', 'shOn']].forEach(([id, k]) => $(id).onchange = e => { S.room[k] = e.target.checked; rebuild(); });
 [['angR', 'angle', 'angV', v => v + '°'], ['shAng', 'shAng', 'shAngV', v => v + '°'], ['shBlur', 'shBlur', 'shBlurV', v => v], ['shDist', 'shDist', 'shDistV', v => Math.round(v * 100) + '%'], ['glare', 'glare', 'glareV', v => Math.round(v * 100) + '%'], ['shadow', 'shadow', 'shadowV', v => Math.round(v * 100) + '%'], ['roomX', 'extra', 'roomV', v => v], ['ceilH', 'ceilH', 'ceilV', v => v]].forEach(([id, k, lab, f]) => { let t; $(id).oninput = e => { S.room[k] = +e.target.value; $(lab).textContent = f(S.room[k]); clearTimeout(t); t = setTimeout(rebuild, 40); }; });
 const SW = ['#b3b1ad', '#c9c7c2', '#ecdcc8', '#e8d3bd', '#f2efe9', '#ffffff', '#dcd9d3', '#c9d3cf', '#d8c3b0', '#bfc7d1'];
-$('skirtC').oninput = $('skirtC').onchange = e => { S.room.skirtColor = e.target.value; S.room.skirting = true; $('skirtT').checked = true; rebuild(); localStorage.setItem('gs_auto', JSON.stringify(S)); }; $('glowS').onchange = e => { S.room.glow = e.target.value; rebuild(); };
+document.querySelectorAll('[data-skc]').forEach(b => b.onclick = () => { $('skirtC').value = b.dataset.skc; $('skirtC').onchange({ target: $('skirtC') }); }); $('skirtC').oninput = $('skirtC').onchange = e => { S.room.skirtColor = e.target.value; S.room.skirting = true; $('skirtT').checked = true; rebuild(); localStorage.setItem('gs_auto', JSON.stringify(S)); }; $('glowS').onchange = e => { S.room.glow = e.target.value; rebuild(); };
 $('undoBtn').onclick = undo; $('redoBtn').onclick = redo;
 addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { if (e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey)) { e.preventDefault(); redo(); } } });
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
@@ -1671,7 +1689,7 @@ function handleTap(e) {
     if (selPost) { selPost = null; $('postPop').classList.add('hide'); }
     if (findRef(h0.object)) {
       // overlapping items: a second tap on the same spot selects the item behind
-      const refs = []; hits.forEach(h => { const g = findRef(h.object); if (!g || h.distance > h0.distance + 0.25) return; const { wi, si, ii } = g.userData.ref, k = [wi, si, mainIdx(wi, si, ii)]; if (!refs.some(r => r.join() === k.join())) refs.push(k); });
+      const refs = []; hits.forEach(h => { const g = findRef(h.object); if (!g || h.distance > h0.distance + 0.25) return; const { wi, si, ii } = g.userData.ref, ti = S.walls[wi].sections[si] && S.walls[wi].sections[si].items[ii], k = [wi, si, ti && ti.t === 'rail' ? ii : mainIdx(wi, si, ii)]; if (!refs.some(r => r.join() === k.join())) refs.push(k); });
       let k = refs[0]; const ci = refs.findIndex(r => r[0] === cur.w && r[1] === cur.s && r[2] === cur.it); if (ci >= 0 && refs.length > 1) k = refs[(ci + 1) % refs.length];
       cur = { w: k[0], s: k[1], it: k[2] }; rebuild(); renderSec(); if (window.goStep) goStep(1); return;
     }
@@ -1741,10 +1759,10 @@ function cleanShot(fn) {
 }
 // wall outline flash (never in snapshots: cleanShot hides it)
 const flashG = new THREE.Group(); scene.add(flashG); let flashT0 = 0, flashMat = null;
-function flashWall(wi) {
+function flashWall(wi, si) {
   const g = WG[wi]; if (!g) return; flashG.clear(); g.updateMatrixWorld(true);
   const tot = wallWidth(wi) * MM, top = S.railTop * 10 * MM + 0.035, xs = [0]; S.walls[wi].sections.forEach(s => xs.push(xs[xs.length - 1] + s.w / 100));
-  const bot = Math.min(...xs.map((x, i) => (S.railTop * 10 - 10 - postLen(wi, i)) * MM)) - 0.035, x0 = -0.05, x1 = tot + 0.05, th = 0.007, z = 0.012;
+  const bot = Math.min(...xs.map((x, i) => (S.railTop * 10 - 10 - postLen(wi, i)) * MM)) - 0.035, x0 = si != null ? xs[si] - 0.01 : -0.05, x1 = si != null ? xs[si + 1] + 0.01 : tot + 0.05, th = 0.007, z = 0.012;
   flashMat = new THREE.MeshBasicMaterial({ color: 0x2f7bff, transparent: true, opacity: 0, depthTest: false, toneMapped: false });
   const h = new THREE.Group(); h.matrixAutoUpdate = false; h.matrix.copy(g.matrixWorld); flashG.add(h);
   [[x1 - x0, th, (x0 + x1) / 2, top], [x1 - x0, th, (x0 + x1) / 2, bot], [th, top - bot, x0, (top + bot) / 2], [th, top - bot, x1, (top + bot) / 2]].forEach(([w, hh, x, y]) => { const m = new THREE.Mesh(BOX, flashMat); m.scale.set(w, hh, th); m.position.set(x, y, z); m.renderOrder = 30; h.add(m); });
@@ -1826,13 +1844,13 @@ function renderDeco() {
   $('floorBtns').querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { S.floor = b.dataset.fl; $('floor').value = S.floor; rebuild(); renderDeco(); });
   // rug: shape x pile
   const rg = S.rug, carpet = S.floor === 'carpet';
-  $('rugBox').innerHTML = carpet ? '' : `<div class="sz"><button data-rs="round" class="${rg && rg.shape === 'round' ? 'on' : ''}">Круглый</button><button data-rs="rect" class="${rg && rg.shape === 'rect' ? 'on' : ''}">Прямоугольный</button></div><div class="sz"><button data-rp="fluffy" class="${rg && rg.pile === 'fluffy' ? 'on' : ''}">Пушистый</button><button data-rp="flat" class="${rg && rg.pile === 'flat' ? 'on' : ''}">Плоский</button><button data-rugoff="1" class="${rg ? '' : 'on'}">Убрать ковер</button></div>`;
+  $('rugBox').innerHTML = carpet ? '' : `<div class="sz"><button data-rs="round" class="${rg && rg.shape === 'round' ? 'on' : ''}">Круглый</button><button data-rs="rect" class="${rg && rg.shape === 'rect' ? 'on' : ''}">Прямоугольный</button></div><div class="sz"><button data-rp="fluffy" class="${rg && rg.pile === 'fluffy' ? 'on' : ''}">Пушистый</button><button data-rp="flat" class="${rg && rg.pile === 'flat' ? 'on' : ''}">Джут</button><button data-rugoff="1" class="${rg ? '' : 'on'}">Убрать ковер</button></div>`;
   if (!carpet && rg) { $('rugBox').insertAdjacentHTML('beforeend', `<div class="szlab">Размер ковра: <b id="rugKv">${Math.round((rg.k || 1) * 100)}%</b></div><input type="range" id="rugK" min="50" max="200" step="1" value="${Math.round((rg.k || 1) * 100)}">` + (rg.shape === 'round' ? '' : `<div class="szlab">Поворот ковра: <b id="rugRv">${Math.round((rg.r || 0) * 180 / Math.PI)}°</b></div><input type="range" id="rugR" min="-90" max="90" step="1" value="${Math.round((rg.r || 0) * 180 / Math.PI)}">`));
     const rm = () => decor.children.find(c => c.userData.rug), kk = $('rugK'), rr = $('rugR');
     kk.oninput = () => { const k = kk.value / 100, m = rm(); S.rug.k = k; $('rugKv').textContent = kk.value + '%'; if (m) m.scale.set(k / (m.userData.k0 || 1), 1, k / (m.userData.k0 || 1)); }; kk.onchange = () => { rebuild(); pushHist(); };
     if (rr) { rr.oninput = () => { const a = rr.value * Math.PI / 180, m = rm(); S.rug.r = a; $('rugRv').textContent = rr.value + '°'; if (m) m.rotation.y = a; }; rr.onchange = () => { localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); }; } }
   $('rugNote').textContent = carpet ? 'На ковролин ковер не кладется: выберите другой пол.' : '';
-  $('rugBox').querySelectorAll('[data-rs]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: b.dataset.rs, pile: (S.rug && S.rug.pile) || 'flat' }; rebuild(); renderDeco(); });
+  $('rugBox').querySelectorAll('[data-rs]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: b.dataset.rs, pile: (S.rug && S.rug.pile) || 'fluffy' }; rebuild(); renderDeco(); });
   $('rugBox').querySelectorAll('[data-rp]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: (S.rug && S.rug.shape) || 'rect', pile: b.dataset.rp }; rebuild(); renderDeco(); });
   $('rugBox').querySelectorAll('[data-rugoff]').forEach(b => b.onclick = () => { S.rug = null; rebuild(); renderDeco(); });
   // openings
@@ -1889,7 +1907,7 @@ function renderGaps() {
   const html = ks.length ? '<div class="szlab">Сдвиг от угла, см</div>' + ks.map(([k, t]) => { const eg = gapGet(k), og = Math.min(300, optGap(k)); return `<label class="gapl">${t}: <b data-gv="${k}">${eg}</b> см<span class="own"><span class="rng"><input type="range" data-gr="${k}" min="0" max="300" step="1" value="${eg}"><i class="opt" style="left:calc(${og / 300} * (100% - 18px) + 9px)" title="Без пересечения полок: ${og} см"></i></span><input type="number" data-gf="${k}" min="0" max="300" step="1" value="${eg}"></span></label>`; }).join('') + '<p class="foot"><i class="opt inl"></i> красная точка — положение, при котором полки двух стен не пересекаются</p>' : '';
   ['posGap', 'posGap2'].forEach(id => $(id).innerHTML = html);
   const sh = { '0': S.layout === 'U' ? 'Осн. слева' : 'Основная', '0r': 'Осн. справа', '1': S.layout === 'U' ? 'Левая' : 'Вторая', '2': S.layout === 'U' ? 'Правая' : 'Вторая' };
-  $('posGap3').innerHTML = ks.length ? '<div class="szlab">Сдвиг от угла, см</div><div class="gr2">' + ks.map(([k]) => `<label>${sh[k]}: <b data-gv="${k}">${gapGet(k)}</b><input type="range" data-gr="${k}" min="0" max="300" step="1" value="${gapGet(k)}"></label>`).join('') + '</div>' : '';
+  $('posGap3').innerHTML = ks.length ? '<div class="szlab">Сдвиг от угла, см</div><div class="gr2">' + ks.map(([k]) => `<label>${sh[k]}: <b data-gv="${k}">${gapGet(k)}</b><span class="rng"><input type="range" data-gr="${k}" min="0" max="300" step="1" value="${gapGet(k)}"><i class="opt" style="left:calc(${Math.min(300, optGap(k)) / 300} * (100% - 18px) + 9px)" title="Без пересечения полок: ${Math.min(300, optGap(k))} см"></i></span></label>`).join('') + '</div>' : '';
   const set = (k, v, live, src) => { const prev = gapGet(k), og = Math.min(300, optGap(k)); let nv = Math.max(0, Math.min(300, Math.round(v))); if (Math.abs(nv - og) <= 4) nv = og; gapSet(k, nv); if (prev !== nv && nv === og) { haptic(); tick('bright'); }
     document.querySelectorAll(`[data-gv="${k}"]`).forEach(e => e.textContent = nv); document.querySelectorAll(`[data-gr="${k}"],[data-gf="${k}"]`).forEach(e => { if (e !== src) e.value = nv; }); clearTimeout(gapTmr); gapTmr = setTimeout(rebuild, live ? 30 : 0); };
   document.querySelectorAll('[data-gr]').forEach(el => { el.oninput = () => set(el.dataset.gr, +el.value, true, el); el.onchange = () => set(el.dataset.gr, +el.value, false, el); });
@@ -1990,8 +2008,9 @@ try { renderDeco(); setBg(); rebuild(); renderSec(); } catch (e) { console.warn(
 { const pop = document.createElement('div'); pop.id = 'camPop'; pop.className = 'hide'; document.body.appendChild(pop);
   const draw = () => { pop.innerHTML = '<div class="szlab">Камера</div>' + CAMS.map(([k, t]) => `<button data-cs="${k}" class="${camK() === k ? 'on' : ''}">${t}</button>`).join('');
     pop.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { localStorage.setItem('gs_cam', b.dataset.cs); lensUI(); pop.classList.add('hide'); applyLights(); $('niceBtn').click(); }); };
+  $('lensBtn2').onclick = e => { e.stopPropagation(); if (!pop.classList.contains('hide')) return pop.classList.add('hide'); draw(); const r = $('lensBtn2').getBoundingClientRect(); pop.classList.remove('hide'); const ph = pop.offsetHeight || 200; pop.style.top = Math.max(6, r.top - ph - 8) + 'px'; pop.style.right = Math.max(6, innerWidth - r.right - 60) + 'px'; };
   $('lensBtn').onclick = e => { e.stopPropagation(); draw(); const r = $('lensBtn').getBoundingClientRect(); pop.style.top = (r.bottom + 6) + 'px'; pop.style.right = Math.max(6, innerWidth - r.right - 40) + 'px'; pop.classList.toggle('hide'); };
-  document.addEventListener('pointerdown', e => { if (!pop.contains(e.target) && e.target !== $('lensBtn') && !$('lensBtn').contains(e.target)) pop.classList.add('hide'); }); }
+  document.addEventListener('pointerdown', e => { if (!pop.contains(e.target) && !$('lensBtn').contains(e.target) && !$('lensBtn2').contains(e.target)) pop.classList.add('hide'); }); }
 lensUI();
 // «Эффект»: a per-camera photo look (no blur); live as CSS filter + overlays, baked into 📷 by pixels
 const FXP = { std: { b: 1.02, c: 1.03, s: 1.04, w: 0.03, l: 0, v: 0.2 }, int: { b: 1.08, c: 0.92, s: 1.03, w: 0.035, l: 0.04, v: 0 }, por: { b: 1.0, c: 1.16, s: 1.06, w: 0, l: 0, v: 0.32 }, top3: { b: 1.04, c: 1.03, s: 0.9, w: -0.035, l: 0, v: 0.06 } };
