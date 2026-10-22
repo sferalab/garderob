@@ -86,12 +86,12 @@ function validState(v) {
     w.sections = w.sections.filter(s => s && typeof s === 'object').map(s => { s.w = num(s.w, 10, 200, 60);
       s.items = (Array.isArray(s.items) ? s.items : []).filter(o => o && REAL_DEPTH[o.t] && typeof o.y === 'number' && isFinite(o.y) && o.y >= 0 && o.y <= 300);
       s.items.forEach(o => { if (!REAL_DEPTH[o.t][o.d]) o.d = +Object.keys(REAL_DEPTH[o.t])[0]; if (o.h != null) o.h = num(o.h, 20, 400, 85);
-        if (o.pr != null) o.pr = Array.isArray(o.pr) ? o.pr.filter(p => p && PROPK[p.k]).map(p => ({ k: p.k, u: num(p.u, 0, 1, 0.5) })) : []; });
+        if (o.pr != null) o.pr = Array.isArray(o.pr) ? o.pr.filter(p => p && (typeof PROPK === 'undefined' || !PROPK || PROPK[p.k])).map(p => ({ k: p.k, u: num(p.u, 0, 1, 0.5) })) : []; });
       return s; });
     if (!w.sections.length && wi === 0) bad++; return w; });
   if (bad > 1) return null;
   if (v.plants != null && !Array.isArray(v.plants)) v.plants = [];
-  if (Array.isArray(v.plants)) v.plants = v.plants.filter(p => p && PLANTS[p.k] && isFinite(p.x) && isFinite(p.z)).map(p => ({ ...p, s: num(p.s, 0.3, 3, 1), r: num(p.r, -100, 100, 0) }));
+  if (Array.isArray(v.plants)) v.plants = v.plants.filter(p => p && (typeof PLANTS === 'undefined' || !PLANTS || PLANTS[p.k] || ['fig', 'monstera', 'olive', 'mirror', 'pouf'].includes(p.k)) && isFinite(p.x) && isFinite(p.z)).map(p => ({ ...p, s: num(p.s, 0.3, 3, 1), r: num(p.r, -100, 100, 0) }));
   if (v.room != null && typeof v.room !== 'object') delete v.room; if (v.dm != null && typeof v.dm !== 'object') delete v.dm;
   return v;
 }
@@ -257,10 +257,10 @@ function normalTex(v, str) {
 function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).multiplyScalar(m.userData.kd); m.emissive.copy(col).multiplyScalar(m.userData.ke); }
 const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
 // real CC0 photo textures (Poly Haven, 1k) with normal + roughness maps for the key finishes; procedural for the rest
-const PHW = { brick: ['painted_brick', 2.0, 1.4], beige: ['beige_wall_001', 2.4, 1, 1.1], lime: ['white_plaster_02', 2.2, 1] };
+const PHW = { brick: ['painted_brick', 1.04, 1.0], beige: ['beige_wall_001', 2.4, 1, 1.1], lime: ['white_plaster_02', 2.2, 1] };
 function wallMat() { const v = finVar(), ph = PHW[v];
   if (ph) { const rp = (1 / ph[1]).toFixed(4), sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: tex(ph[0] + '_diff', true, rp), emissiveMap: tex(ph[0] + '_diff', true, rp), normalMap: tex(ph[0] + '_nor_gl', false, rp), normalScale: new THREE.Vector2(ph[2], ph[2]), roughnessMap: tex(ph[0] + '_rough', false, rp), roughness: 1, metalness: 0, envMapIntensity: 0.35, toneMapped: false });
-    const gn = ph[3] || 1; m.userData = { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; setWallCol(m, S.wall); return m; }
+    const gn = ph[3] || 1, lf = S.roomPre === 'loft' && v === 'brick'; m.userData = lf ? { wall: true, kd: 0.74, ke: 0.05 } : { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; if (lf) m.roughness = 0.85; setWallCol(m, S.wall); return m; }
   const t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
   const sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, normalMap: n, roughness: 0.93, metalness: 0, envMapIntensity: 0.25, toneMapped: false });
   m.userData = { wall: true, kd: sunM ? 0.55 : 0.62, ke: sunM ? 0.4 : 0.42 }; /* lit PBR wall: relief reads in the light, emissive keeps the color clean */ setWallCol(m, S.wall); return m; }
@@ -404,6 +404,8 @@ function bracket(g, x, y, L) {
   g.add(box(0.016, 0.02, 0.01, x, y - 0.01, ZB + L - 0.005, M.metal));
 }
 const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0175, 0.0042, 12, 32, Math.PI * 1.7), RIV_G = new THREE.CylinderGeometry(0.0035, 0.0035, 0.007, 12);
+let _GRM = null, _GRK = null; function gridMat() { if (_GRM && _GRK === M.metal) return _GRM; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 9); g.fillRect(0, 0, 9, 64);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(34, 15); t.anisotropy = 4; _GRK = M.metal; _GRM = M.metal.clone(); _GRM.alphaMap = t; _GRM.alphaTest = 0.5; _GRM.side = THREE.DoubleSide; _GRM.normalMap = null; return _GRM; }
 let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
   const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#fdfdfd'); gr.addColorStop(0.36, '#c9ced4'); gr.addColorStop(0.49, '#3a3d42'); gr.addColorStop(0.55, '#16171a'); gr.addColorStop(0.75, '#6b6e72'); gr.addColorStop(1, '#2a2b2d'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
   g.fillStyle = '#ffffff'; [[40, 50], [200, 30], [330, 60], [450, 24]].forEach(([x, w]) => g.fillRect(x, 30, w, 70));
@@ -431,7 +433,7 @@ function buildItem(g, item, x0, x1, sec) {
     const lip = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0 - 0.002, 0.042, 0.008, 2, 0.0028), M.metal); lip.position.set(mid, y - 0.01, zf + 0.004); lip.castShadow = lip.receiveShadow = true; g.add(lip);
     const rim = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0 - 0.002, 0.009, 0.02, 2, 0.0035), M.metal); rim.position.set(mid, y + 0.0075, zf - 0.006); rim.castShadow = true; g.add(rim);
   } else if (item.t === 'metal') {
-    g.add(box(x1 - x0, 0.0045, dep, mid, y + 0.00225, z0 + dep / 2, M.metal));
+    g.add(box(x1 - x0, 0.0045, dep, mid, y + 0.00225, z0 + dep / 2, S.roomPre === 'loft' ? gridMat() : M.metal));
     const f = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0, 0.038, 0.007, 2, 0.0025), M.metal); f.position.set(mid, y - 0.015, zf); f.castShadow = true; g.add(f);
     g.add(box(x1 - x0, 0.024, 0.006, mid, y + 0.012, z0, M.metal));
   } else if (item.t === 'ldsp') {
@@ -751,8 +753,8 @@ function mirrorModel() { const g = new THREE.Group(), W = 0.62, H = 1.72, f = 0.
   g.position.z = 0; return g; }
 // square upholstered pouf in soft velvet with a piped top edge
 function poufModel() { const g = new THREE.Group(), s = 0.42, h = 0.44;
-  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#8f7570'; x.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 1800; i++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '255,240,235' : '40,20,20'},${Math.random() * 0.08})`; x.fillRect(Math.random() * 128, Math.random() * 128, 1 + Math.random() * 2, 1); }
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#e6dfd3'; x.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 1800; i++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,250' : '90,80,70'},${Math.random() * 0.08})`; x.fillRect(Math.random() * 128, Math.random() * 128, 1 + Math.random() * 2, 1); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
   const m = new THREE.MeshPhysicalMaterial({ map: t, roughness: 0.85, sheen: 1, sheenRoughness: 0.45, sheenColor: new THREE.Color(0xe7cfc8), envMapIntensity: 0.5 });
   const b = new THREE.Mesh(new RoundedBoxGeometry(s, h - 0.03, s, 5, 0.06), m); b.position.y = (h - 0.03) / 2 + 0.03; b.castShadow = b.receiveShadow = true; g.add(b);
@@ -1195,8 +1197,18 @@ function applyGlareShadow() {
   specL.intensity = gmode === 'bright' ? 2.2 : gmode === 'soft' ? 0.5 : 0; specL.target.position.copy(c); tickSpec();
   const gm = { soft: 1, bright: 1, off: 0.35 }[gmode];
   scene.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial && !o.material.isMeshPhysicalMaterial && o.material !== M.chrome && !o.material.userData.wall) o.material.envMapIntensity = (o.material.metalness > 0.6 ? 1.0 : 0.9) * gm; });
-  sunMode();
+  sunMode(); loftLights();
 }
+const _isPhone = /iPhone|iPad|iPod|Android/.test(navigator.userAgent);
+function loftLights() { const lf = S.roomPre === 'loft' && !S.studio && !S.sun && !(photo && !$('showRoom').checked);
+  const want = lf ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap; if (renderer.shadowMap.type !== want) { renderer.shadowMap.type = want; scene.traverse(o => { if (o.material && !Array.isArray(o.material)) o.material.needsUpdate = true; }); }
+  if (!lf) return; const c = bbox.getCenter(new THREE.Vector3()), ms = _isPhone ? 1024 : 2048;
+  if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); }
+  sun.castShadow = true; sun.color.set(0xffffff); sun.intensity = 1.9; sun.position.set(c.x + 2, 4, c.z + 3); sun.target.position.set(c.x, c.y, 0); sun.target.updateMatrixWorld();
+  Object.assign(sc, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 14 }); sc.updateProjectionMatrix(); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02; sun.shadow.radius = 3;
+  hemi.color.set(0xffffff); hemi.groundColor.set(0xe8e4de); hemi.intensity = 0.32; fill.color.set(0xf4f6ff); fill.intensity = 0.42; fill.position.set(c.x - 4, 2.2, c.z + 1.5); sideFill.intensity = 0; gobo.intensity = 0; rim.intensity = 0.25;
+  try { glow.color.set(0xffffff); glow.intensity = 1.6; glow.angle = 0.95; glow.penumbra = 1; glow.decay = 0; glow.position.set(c.x, 2.4, c.z + 3.6); glow.target.position.set(c.x, 1.3, 0); glow.target.updateMatrixWorld(); } catch (e) {}
+  renderer.toneMappingExposure = 1.15; }
 function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(S.studio ? (S.bg || '#e2ded7') : S.room && S.room.ceiling ? '#fbfbf9' : '#e9e6e0'); }
 
 // ---------- export ----------
@@ -1622,8 +1634,14 @@ $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : 'nice');
 // iOS settles the canvas size late (toolbar, safe areas): refit once the final size is known
-{ const late = () => { if (lastCam === 'card' || window.__userCam) return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); setTimeout(late, 1800); setTimeout(late, 3200); addEventListener('load', late); THREE.DefaultLoadingManager.onLoad = () => setTimeout(late, 60); addEventListener('orientationchange', () => { window.__userCam = false; setTimeout(late, 400); });
-  if (window.visualViewport) { let vt = 0; visualViewport.addEventListener('resize', () => { clearTimeout(vt); vt = setTimeout(late, 150); }); } }
+{ // initial framing: fit repeatedly while layout/fonts/textures settle (canvas hidden), then lock; later only Ракурс/Сброс/rotation/size changes refit
+  const cv = renderer.domElement; cv.style.opacity = '0'; cv.style.transition = 'opacity .35s'; let locked = false, ld = false, fn = false;
+  const late = () => { if (locked || lastCam === 'card' || window.__userCam) return; try { resize(); fitView(); } catch (e) {} };
+  const lock = () => { if (locked) return; late(); locked = true; window.__camLocked = true; cv.style.opacity = '1'; };
+  const tryLock = () => { if (ld && fn) setTimeout(lock, 250); };
+  requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late); setTimeout(lock, 2600);
+  THREE.DefaultLoadingManager.onLoad = () => { ld = true; late(); tryLock(); }; (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { fn = true; late(); tryLock(); });
+  if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (!locked) late(); }); }
 const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [3, 0.05], [0.05, 1.5], [0.05, 0.05]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
 // ---------- v4 extra controls ----------
@@ -1914,7 +1932,7 @@ function snap34() {
   renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   if (photoImg && !$('showRoom').checked) { const s = Math.max(CW / photoImg.width, CH / photoImg.height), iw = photoImg.width * s, ih = photoImg.height * s; g.drawImage(photoImg, (CW - iw) / 2, (CH - ih) / 2, iw, ih); }
-  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH); if (real) { sun.castShadow = rsv.cs; sun.shadow.radius = rsv.r; if (rsv.fx == null) localStorage.removeItem('gs_fx'); else localStorage.setItem('gs_fx', rsv.fx); }
+  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH); { const vg = g.createRadialGradient(CW / 2, CH / 2, CH * 0.35, CW / 2, CH / 2, CH * 0.75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.22)'); g.fillStyle = vg; g.fillRect(0, 0, CW, CH); } if (real) { sun.castShadow = rsv.cs; sun.shadow.radius = rsv.r; if (rsv.fx == null) localStorage.removeItem('gs_fx'); else localStorage.setItem('gs_fx', rsv.fx); }
   sun.shadow.mapSize.set(sm, sm); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q); if (orb.on) applyCam();
   return out;
@@ -1983,7 +2001,7 @@ function fxBake(g, W, H) { if (!fxOn()) return; const p = FXP[camK()] || FXP.std
   g.putImageData(im, 0, 0); }
 $('fxBtn').onclick = () => { localStorage.setItem('gs_fx', fxOn() ? '0' : '1'); fxUI(); msg('Эффект: ' + (fxOn() ? 'вкл' : 'выкл')); };
 addEventListener('resize', () => setTimeout(fxUI, 50)); fxUI();
-{ let rt = 0; const refit = () => { clearTimeout(rt); rt = setTimeout(() => { try { resize(); fitView(); } catch (e) {} }, 150); }; addEventListener('resize', refit); addEventListener('orientationchange', refit); }
+{ let rt = 0; const refit = () => { clearTimeout(rt); rt = setTimeout(() => { try { resize(); fitView(); } catch (e) {} }, 150); }; let lw = innerWidth; addEventListener('resize', () => { if (!window.__camLocked) return; if (innerWidth !== lw) { lw = innerWidth; window.__userCam = false; refit(); } else resize(); }); addEventListener('orientationchange', () => { window.__userCam = false; lw = innerWidth; refit(); }); }
 { const o = lensUI; lensUI = function () { o(); try { fxUI(); } catch (e) {} }; }
 
 // ---- v10 props: add to the selected (or first fitting) shelf / rod, drag along it with a finger, delete with 🗑
@@ -2022,7 +2040,7 @@ renderPropBtns();
 
 // ---- room presets: one tap sets walls, floor, rug, window, light and decor (the wardrobe itself is untouched)
 const ROOMP = {
-  loft: ['Кирпичный лофт', { wallFin: 'relief', fv: 'brick', wall: '#f4f2ee', floor: 'tile2', rug: { shape: 'rect', pile: 'jute' }, win: true, winX: -1, shP: 'soft', metal: 'black', plants: ['mirror', 'pouf'] }],
+  loft: ['Кирпичный лофт', { wallFin: 'relief', fv: 'brick', wall: '#fcfcfc', floor: 'tile2', rug: { shape: 'rect', pile: 'fluffy' }, win: true, winX: -1, shP: 'soft', metal: 'black', plants: ['mirror', 'pouf'] }],
   beige: ['Светлый бежевый', { wallFin: 'plaster', fv: 'beige', wall: '#f4ebe3', floor: 'oak', rug: { shape: 'round', pile: 'fluffy' }, win: true, winX: 0, shP: 'sun', winL: 'both', plants: ['olive'] }],
   scandi: ['Скандинавский', { wallFin: 'paint', fv: 'matte', wall: '#f1efea', floor: 'lam', rug: { shape: 'rect', pile: 'flat' }, win: false, shP: 'soft', plants: ['fig', 'pouf'] }],
   conc: ['Бетон и дуб', { wallFin: 'relief', fv: 'conc2', wall: '#d9d6d1', floor: 'lamD', rug: null, win: false, shP: 'left', plants: ['monstera', 'mirror'] }] };
@@ -2078,7 +2096,7 @@ async function vizShot(opt = {}) {
     if (!o.isMesh || !o.material || Array.isArray(o.material)) return; const m = o.material;
     if (m.isShadowMaterial || (m.isMeshBasicMaterial && (m.transparent || m.opacity < 1 || m.blending !== THREE.NormalBlending))) { hide(o); return; }
     let n = null;
-    if (m.isMeshBasicMaterial) { n = m.map && m.toneMapped === false ? new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: m.map, emissiveIntensity: 2.6, side: m.side }) : new THREE.MeshStandardMaterial({ color: m.color, map: m.map, roughness: 0.9, side: m.side }); }
+    if (m.isMeshBasicMaterial) { n = m.map && m.toneMapped === false ? new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: m.map, emissiveIntensity: 1.3, side: m.side }) : new THREE.MeshStandardMaterial({ color: m.color, map: m.map, roughness: 0.9, side: m.side }); }
     else if (m.emissive && (m.emissive.r + m.emissive.g + m.emissive.b) > 0.001) { n = m.clone(); n.emissive = new THREE.Color(0); n.emissiveMap = null; if (m.emissiveMap) n.color.multiplyScalar(1.25); }
     if (n) { sw.push([o, m]); o.material = n; } });
   M.rod && sw.length; scene.environment = skyEquirect(); scene.background = scene.environment; if ('environmentIntensity' in scene) scene.environmentIntensity = 1;
