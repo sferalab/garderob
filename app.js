@@ -8,7 +8,7 @@ const $ = id => document.getElementById(id);
 const MM = 0.001;
 const METAL = { white: 0xf7f9fc, black: 0x202124, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
-const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 } };
+const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
 const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
@@ -46,7 +46,7 @@ function defaults() {
 const ROOMDEF = { shP: 'soft', winL: 'off', glareM: 'soft', win: false, door: false, winX: 0, cornice: false, extra: 250, ceiling: false, ceilH: 275, skirting: true, lamps: false, glare: 0.3, shadow: 0.5, angle: 90, skirtColor: '#ffffff', lampType: 'spot', glow: 'none', shOn: true, shAng: 20, shBlur: 4, shDist: 0.12, shadow: 0.55 };
 function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.v7) { S.v7 = 1; const d = S.dm || {}; S.dm = { o: !!(d.t || d.v), s: !!d.s, h: false, g: !!d.c, sd: false }; S.room.shAng = Math.max(-35, Math.min(35, S.room.shAng ?? 20)); S.room.shBlur = Math.min(8, S.room.shBlur ?? 4); S.room.shadow = Math.max(0.2, Math.min(0.8, S.room.shadow ?? 0.55)); } if (S.metal === 'graphite') S.metal = 'black'; if (!METAL[S.metal]) S.metal = 'white'; if (S.rod && S.rod !== 'white') S.rod = 'chrome'; if (!S.dm || !('o' in S.dm)) S.dm = { o: false, s: false, h: false, g: false, sd: false }; S.dimC = S.dimC === 'black' ? 'black' : 'white'; S.dimStyle = S.dimStyle === 'thin' ? 'thin' : 'bold'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40;
   if (!S.v8) { S.v8 = 1; if (S.wall === '#b3b1ad') S.wall = '#a9a49c'; S.room.shP = S.room.shOn === false ? 'none' : 'soft'; S.room.extra = Math.max(250, S.room.extra || 0); S.room.glareM = 'soft'; if (S.rug === true) S.rug = { shape: 'rect', pile: 'flat' }; }
-  if (S.floor === 'tile') S.floor = 'marble'; if (S.rug && typeof S.rug !== 'object') S.rug = { shape: 'rect', pile: 'flat' }; if (!S.plants) S.plants = []; if (!S.wallVar) S.wallVar = { paint: 'matte', plaster: 'koroed', paper: 'linen' }; if (!['soft', 'left', 'right', 'top', 'sharp', 'none'].includes(S.room.shP)) S.room.shP = 'soft'; if (!['off', 'wall', 'floor', 'both'].includes(S.room.winL)) S.room.winL = 'off'; if (!['soft', 'bright', 'off'].includes(S.room.glareM)) S.room.glareM = 'soft';
+  if (S.floor === 'tile') S.floor = 'marble'; if (S.rug && typeof S.rug !== 'object') S.rug = { shape: 'rect', pile: 'flat' }; if (!S.plants) S.plants = []; if (!S.wallVar) S.wallVar = { paint: 'matte', plaster: 'koroed', paper: 'linen' }; if (!['soft', 'left', 'right', 'top', 'sharp', 'sun', 'none'].includes(S.room.shP)) S.room.shP = 'soft'; if (!['off', 'wall', 'floor', 'both'].includes(S.room.winL)) S.room.winL = 'off'; if (!['soft', 'bright', 'off'].includes(S.room.glareM)) S.room.glareM = 'soft';
   // v9: ceiling always on (a bit higher), walls at full width, short attached shadows
   if (!S.v9) { S.v9 = 1; S.room.ceilH = Math.max(285, S.room.ceilH || 0); if (S.room.glareM === 'bright') S.room.glareM = 'soft'; }
   if (!S.v91) { S.v91 = 1; S.room.ceilH = Math.max(300, S.room.ceilH || 0); S.__gapFix = true; }
@@ -230,7 +230,7 @@ function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).mu
 const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
 function wallMat() { const v = finVar(), t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
   const sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, normalMap: n, roughness: 0.93, metalness: 0, envMapIntensity: 0.25, toneMapped: false });
-  m.userData = { wall: true, kd: sunM ? 0.42 : 0.3, ke: sunM ? 0.6 : 0.74 }; setWallCol(m, S.wall); return m; }
+  m.userData = { wall: true, kd: sunM ? 0.4 : 0.28, ke: sunM ? 0.55 : 0.7 }; setWallCol(m, S.wall); return m; }
 // small tile preview of a finish, tinted by the wall color
 function finSwatch(v) { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'), src = finishTex(v).image, k = FINK[v] || 0.9, px = Math.min(512, 512 * 0.35 / k); g.drawImage(src, 0, 0, px, px, 0, 0, 96, 96); g.globalCompositeOperation = 'multiply'; g.fillStyle = S.wall; g.fillRect(0, 0, 96, 96); return c.toDataURL('image/jpeg', 0.85); }
 
@@ -944,6 +944,10 @@ function goboTex() {
 }
 const gobo = new THREE.SpotLight(0xffd9a8, 0); gobo.map = goboTex(); gobo.castShadow = true; gobo.shadow.mapSize.set(1024, 1024); gobo.shadow.radius = 4;
 gobo.angle = 0.62; gobo.penumbra = 0.15; gobo.shadow.bias = -0.0005; gobo.decay = 0; scene.add(gobo, gobo.target);
+// «Солнечный свет»: warm low sun from the window side, long soft shadows of the shelves and mesh on the wall and floor
+function sunMode() { if (!S.room || S.room.shP !== 'sun' || S.studio) return; const big = innerWidth < 800 ? 2048 : 4096;
+  if (sun.shadow.mapSize.x !== big) { sun.shadow.mapSize.set(big, big); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); }
+  sun.color.set(0xffd6a6); sun.intensity = 2.6; sun.shadow.radius = 5; sun.shadow.blurSamples = 16; hemi.intensity *= 0.78; fill.intensity *= 0.6; gobo.intensity = 0; }
 function applyLights() {
   const c = bbox.getCenter(new THREE.Vector3()); const warm = S.preset === 'warm';
   if (warm && !S.sun) {
@@ -954,11 +958,12 @@ function applyLights() {
     gobo.color.set(0xffcf94); gobo.intensity = 9; gobo.position.set(c.x - 1.4, 3.3, 3.0); gobo.target.position.set(c.x + 0.4, 1.5, 0);
     renderer.toneMappingExposure = CAMEXP(); hemi.color.set(0xfff0dd); hemi.groundColor.set(0xe8c49c); hemi.intensity = 1.0; fill.color.set(0xffe2c2); fill.intensity = 0.45; fill.position.set(c.x + 3, 2.2, 4); sideFill.intensity = 2.0; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
   } else { sun.color.set(0xffffff); sun.intensity = 1.6; gobo.intensity = 0; renderer.toneMappingExposure = CAMEXP(); hemi.color.set(0xffffff); hemi.groundColor.set(0xd8cfc2); sideFill.intensity = 0; hemi.intensity = 0.6; fill.color.set(0xfff4e6); fill.intensity = 0.35; fill.position.set(-3, 2, 4); }
+  sunMode();
 }
 const glow = new THREE.SpotLight(0xfff0dc, 0, 0, 0.9, 1, 0); scene.add(glow, glow.target);
 const rim = new THREE.DirectionalLight(0xdfe7ff, 0); scene.add(rim, rim.target); // edge light so black RAL 9005 reads in detail
 // shadow presets: sun direction (deg), blur radius, shadow strength on the walls
-const SHP = { soft: { az: 5, el: 13, r: 9, k: 0.38 }, left: { az: -13, el: 15, r: 7, k: 0.4 }, right: { az: 13, el: 15, r: 7, k: 0.4 }, top: { az: 0, el: 19, r: 7, k: 0.4 }, sharp: { az: 5, el: 13, r: 1.6, k: 0.42 }, none: { k: 0 } };
+const SHP = { sun: { az: -52, el: 27, r: 6, k: 0.3 }, soft: { az: 5, el: 13, r: 9, k: 0.38 }, left: { az: -13, el: 15, r: 7, k: 0.4 }, right: { az: 13, el: 15, r: 7, k: 0.4 }, top: { az: 0, el: 19, r: 7, k: 0.4 }, sharp: { az: 5, el: 13, r: 1.6, k: 0.42 }, none: { k: 0 } };
 const specL = new THREE.DirectionalLight(0xffffff, 0); scene.add(specL, specL.target);
 const _sc = new THREE.OrthographicCamera();
 // the highlight light rides with the camera (up and to the right), so edge highlights travel as the view turns
@@ -970,7 +975,7 @@ function applyGlareShadow() {
   const R = S.room || {}, c = bbox.getCenter(new THREE.Vector3()), P = SHP[R.shP] || SHP.soft, ST = !!S.studio && !photo, gmode = R.glareM || 'soft';
   if (R.glow === 'left' || R.glow === 'right') { const sx = R.glow === 'left' ? -1 : 1; glow.intensity = 1.6; glow.position.set(c.x + sx * 3, 2.4, 2.6); glow.target.position.set(c.x + sx * 0.6, 1.5, 0); } else glow.intensity = 0;
   const on = R.shP !== 'none' && !S.sun;
-  sun.castShadow = !!photo && !$('showRoom').checked; gobo.castShadow = gobo.intensity > 0 && sun.castShadow; // shelf shadows are baked on the wall (SHB)
+  sun.castShadow = (!!photo && !$('showRoom').checked) || (R.shP === 'sun' && !ST); gobo.castShadow = gobo.intensity > 0 && sun.castShadow; // shelf shadows are baked on the wall (SHB)
   if (P.el != null && !S.sun) {
     const az = P.az * Math.PI / 180, el = P.el * Math.PI / 180, D = 7;
     sun.position.set(c.x + D * Math.sin(az) * Math.cos(el), c.y + D * Math.sin(el), c.z + D * Math.cos(az) * Math.cos(el)); sun.target.position.copy(c);
@@ -979,6 +984,7 @@ function applyGlareShadow() {
     _sc.position.copy(sun.position); _sc.lookAt(sun.target.position); _sc.updateMatrixWorld(true); const inv = _sc.matrixWorldInverse;
     let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9, z0 = 1e9, z1 = -1e9;
     for (let i = 0; i < 8; i++) { const p = V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).applyMatrix4(inv); x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); }
+    if (R.shP === 'sun') { x0 -= 0.6; x1 += 0.6; y0 -= 0.6; y1 += 0.6; z0 -= 8; }
     Object.assign(sc, { left: x0, right: x1, bottom: y0, top: y1, near: Math.max(0.05, -z1 - 0.5), far: -z0 + 0.5 }); sc.updateProjectionMatrix();
     sun.shadow.bias = -0.00025; sun.shadow.normalBias = 0.012; sun.shadow.radius = P.r; sun.shadow.blurSamples = 16;
   }
@@ -987,6 +993,7 @@ function applyGlareShadow() {
   specL.intensity = gmode === 'bright' ? 2.2 : gmode === 'soft' ? 0.5 : 0; specL.target.position.copy(c); tickSpec();
   const gm = { soft: 1, bright: 1, off: 0.35 }[gmode];
   scene.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial && !o.material.isMeshPhysicalMaterial && o.material !== M.chrome && !o.material.userData.wall) o.material.envMapIntensity = (o.material.metalness > 0.6 ? 1.0 : 0.9) * gm; });
+  sunMode();
 }
 function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(S.studio ? (S.bg || '#e2ded7') : S.room && S.room.ceiling ? '#fbfbf9' : '#e9e6e0'); }
 
@@ -1603,7 +1610,7 @@ function renderDeco() {
 let plantSel = -1;
 function renderLight() {
   const R = S.room;
-  $('shPBtns').innerHTML = [['soft', 'Мягкая'], ['left', 'Слева'], ['right', 'Справа'], ['top', 'Сверху'], ['sharp', 'Четкая'], ['none', 'Без тени']].map(([k, t]) => `<button data-shp="${k}" class="${(R.shP || 'soft') === k ? 'on' : ''}">${t}</button>`).join('');
+  $('shPBtns').innerHTML = [['soft', 'Мягкая'], ['left', 'Слева'], ['right', 'Справа'], ['top', 'Сверху'], ['sharp', 'Четкая'], ['sun', 'Солнечный свет'], ['none', 'Без тени']].map(([k, t]) => `<button data-shp="${k}" class="${(R.shP || 'soft') === k ? 'on' : ''}">${t}</button>`).join('');
   $('glMBtns').innerHTML = [['soft', 'Мягкие'], ['bright', 'Яркие'], ['off', 'Выкл']].map(([k, t]) => `<button data-glm="${k}" class="${(R.glareM || 'soft') === k ? 'on' : ''}">${t}</button>`).join('');
   $('winL').value = R.winL || 'off'; $('winL').disabled = !!S.studio;
   $('shPBtns').querySelectorAll('[data-shp]').forEach(b => b.onclick = () => { R.shP = b.dataset.shp; R.shOn = R.shP !== 'none'; rebuild(); renderLight(); });
