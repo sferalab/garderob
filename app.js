@@ -70,11 +70,39 @@ function cardPreset() {
   S.walls[1].gap = 46; S.walls[1].sections = [{ w: 60, items: [m(190), m(140), m(90), m(42)] }];
   S.card = Object.assign(cardDefaults(), { size: '156 × 110 × 205 см' }); S._cam = 'card'; return S;
 }
-let S = (() => { const v = load('gs_auto'); return migrate(v && v.v5 ? v : defaults()); })();
+// saved state is checked field by field on load; anything broken falls back to the default value, a badly corrupted state to the full default
+const num = (v, lo, hi, d) => (typeof v === 'number' && isFinite(v) && v >= lo && v <= hi ? v : d);
+function validState(v) {
+  const D = defaults(); if (!v || typeof v !== 'object' || !Array.isArray(v.walls) || !v.walls.length) return null;
+  const ok = (k, set) => { if (!set.includes(v[k])) v[k] = D[k]; };
+  ok('layout', ['L', 'Lr', 'U', 'straight']); ok('metal', Object.keys(METAL)); ok('view', ['all', 'frame', 'fill']);
+  if (!FLOORS[v.floor]) v.floor = D.floor; if (v.rod !== 'white' && v.rod !== 'chrome') v.rod = D.rod || 'chrome';
+  v.railTop = num(v.railTop, 120, 300, D.railTop); v.postH = num(v.postH, 500, 3000, D.postH);
+  if (typeof v.wall !== 'string' || !/^#[0-9a-f]{6}$/i.test(v.wall)) v.wall = D.wall;
+  let bad = 0;
+  while (v.walls.length < D.walls.length) v.walls.push(D.walls[v.walls.length]);
+  v.walls = v.walls.slice(0, D.walls.length).map((w, wi) => { if (!w || !Array.isArray(w.sections)) { bad++; return D.walls[wi]; }
+    w.gap = num(w.gap, 0, 300, D.walls[wi].gap || 0); if (w.gapR != null) w.gapR = num(w.gapR, 0, 300, 0);
+    w.sections = w.sections.filter(s => s && typeof s === 'object').map(s => { s.w = num(s.w, 10, 200, 60);
+      s.items = (Array.isArray(s.items) ? s.items : []).filter(o => o && REAL_DEPTH[o.t] && typeof o.y === 'number' && isFinite(o.y) && o.y >= 0 && o.y <= 300);
+      s.items.forEach(o => { if (!REAL_DEPTH[o.t][o.d]) o.d = +Object.keys(REAL_DEPTH[o.t])[0]; if (o.h != null) o.h = num(o.h, 20, 400, 85);
+        if (o.pr != null) o.pr = Array.isArray(o.pr) ? o.pr.filter(p => p && PROPK[p.k]).map(p => ({ k: p.k, u: num(p.u, 0, 1, 0.5) })) : []; });
+      return s; });
+    if (!w.sections.length && wi === 0) bad++; return w; });
+  if (bad > 1) return null;
+  if (v.plants != null && !Array.isArray(v.plants)) v.plants = [];
+  if (Array.isArray(v.plants)) v.plants = v.plants.filter(p => p && PLANTS[p.k] && isFinite(p.x) && isFinite(p.z)).map(p => ({ ...p, s: num(p.s, 0.3, 3, 1), r: num(p.r, -100, 100, 0) }));
+  if (v.room != null && typeof v.room !== 'object') delete v.room; if (v.dm != null && typeof v.dm !== 'object') delete v.dm;
+  return v;
+}
+function safeMigrate(v) { try { const s = validState(v); return s ? migrate(s) : migrate(defaults()); } catch (e) { console.warn('state reset', e); try { localStorage.removeItem('gs_auto'); } catch (er) {} return migrate(defaults()); } }
+function clearSaved() { try { Object.keys(localStorage).filter(k => k.startsWith('gs_') && k !== 'gs_snd').forEach(k => localStorage.removeItem(k)); } catch (e) {} }
 const QS = new URLSearchParams(location.search);
+if (QS.get('reset') === '1') { clearSaved(); QS.delete('reset'); try { history.replaceState(null, '', location.pathname + (QS.toString() ? '?' + QS : '') + location.hash); } catch (e) {} }
+let S = (() => { const v = load('gs_auto'); return v && v.v5 ? safeMigrate(v) : migrate(defaults()); })();
 try {
   if (QS.get('preset') === 'card') S = migrate(cardPreset());
-  else if (QS.get('cfg')) { const v = JSON.parse(decodeURIComponent(escape(atob(QS.get('cfg').replace(/-/g, '+').replace(/_/g, '/'))))); if (v && v.walls) S = migrate(v); }
+  else if (QS.get('cfg')) { const v = JSON.parse(decodeURIComponent(escape(atob(QS.get('cfg').replace(/-/g, '+').replace(/_/g, '/'))))); if (v && v.walls) S = safeMigrate(v); }
 } catch (e) { console.warn('cfg', e); } if (!FLOORS[S.floor]) S.floor = S.floor === 'parquet' || S.floor === 'walnut' ? 'oak' : S.floor === 'tile' ? 'marble' : 'lam'; if (!S.view) S.view = 'all'; S = migrate(S); if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.preset) S.preset = 'none'; S.dims = true;
 let cur = { w: 0, s: 0, it: -1 }, drag = null;
 function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v && v.walls ? v : null; } catch (e) { return null; } }
@@ -453,7 +481,7 @@ function buildItem(g, item, x0, x1, sec) {
 }
 
 // ---------- v10 props: clothes on hangers, shoes, bags, hat, folded stacks, fabric boxes (stored on the item: item.pr = [{ k, u }]) ----------
-const PROPK = { shirts: ['Рубашки', 'rail', 0.42], dresses: ['Платья', 'rail', 0.4], trousers: ['Брюки', 'rail', 0.36], shoes: ['Пары обуви', 'shoe', 0.34], stack: ['Стопка свитеров', 'shelf', 0.34], towels: ['Полотенца', 'shelf', 0.32], box: ['Короб из ткани', 'shelf', 0.34], bag: ['Сумка', 'shelf', 0.3], hat: ['Шляпа', 'shelf', 0.34] };
+var PROPK = { shirts: ['Рубашки', 'rail', 0.42], dresses: ['Платья', 'rail', 0.4], trousers: ['Брюки', 'rail', 0.36], shoes: ['Пары обуви', 'shoe', 0.34], stack: ['Стопка свитеров', 'shelf', 0.34], towels: ['Полотенца', 'shelf', 0.32], box: ['Короб из ткани', 'shelf', 0.34], bag: ['Сумка', 'shelf', 0.3], hat: ['Шляпа', 'shelf', 0.34] };
 const propFits = (k, t) => PROPK[k][1] === 'rail' ? t === 'rail' : PROPK[k][1] === 'shoe' ? t === 'shoe' : ['mesh', 'metal', 'ldsp'].includes(t);
 const PCOL = { shirts: ['#c9cfe3', '#e9b9ad', '#f4f1ea', '#8d6a4d', '#efe7d6', '#2f3a4f', '#b9a28a'], dresses: ['#f0c9b8', '#1f2330', '#b0262e', '#d9b8a0', '#ece6dc'], trousers: ['#c8b08a', '#2b2d33', '#e7c2b7', '#4a4440', '#f1ece2'], stack: ['#6d7fa8', '#d9cbb5', '#8a8f7a', '#c7a79a', '#3e4757', '#e8e1d4'], towels: ['#f3f1ec', '#d8d0c4', '#b9c4c8', '#e9dfd2'] };
 const PMAT = {}, PGEO = {};
@@ -684,7 +712,7 @@ function buildRug() {
   const m = new THREE.Mesh(geo, mat), [x, z] = rugSpot(); m.position.set(x, th / 2 + 0.001, z); m.receiveShadow = true; m.castShadow = false; decor.add(m);
 }
 // ---- plants: procedural potted plants, draggable on the floor ----
-const PLANTS = { fig: 'Фикус лировидный', monstera: 'Монстера', olive: 'Оливковое дерево', mirror: 'Зеркало в черной раме', pouf: 'Пуф' };
+var PLANTS = { fig: 'Фикус лировидный', monstera: 'Монстера', olive: 'Оливковое дерево', mirror: 'Зеркало в черной раме', pouf: 'Пуф' };
 let BLOBT = null;
 function blobMat(op) { if (!BLOBT) { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, 'rgba(30,24,20,1)'); gr.addColorStop(0.55, 'rgba(30,24,20,0.55)'); gr.addColorStop(1, 'rgba(30,24,20,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); BLOBT = new THREE.CanvasTexture(c); }
   return new THREE.MeshBasicMaterial({ map: BLOBT, transparent: true, opacity: op, depthWrite: false, toneMapped: false }); }
@@ -1520,7 +1548,7 @@ const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textConte
 $('shareBtn').onclick = async () => { const u = location.origin + location.pathname + '?cfg=' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); try { await navigator.clipboard.writeText(u); msg('Ссылка скопирована'); } catch (e) { prompt('Ссылка на конфигурацию', u); } };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = migrate(v); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); renderDeco(); setBg(); camTo(lastCam); msg('Конфигурация загружена'); };
-$('resetBtn').onclick = () => { if (!confirm('Сбросить все настройки?')) return; S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
+$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname); return; S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
 
 async function fontsFor(C) { const f = { montserrat: 'Montserrat', inter: 'Inter', playfair: 'Playfair Display' }[C.font] || 'Manrope'; await Promise.all([document.fonts.load(`700 60px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load('500 30px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load('800 48px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load(`800 48px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load(`500 30px "${f}"`, 'Наполнение КАРКАС 0123')]).catch(() => {}); }
 $('cardBtn').onclick = async () => { cardRead(); await fontsFor(S.card); const o = cleanShot(makeCard); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
@@ -1863,7 +1891,7 @@ sndUI();
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (!b || b.disabled || b.id === 'sndBtn') return;
   const muted = ['delBtn', 'undoBtn', 'redoBtn'].includes(b.id), bright = !muted && !!b.closest('.sz,.sws,.tiles,.cpgrid,.ld,.wbtn,.btiles');
   tick(muted ? 'muted' : bright ? 'bright' : 'soft'); if (muted || bright) lightHaptic(); }, true);
-renderDeco(); setBg(); rebuild(); renderSec();
+try { renderDeco(); setBg(); rebuild(); renderSec(); } catch (e) { console.warn('bad state, defaults', e); clearSaved(); S = migrate(defaults()); renderDeco(); setBg(); rebuild(); renderSec(); }
 // lens toggle in the top bar
 { const pop = document.createElement('div'); pop.id = 'camPop'; pop.className = 'hide'; document.body.appendChild(pop);
   const draw = () => { pop.innerHTML = '<div class="szlab">Камера</div>' + CAMS.map(([k, t]) => `<button data-cs="${k}" class="${camK() === k ? 'on' : ''}">${t}</button>`).join('');
