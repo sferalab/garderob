@@ -119,7 +119,7 @@ view.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const pm = new THREE.PMREMGenerator(renderer);
 scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
-const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 100);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.08, 40);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08;
 const hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc2, 0.6); scene.add(hemi);
@@ -262,7 +262,7 @@ function wallMat() { const v = finVar(), t = finishTex(v).clone(); t.needsUpdate
 // small tile preview of a finish, tinted by the wall color
 function finSwatch(v) { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'), src = finishTex(v).image, k = FINK[v] || 0.9, px = Math.min(512, 512 * 0.35 / k); g.drawImage(src, 0, 0, px, px, 0, 0, 96, 96); g.globalCompositeOperation = 'multiply'; g.fillStyle = S.wall; g.fillRect(0, 0, 96, 96); return c.toDataURL('image/jpeg', 0.85); }
 
-function wallShadowMat() { return new THREE.ShadowMaterial({ opacity: (SHP[S.room.shP] || SHP.soft).k, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); }
+function wallShadowMat() { return new THREE.ShadowMaterial({ opacity: (SHP[S.room.shP] || SHP.soft).k, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); }
 const AOG = {};
 function aoGrad(k) { // soft quadratic falloff, alpha along u (u=0 darkest)
   if (!AOG[k]) { const c = document.createElement('canvas'); c.width = 256; c.height = 2; const g = c.getContext('2d'), im = g.createImageData(256, 2); for (let x = 0; x < 256; x++) { const t = x / 255, a = Math.pow(1 - t, 2.2) * 255; for (let y = 0; y < 2; y++) { const i = (y * 256 + x) * 4; im.data[i + 3] = a; } } g.putImageData(im, 0, 0); AOG[k] = new THREE.CanvasTexture(c); }
@@ -275,7 +275,7 @@ const CONTACTS = {};
 function contactMat(f = 18, op = 0.6) {
   CONTACT = CONTACTS[f]; if (!CONTACT) { const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(0,0,0,0.62)'); gr.addColorStop(0.3, 'rgba(0,0,0,0.42)'); gr.addColorStop(0.65, 'rgba(0,0,0,0.14)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 64);
     const m = g.getImageData(0, 0, 128, 64); for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const k = Math.min(1, Math.min(x, 127 - x) / f); m.data[(y * 128 + x) * 4 + 3] *= k; } g.putImageData(m, 0, 0); CONTACT = CONTACTS[f] = new THREE.CanvasTexture(c); }
-  return new THREE.MeshBasicMaterial({ map: CONTACT, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  return new THREE.MeshBasicMaterial({ map: CONTACT, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -16 });
 }
 
 // ---------- materials ----------
@@ -383,7 +383,7 @@ function buildWall(wi) {
     if (!S.studio) [1, -1].forEach(sd => aoStrip(g, pt - pb, 0.04, 0.2, m => { m.position.set(x + sd * (0.023 + 0.02), (pt + pb) / 2, 0.0012); if (sd < 0) m.scale.x = -1; m.userData.contact = m.userData.frame = true; m.renderOrder = 1; })); });
   W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si] + XIN, xs[si + 1] - XIN, s); buildProps(ig, item, xs[si] + XIN, xs[si + 1] - XIN, { wi, si, ii });
     // baked shadow tight on the wall under/behind the item: 5-15 cm, soft edge; presets only tilt it a little; never leaves the item's own wall
-    const B = SHB[S.room.shP] || SHB.soft; if (B.o > 0 && item.t !== 'rail') { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) - 0.014) - ch / 2, 0.0012); cs.userData.contact = true; ig.add(cs); } }));
+    const B = SHB[S.room.shP] || SHB.soft; if (B.o > 0 && item.t !== 'rail') { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) + 0.003) - ch / 2, 0.0026); cs.renderOrder = 2; cs.userData.contact = true; ig.add(cs); } }));
   // soft contact shade on the floor under and just in front of the wall (the only shadow in Студия)
   if (false) { const fs = new THREE.Mesh(new THREE.PlaneGeometry(0.75, total * MM + 0.14), aoGrad(S.studio ? 0.36 : 0.12)); fs.rotation.x = -Math.PI / 2; fs.rotation.z = Math.PI / 2; fs.scale.x = -1; fs.position.set(total * MM / 2, 0.0025, 0.375); fs.userData.contact = fs.userData.keep = true; g.add(fs); }
   return g;
@@ -1566,7 +1566,7 @@ addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !/INPUT|TEXTA
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : 'nice');
-const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+const _x=0;window.__gs = { proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
 // ---------- v4 extra controls ----------
 $('rS').oninput = e => { $('fS').value = e.target.value; S.walls[cur.w].sections.forEach(x => x.w = +e.target.value); clearTimeout(dimT); dimT = setTimeout(rebuild, 40); };
