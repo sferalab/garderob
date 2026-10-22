@@ -6,7 +6,7 @@ import { CATALOG, RULES } from './catalog.js';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
-const METAL = { white: 0xf7f9fc, black: 0x111111, silver: 0xc3c6c8 };
+const METAL = { white: 0xeef1f4, black: 0x111111, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
 const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_light', 3.0, 0xffffff, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
@@ -22,7 +22,7 @@ const lensOf = o => o.t === 'pull' && o.v === 'fine' ? LENS.fine : LENS[o.t];
 const depthsOf = o => o.t === 'pull' && o.v === 'fine' ? [40] : DEPTHS[o.t];
 const secW = mm => nearest([45, 60, 90, 120], mm / 10);
 const LAYOUTS = { straight: 'Прямая (одна стена)', L: 'Угловая, угол слева', Lr: 'Угловая, угол справа', U: 'П-образная' };
-const CATS = { shelf: 'Полка', rod: 'Штанга', combo: 'Штанга с полкой', basket: 'Корзина', trouser: 'Брючница' };
+const CATS = { shelf: 'Полка', rod: 'Штанга', combo: 'Полка со штангой', basket: 'Корзина', trouser: 'Брючница' };
 const rowCat = o => o.g ? 'combo' : catOf(o.t);
 const catOf = t => t === 'rail' ? 'rod' : t === 'basket' || t === 'pull' ? 'basket' : t === 'trouser' ? 'trouser' : 'shelf';
 const VARS = { shelf: [['mesh', 'Сетчатая'], ['metal', 'Металлическая'], ['ldsp', 'ЛДСП'], ['shoe', 'Для обуви']], rod: [['rail', 'Штанга на кронштейнах']], combo: [['mesh', 'Сетчатая полка + штанга'], ['metal', 'Металлическая полка + штанга'], ['ldsp', 'Полка ЛДСП + штанга']], basket: [['pull|mesh', 'Сетчатая выдвижная'], ['basket|mesh', 'Стационарная'], ['pull|fine', 'Мелкосетчатая'], ['pull|perf', 'Перфорированная'], ['basket|perf', 'Перфор. стационарная']], trouser: [['trouser', 'Выдвижная']] };
@@ -62,7 +62,7 @@ function setTemplate(t) {
   if (t === 'l23') { S.layout = 'L'; S.walls[0].sections = [A(), B()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[1].sections = [B(), D()]; }
   if (t === 'zero') { S.layout = 'straight'; S.walls[0].sections = [{ w: 90, items: [] }, { w: 90, items: [] }]; }
   cur = { w: 0, s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); // templates never move the camera (only Сброс / Ракурс)
-  if (['p2', 'p3', 'p6', 'zero', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 12 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? (S.layout === 'Lr' ? -1 : 1) * Math.PI / 4 : 0; orb.snapAz = false; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); applyCam(); } // straight templates: frontal view
+  if (['p2', 'p3', 'p6', 'zero', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? (S.layout === 'Lr' ? -1 : 1) * Math.PI / 4 : 0; orb.snapAz = false; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) { orb.R *= 1.12; orb.h = orb.T.y + (orb.h - orb.T.y) * 1.12; } applyCam(); } // straight templates: frontal view
 }
 function cardPreset() {
   const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
@@ -320,7 +320,7 @@ function makeMats() {
   // Titan-GS powder coat: RAL 9016 snow white (slightly cool, glowing), RAL 9006 silver, RAL 9005 black
   const gm = { soft: 1, bright: 1, off: 0.3 }[S.room.glareM || 'soft'] || 1, bright = S.room.glareM === 'bright';
   const PB = {
-    white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.6, clearcoatRoughness: bright ? 0.05 : 0.16, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xeef4ff), emissive: new THREE.Color(0x181c22), envMapIntensity: 0.95 * gm },
+    white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.6, clearcoatRoughness: bright ? 0.05 : 0.16, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xeef4ff), emissive: new THREE.Color(0x06080b), envMapIntensity: 0.8 * gm },
     silver: { color: METAL.silver, metalness: 0.62, roughness: 0.4, clearcoat: bright ? 0.6 : 0.25, clearcoatRoughness: bright ? 0.12 : 0.4, specularIntensity: 0.75, envMapIntensity: 1.35 * gm },
     black: { color: METAL.black, metalness: 0.85, roughness: 0.45, clearcoat: bright ? 0.5 : 0.15, clearcoatRoughness: 0.35, specularIntensity: 0.9, sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
   }[S.metal] || {};
@@ -333,7 +333,7 @@ function makeMats() {
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, emissive: new THREE.Color(0x1c1f23), envMap: chromeEnv(), envMapIntensity: 2 * Math.max(0.8, gm), userData: { chrome: true } });
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, emissive: new THREE.Color(0x5a5e64), envMap: chromeEnv(), envMapIntensity: 2 * Math.max(0.8, gm), userData: { chrome: true } });
   M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
@@ -413,15 +413,15 @@ function bracket(g, x, y, L) {
   const k = L.toFixed(3);
   if (!BRG[k]) { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(L, 0); sh.lineTo(L, -0.016); sh.lineTo(0.06, -0.082); sh.lineTo(0, -0.088); sh.lineTo(0, 0);
     const ge = new THREE.ExtrudeGeometry(sh, { depth: 0.0065, bevelEnabled: true, bevelThickness: 0.0013, bevelSize: 0.0012, bevelSegments: 2 }); ge.rotateY(-Math.PI / 2); ge.translate(0.00325, 0, 0); BRG[k] = ge; }
-  const m = new THREE.Mesh(BRG[k], M.metal); m.position.set(x, y - 0.0012, ZB); m.castShadow = m.receiveShadow = true; g.add(m);
-  g.add(box(0.03, 0.005, L, x, y - 0.0025, ZB + L / 2, M.metal));
+  const m = new THREE.Mesh(BRG[k], M.metal); m.position.set(x, y - 0.0012, ZB); m.castShadow = m.receiveShadow = true; g.add(m); [-0.012, -0.052].forEach(dy => g.add(box(0.0065, 0.016, 0.012, x, y + dy, 0.0405, M.metal))); /* hook tabs into the upright slot */
+  g.add(box(0.03, 0.005, L - 0.044, x, y - 0.0025, 0.0435 + (L - 0.044) / 2, M.metal));
   g.add(box(0.016, 0.02, 0.01, x, y - 0.01, ZB + L - 0.005, M.metal));
 }
 const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0175, 0.0042, 12, 32, Math.PI * 1.7), RIV_G = new THREE.CylinderGeometry(0.0035, 0.0035, 0.007, 12);
 let _GRM = null, _GRK = null; function gridMat() { if (_GRM && _GRK === M.metal) return _GRM; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 9); g.fillRect(0, 0, 9, 64);
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(34, 15); t.anisotropy = 4; _GRK = M.metal; _GRM = M.metal.clone(); _GRM.alphaMap = t; _GRM.alphaTest = 0.5; _GRM.side = THREE.DoubleSide; _GRM.normalMap = null; return _GRM; }
 let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#fdfdfd'); gr.addColorStop(0.36, '#c9ced4'); gr.addColorStop(0.49, '#3a3d42'); gr.addColorStop(0.55, '#16171a'); gr.addColorStop(0.75, '#6b6e72'); gr.addColorStop(1, '#2a2b2d'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#fdfdfd'); gr.addColorStop(0.36, '#c9ced4'); gr.addColorStop(0.49, '#8d9298'); gr.addColorStop(0.55, '#6a6e74'); gr.addColorStop(0.75, '#b4b8bd'); gr.addColorStop(1, '#8a8d91'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
   g.fillStyle = '#ffffff'; [[40, 50], [200, 30], [330, 60], [450, 24]].forEach(([x, w]) => g.fillRect(x, 30, w, 70));
   const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; _CHE = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; return _CHE; }
 function rodHolder(g, x, by, ry, zr) {
@@ -676,7 +676,7 @@ function buildRoom() {
   };
   const bo = ops.filter(o => o.wall === 'B').map(o => ({ ...o, c: o.x - cx }));
   bk.userData.occ = wallPlane(right - left, cx, 0, 0, bk, bo);
-  const skM = new THREE.MeshStandardMaterial({ color: S.room.skirtColor || '#ffffff', roughness: 0.6 });
+  const skM = new THREE.MeshStandardMaterial({ color: '#f6f5f2', roughness: 1, metalness: 0, envMapIntensity: 0 });
   // skirting runs along u (local x of a wall frame), cut at doors
   const skirt = (parent, u0, u1, cuts, place) => { let segs = [[u0, u1]]; cuts.forEach(([a, b]) => { segs = segs.flatMap(([s, e]) => b <= s || a >= e ? [[s, e]] : [[s, a], [b, e]].filter(([p, q]) => q - p > 0.01)); });
     segs.forEach(([s, e]) => { const g = new THREE.Group(); place(g); [[0.016, 0.08, 0.04, 0.008], [0.022, 0.012, 0.074, 0.011]].forEach(([d, h, y, z]) => { const m = box(e - s, h, d, (s + e) / 2, y, z, skM); m.castShadow = false; g.add(m); }); parent.add(g); }); };
@@ -690,7 +690,7 @@ function buildRoom() {
     pv.userData.occ = wallPlane(sideLen, 0, sideLen / 2, L ? Math.PI / 2 : -Math.PI / 2, pv, so);
     if (ST) return;
     const fr = new THREE.Group(); fr.rotation.y = L ? Math.PI / 2 : -Math.PI / 2; if (L) fr.scale.x = -1; pv.add(fr); // local x = u (z in room), local z into the room
-    if (false /* skirting removed */) skirt(fr, 0, sideLen, doorCuts(ops.filter(o => o.wall === (L ? 'L' : 'R')), 'z'), () => {});
+    if (!ST) skirt(fr, 0, sideLen, doorCuts(ops.filter(o => o.wall === (L ? 'L' : 'R')), 'z'), () => {});
     if (S.room.cornice) cornice(sideLen, g => g.position.x = sideLen / 2, fr);
     aoStrip(fr, CH, 0.5, k, m => { m.position.set(0.25, CH / 2, 0.002); });
     aoStrip(fr, sideLen, 0.35, k, m => { m.rotation.z = Math.PI / 2; m.position.set(sideLen / 2, 0.175, 0.002); });
@@ -702,7 +702,7 @@ function buildRoom() {
     aoStrip(bk, W, 0.35, k, m => { m.position.set(cx, 0.175, 0.002); m.rotation.z = Math.PI / 2; });
     if (false) { aoStrip(room, W, 0.3, k * 0.7, m => { m.rotation.z = -Math.PI / 2; m.position.set(cx, CH - 0.15, 0.002); }); aoStrip(room, W, 0.4, k * 0.55, m => { m.rotation.x = Math.PI / 2; m.rotation.z = Math.PI / 2; m.scale.x = -1; m.position.set(cx, CH - 0.002, 0.2); }); } }
   if (ST) return;
-  if (false /* skirting removed */) skirt(bk, left, right, doorCuts(bo.map(o => ({ ...o, x: o.c + cx })), 'x'), () => {});
+  if (!ST) skirt(bk, left, right, doorCuts(bo.map(o => ({ ...o, x: o.c + cx })), 'x'), () => {});
   // ceiling: one solid plane over the whole room, seen only from below
   const cg = new THREE.Group(); cg.userData.occC = CH; room.add(cg);
   { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xfbfbf9, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
@@ -884,8 +884,8 @@ function buildDims(g, wi) {
   const labels = [], W = S.walls[wi], z = 0.006, railY = S.railTop * 10 * MM, D = S.dm || {};
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   const tot = xs[xs.length - 1];
-  if (D.s) W.sections.forEach((s, i) => dimH(g, labels, xs[i], xs[i + 1], railY + 0.08, z, cm(s.w * 10), railY));
-  if (D.o) dimH(g, labels, -0.0125, tot + 0.0125, railY + (D.s ? 0.19 : 0.08), z, cm(tot / MM + 25), railY);
+  if (D.s) W.sections.forEach((s, i) => dimH(g, labels, xs[i], xs[i + 1], railY + 0.14, z, cm(s.w * 10), railY));
+  if (D.o) dimH(g, labels, -0.0125, tot + 0.0125, railY + (D.s ? 0.28 : 0.14), z, cm(tot / MM + 25), railY);
   if (D.s) { const eg = effGap(wi), lr = wi === 0 && S.layout === 'Lr', gr = wi === 0 && S.layout === 'U' ? effGapR() : 0;
     if (eg > 0 && S.layout !== 'straight') { if (lr) dimH(g, labels, tot + 0.0125, tot + eg / 100 + 0.02, railY + 0.08, z, cm(eg * 10 - 12.5), railY); else dimH(g, labels, -eg / 100 - (wi === 0 ? 0.02 : 0), -0.0125, railY + 0.08, z, cm(eg * 10 - 12.5), railY); }
     if (gr > 0) dimH(g, labels, tot + 0.0125, tot + gr / 100 + 0.02, railY + 0.08, z, cm(gr * 10 - 12.5), railY); }
@@ -1070,7 +1070,7 @@ function lensUI() { const k = camK(), b = document.getElementById('lensBtn'); if
 // between the top bar and the bottom toolbar with ~11% margin on each side
 function safeNdc() { const r = renderer.domElement.getBoundingClientRect(), H = r.height || 1, tb = $('topbar'), fb = $('floatBar');
   const top = tb ? Math.max(0, tb.getBoundingClientRect().bottom - r.top) : 0, bot = fb ? Math.max(0, r.bottom - fb.getBoundingClientRect().top) : 0;
-  const yT = 1 - 2 * top / H, yB = -1 + 2 * bot / H, m = 0.14, hy = (yT - yB) * m; return { x0: -1 + 2 * m, x1: 1 - 2 * m, y0: yB + hy, y1: yT - hy }; }
+  const yT = 1 - 2 * top / H, yB = -1 + 2 * bot / H, m = 0.19, hy = (yT - yB) * m; return { x0: -1 + 2 * m, x1: 1 - 2 * m, y0: yB + hy, y1: yT - hy }; }
 function fitView() { if (!orb.on || !WG.length) return; const b = meshBox(); if (b.isEmpty()) return;
   const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
   const sf = safeNdc(), q = new THREE.Vector3();
@@ -1168,7 +1168,7 @@ const _sc = new THREE.OrthographicCamera();
 // the highlight light rides with the camera (up and to the right), so edge highlights travel as the view turns
 const _cr = new THREE.Vector3(), _cu = new THREE.Vector3(), _co = new THREE.Vector3();
 // walls and ceiling between the camera and the wardrobe disappear, so the view can go anywhere
-function tickOcc() { const cp = camera.position, und = cp.y < 0.002;  decor.children.forEach(c => { if (c.userData.rug) c.visible = !und; }); room.children.forEach(c => { const u = c.userData; if (u.floorM) { c.visible = !und; return; } if (u.occ) { _co.copy(cp); u.occ.worldToLocal(_co); c.visible = _co.z > -0.08; } else if (u.occC != null) c.visible = cp.y < u.occC - 0.005; }); }
+function tickOcc() { const cp = camera.position, und = cp.y < 0.002;  decor.children.forEach(c => { if (c.userData.rug) c.visible = !und; }); room.children.forEach(c => { const u = c.userData; if (u.floorM) { const fm = c.material; if (fm && !fm.isShadowMaterial && fm.userData.und !== und) { fm.userData.und = und; fm.side = THREE.DoubleSide; fm.transparent = und; fm.opacity = und ? 0.35 : 1; fm.depthWrite = !und; fm.needsUpdate = true; } return; } if (u.occ) { _co.copy(cp); u.occ.worldToLocal(_co); c.visible = _co.z > -0.08; } else if (u.occC != null) c.visible = cp.y < u.occC - 0.005; }); }
 function tickSpec() { if (!specL.intensity) return; _cr.set(1, 0, 0).applyQuaternion(camera.quaternion); _cu.set(0, 1, 0).applyQuaternion(camera.quaternion); specL.position.copy(camera.position).addScaledVector(_cr, 1.6).addScaledVector(_cu, 1.4); }
 function applyGlareShadow() {
   const R = S.room || {}, c = bbox.getCenter(new THREE.Vector3()), P = SHP[R.shP] || SHP.soft, ST = !!S.studio && !photo, gmode = R.glareM || 'soft';
@@ -1439,7 +1439,7 @@ function renderSec() {
   e += `<div class="wrow"><span>Ширина секции</span><div class="sz wbtn">${[45, 60, 90, 120].map(v => `<button data-pw="${v}" class="${s.w === v ? 'on' : ''}">${v}</button>`).join('')}</div></div>`;
   if (s.items.length && ![45, 60, 90, 120].includes(s.w)) e += `<div class="wtxt">Ширины ${s.w} см нет в каталоге. Подходят: 45, 60, 90, 120 см</div>`;
   e += '<div class="szlab">Готовые наборы</div><div class="chips">' + [['shelves', 'Только полки'], ['rod', 'Штанга + полки'], ['two', 'Две штанги'], ['baskets', 'Полки + корзины'], ['shoes', 'Полки + обувь']].map(([k, t]) => `<button data-pre="${k}">${t}</button>`).join('') + '<button data-empty="1">Очистить</button></div>';
-  const icoBtn = c => `<div class="ico"><button class="big" data-app="${c}" title="Добавить ниже последнего">${ICO[c]}<span class="${c === 'combo' ? 'two' : ''}">${c === 'combo' ? 'Штанга<br>с полкой' : CATS[c]}</span></button><div class="cnt"><button data-dec="${c}">−</button><b>${cnt(c)}</b><button data-inc="${c}">+</button></div></div>`;
+  const icoBtn = c => `<div class="ico"><button class="big" data-app="${c}" title="Добавить ниже последнего">${ICO[c]}<span class="${c === 'combo' ? 'two' : ''}">${c === 'combo' ? 'Полка<br>со штангой' : CATS[c]}</span></button><div class="cnt"><button data-dec="${c}">−</button><b>${cnt(c)}</b><button data-inc="${c}">+</button></div></div>`;
   e += '<div class="szlab">Элементы</div><div class="icons">' + ['shelf', 'rod', 'combo', 'trouser'].map(icoBtn).join('') + '</div>';
   e += '<div class="bgroup"><div class="icons">' + icoBtn('basket') + '<div class="bnote">Тип корзины: нажмите на картинку, чтобы выбрать тип и добавить корзину</div></div><div class="btiles">' + BK.map(([k, t, svg]) => `<button data-bk="${k}" class="${(S.bKind || 'pull|mesh') === k ? 'on' : ''}"><svg viewBox="0 0 48 32">${svg}</svg><span>${t}</span></button>`).join('') + '</div></div>';
   const ord = s.items.map((o, i) => [o, i]).filter(p => !p[0].lk).sort((a, b) => b[0].y - a[0].y), coll = collisions(s);
@@ -1449,7 +1449,7 @@ function renderSec() {
     e += `<div class="item${coll.has(i) ? ' warn' : ''}${cur.it === i ? ' sel' : ''}" data-row="${i}"><div class="top"><b class="num">${k + 1}</b><span class="mico">${ICO[c]}</span><select data-i="${i}" data-k="var">${VARS[c].map(([kk, v]) => `<option value="${kk}" ${kk === vv ? 'selected' : ''}>${v}</option>`).join('')}</select>
     ${isBasket(o.t) ? `<select data-i="${i}" data-k="h" class="dsel">${[85, 181, 285].map(v => `<option value="${v}" ${v === (o.h || 85) ? 'selected' : ''}>${v} мм</option>`).join('')}</select>` : ''}
     <button class="mini" data-sw="${i}" data-dir="-1" ${k === 0 ? 'disabled' : ''}>↑</button><button class="mini" data-sw="${i}" data-dir="1" ${k === ord.length - 1 ? 'disabled' : ''}>↓</button><button class="mini danger" data-del="${i}">✕</button></div>
-    ${isBasket(o.t) ? `<div class="btype">Выбрано: <b>${(VARS[c].find(([kk]) => kk === vv) || [0, ''])[1]}</b></div><div class="ld"><span>Глубина</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div><div class="ld"><span>Ширина</span><div class="sz">${[45, 60, 75, 90].map(w => `<button data-bw="${w}" class="${s.w === w ? 'on' : ''}">${w}</button>`).join('')}</div></div>` : ''}
+    ${isBasket(o.t) ? `<div class="btype">Выбрано: <b>${(VARS[c].find(([kk]) => kk === vv) || [0, ''])[1]}</b></div><div class="ld"><span>Глубина корзины</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div><div class="ld"><span>Ширина корзины</span><div class="sz">${[...new Set((LENS[o.t] || [603, 903]).map(l => Math.round((l + 30) / 100) * 10))].map(w => `<button data-bw="${w}" class="${s.w === w ? 'on' : ''}">${w}</button>`).join('')}</div></div>` : ''}
     <div class="ld"><span>Длина</span><div class="sz">${lensOf(o).map(mm => `<button data-len="${i}:${mm}" class="${secW(mm) === s.w ? 'on' : ''}" title="${mm} мм">${Math.round(mm / 10)}</button>`).join('')}</div></div>${o.t === 'rail' || isBasket(o.t) ? '' : `<div class="ld"><span>Глубина</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div>`}
     <div class="yrow"><input type="range" data-i="${i}" data-k="yr" min="${lo}" max="${hi}" step="1" value="${o.y}"><label class="yn"><input type="number" data-i="${i}" data-k="y" value="${o.y}" min="${lo}" max="${hi}"> см</label></div>
     ${coll.has(i) ? '<div class="wtxt">Пересекается с соседним элементом</div>' : ''}</div>`;
@@ -1873,7 +1873,7 @@ function renderGaps() {
   ['posGap', 'posGap2'].forEach(id => $(id).innerHTML = html);
   const sh = { '0': S.layout === 'U' ? 'Осн. слева' : 'Основная', '0r': 'Осн. справа', '1': S.layout === 'U' ? 'Левая' : 'Вторая', '2': S.layout === 'U' ? 'Правая' : 'Вторая' };
   $('posGap3').innerHTML = ks.length ? '<div class="szlab">Сдвиг от угла, см</div><div class="gr2">' + ks.map(([k]) => `<label>${sh[k]}: <b data-gv="${k}">${gapGet(k)}</b><input type="range" data-gr="${k}" min="0" max="300" step="1" value="${gapGet(k)}"></label>`).join('') + '</div>' : '';
-  const set = (k, v, live, src) => { const prev = gapGet(k), nv = Math.max(0, Math.min(300, Math.round(v))); gapSet(k, nv); const og = Math.min(300, optGap(k)); if (prev !== nv && (nv === og || Math.sign(prev - og) !== Math.sign(nv - og))) haptic();
+  const set = (k, v, live, src) => { const prev = gapGet(k), og = Math.min(300, optGap(k)); let nv = Math.max(0, Math.min(300, Math.round(v))); if (Math.abs(nv - og) <= 4) nv = og; gapSet(k, nv); if (prev !== nv && nv === og) { haptic(); tick('bright'); }
     document.querySelectorAll(`[data-gv="${k}"]`).forEach(e => e.textContent = nv); document.querySelectorAll(`[data-gr="${k}"],[data-gf="${k}"]`).forEach(e => { if (e !== src) e.value = nv; }); clearTimeout(gapTmr); gapTmr = setTimeout(rebuild, live ? 30 : 0); };
   document.querySelectorAll('[data-gr]').forEach(el => { el.oninput = () => set(el.dataset.gr, +el.value, true, el); el.onchange = () => set(el.dataset.gr, +el.value, false, el); });
   document.querySelectorAll('[data-gf]').forEach(el => el.onchange = () => set(el.dataset.gf, +el.value || 0, false, el));
