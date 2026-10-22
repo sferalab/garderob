@@ -1035,6 +1035,13 @@ function applyCam(cam = camera) {
   // straight and U: a near-frontal view settles exactly frontal, so the ceiling and floor edges read level
   const end = e => { P.delete(e.pointerId); last = null; pinch = null; if (!P.size && (S.layout === 'straight' || S.layout === 'U') && Math.abs(orb.az) < 0.16) orb.snapAz = true; };
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  // safety net: object handlers or iOS gestures must never leave a stale pointer / drag lock behind
+  const resetAll = () => { P.clear(); last = null; pinch = null; window.__plantTap = false; TP.clear(); controls.enabled = !orb.on; window.__resetDrag && window.__resetDrag(); };
+  window.__resetInput = resetAll;
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => addEventListener(t, e => { if (P.has(e.pointerId)) end(e); setTimeout(() => { if (!TP.size) resetAll(); }, 0); }, true));
+  ['touchend', 'touchcancel'].forEach(t => addEventListener(t, e => { if (!e.touches || !e.touches.length) setTimeout(resetAll, 0); }, true));
+  addEventListener('blur', resetAll); document.addEventListener('visibilitychange', resetAll); ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+  el.addEventListener('pointerdown', e => { [...P.keys()].forEach(id => { if (id !== e.pointerId && !TP.has(id)) P.delete(id); }); if (TP.size <= 1) { window.__plantTap = false; controls.enabled = !orb.on; } }, true);
   el.addEventListener('pointermove', e => {
     if (!orb.on || !P.has(e.pointerId)) return; if (window.__plantTap) { const q = P.get(e.pointerId); q.x = e.clientX; q.y = e.clientY; last = null; pinch = null; return; } const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
     const hpx = el.clientHeight || 600, unit = orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
@@ -1691,7 +1698,7 @@ function wbShot() {
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q);
 };
 
-$('niceBtn').onclick = () => { lastCam = 'nice'; camTo('nice'); rebuildDims(); };
+$('niceBtn').onclick = () => { window.__resetInput && window.__resetInput(); lastCam = 'nice'; camTo('nice'); rebuildDims(); };
 
 { const o = $('ceilT').onchange; $('ceilT').onchange = e => { o(e); setBg(); }; }
 // ---------- stepper ----------
@@ -1950,7 +1957,7 @@ function camShot(o, nm) {
   function dl() { out.toBlob(b => { if (!b) { msg('Не удалось сделать снимок'); return; } const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); msg('Снимок сохранен'); }, 'image/png'); }
 }
 // ---- plants: drag with a finger on the floor
-{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null;
+{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null; { const pr_ = window.__resetDrag; window.__resetDrag = () => { pd = null; if (pr_) pr_(); }; }
   const ray = e => { const r = el.getBoundingClientRect(); RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); };
   el.addEventListener('pointerdown', e => { if (TP.size > 1) { if (pd) { pd = null; window.__plantTap = false; } tapP = null; return; } if (!orb.on || e.button !== 0 || !decor.visible || !(S.plants || []).length || pd) return; ray(e);
     const h = RC.intersectObjects(decor.children, true).find(x => x.object.userData.plant != null); if (!h) return; const mh = pickHits(e)[0]; if (mh && mh.distance < h.distance) return;
@@ -1961,7 +1968,7 @@ function camShot(o, nm) {
   el.addEventListener('pointerup', tapUp, true);
   el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); ray(e); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
     const p = S.plants[pd.i]; p.x = q.x + pd.dx; p.z = Math.max(0.2, Math.min(9, q.z + pd.dz)); if (ROOMB) p.x = Math.max(ROOMB.l + 0.2, Math.min(ROOMB.r - 0.2, p.x)); if (pd.g) pd.g.position.set(p.x, 0, p.z); }, true);
-  const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); applyGlareShadow(); renderDeco(); };
+  const up = e => { if (!pd || e.pointerId !== pd.id) return; pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); applyGlareShadow(); renderDeco(); };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true); }
 // ---- sound: soft synthesized clicks + light haptics; toggle in the top bar
 const SND = { on: localStorage.getItem('gs_snd') !== '0', ctx: null };
@@ -2021,7 +2028,7 @@ function addProp(k) {
 }
 function renderPropBtns() { const el = $('propBtns'); if (!el) return; el.innerHTML = Object.entries(PROPK).map(([k, v]) => `<button data-prk="${k}">+ ${v[0]}</button>`).join(''); el.querySelectorAll('[data-prk]').forEach(b => b.onclick = () => addProp(b.dataset.prk)); }
 renderPropBtns();
-{ const el = renderer.domElement; let pd = null;
+{ const el = renderer.domElement; let pd = null; { const pr_ = window.__resetDrag; window.__resetDrag = () => { pd = null; if (pr_) pr_(); }; }
   el.addEventListener('pointerdown', e => { if (e.button !== 0 || pd) return; const h = pickHits(e)[0], pr = h && h.object.userData.prop;
     if (!pr) { if (window.__propSel) { window.__propSel = null; hlOnly(null); $('delBtn').classList.toggle('hide', !(cur.it >= 0) && !(window.__plantSel >= 0)); } return; }
     let g = h.object; while (g.parent && g.parent.userData.prop === pr) g = g.parent; const wg = WG[pr.wi]; if (!wg) return;
@@ -2033,7 +2040,7 @@ renderPropBtns();
     RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(pd.plane, q)) return;
     const lp = pd.wg.worldToLocal(q), { x0, x1, hw } = pd.pr, xa = x0 + 0.02 + hw, xb = x1 - 0.02 - hw; if (xb <= xa) return;
     const x = Math.max(xa, Math.min(xb, lp.x + pd.dx)); pd.g.position.x = x; pd.u = (x - xa) / (xb - xa); pd.moved = true; }, true);
-  const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); const p = pd; pd = null; setTimeout(() => { window.__plantTap = false; }, 0);
+  const up = e => { if (!pd || e.pointerId !== pd.id) return; const p = pd; pd = null; setTimeout(() => { window.__plantTap = false; }, 0);
     // dropped onto another fitting shelf / rod: move it there (snaps along that item); dropped elsewhere: it springs back
     if (p.moved) { const h = pickHits(e).find(x => { let g = x.object; while (g && !g.userData.ref) g = g.parent; return g && !x.object.userData.prop; }); let tg = h && h.object; while (tg && !tg.userData.ref) tg = tg.parent;
       const src = S.walls[p.pr.wi].sections[p.pr.si].items[p.pr.ii], pv = src && src.pr && src.pr[p.pr.pi];
@@ -2060,7 +2067,7 @@ function renderRoomPre() { const el = $('roomPre'); if (!el) return; el.innerHTM
 renderRoomPre();
 
 // ---- rug: select by tap, drag the body, resize by corner handles (round: edge handle), rotate by the round handle; camera orbit is off while dragging
-{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null, H = null, sel = null;
+{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null, H = null, sel = null; { const pr_ = window.__resetDrag; window.__resetDrag = () => { pd = null; if (pr_) pr_(); }; }
   const ray = e => { const r = el.getBoundingClientRect(); RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); };
   const hm = new THREE.MeshBasicMaterial({ color: 0x2f7bff, depthTest: false, toneMapped: false }), hg = new THREE.CylinderGeometry(0.045, 0.045, 0.01, 20), rg = new THREE.SphereGeometry(0.05, 16, 10);
   const clearH = () => { if (H) { H.parent && H.parent.remove(H); H = null; } };
@@ -2082,7 +2089,7 @@ renderRoomPre();
     else if (pd.mode === 'k') { const k = Math.max(0.5, Math.min(2.2, pd.k0 * Math.hypot(q.x - m.position.x, q.z - m.position.z) / pd.d0)); m.scale.set(k / pd.k0, 1, k / pd.k0); S.rug.k = k; }
     else { const a = Math.atan2(q.x - m.position.x, q.z - m.position.z); m.rotation.y = a; S.rug.r = a; }
     if (H) { H.position.copy(m.position); H.rotation.y = m.rotation.y; H.scale.set(m.scale.x, 1, m.scale.z); } }, true);
-  const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); const pd0m = pd.m; pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist();
+  const up = e => { if (!pd || e.pointerId !== pd.id) return; const pd0m = pd.m; pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist();
     if (pd0m) { sel = pd0m; showH(pd0m); } };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true); }
 // ---- 📷 «Визуализация»: progressive GPU path tracing (three-gpu-pathtracer) of the current view; the live editor is untouched
