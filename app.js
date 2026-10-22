@@ -258,7 +258,7 @@ function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).mu
 const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
 function wallMat() { const v = finVar(), t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
   const sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, normalMap: n, roughness: 0.93, metalness: 0, envMapIntensity: 0.25, toneMapped: false });
-  m.userData = { wall: true, kd: sunM ? 0.4 : 0.28, ke: sunM ? 0.55 : 0.7 }; setWallCol(m, S.wall); return m; }
+  m.userData = { wall: true, kd: sunM ? 0.55 : 0.62, ke: sunM ? 0.4 : 0.42 }; /* lit PBR wall: relief reads in the light, emissive keeps the color clean */ setWallCol(m, S.wall); return m; }
 // small tile preview of a finish, tinted by the wall color
 function finSwatch(v) { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'), src = finishTex(v).image, k = FINK[v] || 0.9, px = Math.min(512, 512 * 0.35 / k); g.drawImage(src, 0, 0, px, px, 0, 0, 96, 96); g.globalCompositeOperation = 'multiply'; g.fillStyle = S.wall; g.fillRect(0, 0, 96, 96); return c.toDataURL('image/jpeg', 0.85); }
 
@@ -383,7 +383,7 @@ function buildWall(wi) {
     if (!S.studio) [1, -1].forEach(sd => aoStrip(g, pt - pb, 0.04, 0.2, m => { m.position.set(x + sd * (0.023 + 0.02), (pt + pb) / 2, 0.0012); if (sd < 0) m.scale.x = -1; m.userData.contact = m.userData.frame = true; m.renderOrder = 1; })); });
   W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si] + XIN, xs[si + 1] - XIN, s); buildProps(ig, item, xs[si] + XIN, xs[si + 1] - XIN, { wi, si, ii });
     // baked shadow tight on the wall under/behind the item: 5-15 cm, soft edge; presets only tilt it a little; never leaves the item's own wall
-    const B = SHB[S.room.shP] || SHB.soft; if (B.o > 0 && item.t !== 'rail') { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) + 0.003) - ch / 2, 0.0026); cs.renderOrder = 2; cs.userData.contact = true; ig.add(cs); } }));
+    const B0 = SHB[S.room.shP] || SHB.soft, RK = S.room, B = B0.o > 0 ? { ...B0, o: B0.o * (RK.shK ?? 1), len: B0.len * (RK.shL ?? 1), f: Math.max(3, Math.round(B0.f * (RK.shS ?? 1))), dx: B0.dx + (RK.shD ?? 0) * 0.04 } : B0; if (B.o > 0 && item.t !== 'rail') { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) + 0.003) - ch / 2, 0.0026); cs.renderOrder = 2; cs.userData.contact = true; ig.add(cs); } }));
   // soft contact shade on the floor under and just in front of the wall (the only shadow in Студия)
   if (false) { const fs = new THREE.Mesh(new THREE.PlaneGeometry(0.75, total * MM + 0.14), aoGrad(S.studio ? 0.36 : 0.12)); fs.rotation.x = -Math.PI / 2; fs.rotation.z = Math.PI / 2; fs.scale.x = -1; fs.position.set(total * MM / 2, 0.0025, 0.375); fs.userData.contact = fs.userData.keep = true; g.add(fs); }
   return g;
@@ -492,9 +492,9 @@ function pmat(c, kind) { const key = c + (kind || ''); if (!PMAT[key]) PMAT[key]
 function extr(key, pts, depth, bev) { if (!PGEO[key]) { const sh = new THREE.Shape(); sh.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) sh.lineTo(pts[i][0], pts[i][1]);
   const ge = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 2, curveSegments: 4 }); ge.translate(0, 0, -depth / 2); PGEO[key] = ge; } return PGEO[key]; }
 function hanger(g) { // wooden hanger with a chrome hook over the rod (rod center at 0,0)
-  const w = pmat('#a9784f', 'wood'), bar = new THREE.Mesh(extr('hgr', [[-0.21, -0.075], [0, -0.035], [0.21, -0.075], [0.21, -0.088], [0, -0.05], [-0.21, -0.088]], 0.012, 0.003), w); g.add(bar);
-  const hk = new THREE.Mesh(PGEO.hk || (PGEO.hk = new THREE.TorusGeometry(0.019, 0.0022, 6, 16, Math.PI * 1.3)), M.chrome); hk.rotation.z = -0.2; hk.position.y = 0.001; g.add(hk);
-  const st = new THREE.Mesh(PGEO.hs || (PGEO.hs = new THREE.CylinderGeometry(0.002, 0.002, 0.03, 6)), M.chrome); st.position.y = -0.03; g.add(st); }
+  const w = PMAT.gold || (PMAT.gold = new THREE.MeshPhysicalMaterial({ color: 0xd4ad62, metalness: 1, roughness: 0.22, clearcoat: 0.6, envMapIntensity: 1.6 })), bar = new THREE.Mesh(extr('hgr', [[-0.21, -0.075], [0, -0.037], [0.21, -0.075], [0.21, -0.081], [0, -0.043], [-0.21, -0.081]], 0.003, 0.0018), w); g.add(bar); // thin gold wire hanger
+  const hk = new THREE.Mesh(PGEO.hk || (PGEO.hk = new THREE.TorusGeometry(0.019, 0.0022, 6, 16, Math.PI * 1.3)), PMAT.gold); hk.rotation.z = -0.2; hk.position.y = 0.001; g.add(hk);
+  const st = new THREE.Mesh(PGEO.hs || (PGEO.hs = new THREE.CylinderGeometry(0.002, 0.002, 0.03, 6)), PMAT.gold); st.position.y = -0.03; g.add(st); }
 function garment(k, c, i) { const g = new THREE.Group(); hanger(g); let m;
   if (k === 'shirts') { m = new THREE.Mesh(extr('shirt', [[-0.2, -0.08], [-0.06, -0.04], [0.06, -0.04], [0.2, -0.08], [0.23, -0.32], [0.18, -0.33], [0.17, -0.2], [0.175, -0.76], [-0.175, -0.76], [-0.17, -0.2], [-0.18, -0.33], [-0.23, -0.32]], 0.008, 0.009), pmat(c)); const col = new THREE.Mesh(PGEO.col || (PGEO.col = new THREE.TorusGeometry(0.045, 0.01, 6, 18, Math.PI)), pmat(c)); col.rotation.z = Math.PI; col.position.y = -0.045; col.scale.z = 1.6; g.add(col);
     const pl = new THREE.Mesh(PGEO.pl || (PGEO.pl = new THREE.BoxGeometry(0.025, 0.68, 0.003)), pmat(new THREE.Color(c).multiplyScalar(0.9).getStyle())); pl.position.set(0, -0.41, 0.019); g.add(pl); }
@@ -688,7 +688,19 @@ function buildRoom() {
 // ---------- decor: rug, plants, window light ----------
 const decor = new THREE.Group(); scene.add(decor);
 const RUGT = {};
+function juteTex() { if (RUGT.j) return RUGT.j; const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d'), h = document.createElement('canvas'); h.width = h.height = 512; const q = h.getContext('2d');
+  g.fillStyle = '#b39467'; g.fillRect(0, 0, 512, 512); q.fillStyle = '#000'; q.fillRect(0, 0, 512, 512); let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  // braided jute: rows of slanted plaits, alternating direction, fibre noise on top
+  for (let y = 0; y < 512; y += 16) for (let x = -16; x < 528; x += 12) { const dir = (y / 16) % 2 ? 1 : -1, l = 150 + rnd() * 50;
+    g.fillStyle = `rgb(${l + 30},${l + 6},${l - 40})`; g.beginPath(); g.ellipse(x, y + 8, 7, 4.2, dir * 0.6, 0, 7); g.fill();
+    const gr = q.createRadialGradient(x, y + 8, 0, x, y + 8, 7); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#000'); q.fillStyle = gr; q.beginPath(); q.ellipse(x, y + 8, 7, 4.2, dir * 0.6, 0, 7); q.fill(); }
+  for (let i = 0; i < 9000; i++) { const l = 120 + rnd() * 90; g.fillStyle = `rgba(${l},${l - 20},${l - 60},0.35)`; g.fillRect(rnd() * 512, rnd() * 512, 2 + rnd() * 4, 1); }
+  const src = q.getImageData(0, 0, 512, 512).data, n = document.createElement('canvas'); n.width = n.height = 512; const nq = n.getContext('2d'), im = nq.createImageData(512, 512), H = (x, y) => src[(((y + 512) % 512) * 512 + ((x + 512) % 512)) * 4] / 255;
+  for (let y = 0; y < 512; y++) for (let x = 0; x < 512; x++) { const dx = (H(x + 1, y) - H(x - 1, y)) * 2.5, dy = (H(x, y + 1) - H(x, y - 1)) * 2.5, L = Math.hypot(dx, dy, 1), i = (y * 512 + x) * 4; im.data[i] = (-dx / L * 0.5 + 0.5) * 255; im.data[i + 1] = (dy / L * 0.5 + 0.5) * 255; im.data[i + 2] = (1 / L * 0.5 + 0.5) * 255; im.data[i + 3] = 255; }
+  nq.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; const tn = new THREE.CanvasTexture(n); tn.wrapS = tn.wrapT = THREE.RepeatWrapping;
+  return (RUGT.j = [t, tn]); }
 function rugTex(fluffy) {
+  if (fluffy === 'jute') return juteTex();
   const k = fluffy ? 'f' : 'p'; if (RUGT[k]) return RUGT[k];
   let sd = fluffy ? 21 : 33; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
   const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
@@ -703,13 +715,14 @@ function rugTex(fluffy) {
 function rugSpot() { const F = frame(), act = wallsActive(); if (S.layout === 'L') return [F.xL + 1.05, Math.max(1.0, Math.min(1.4, (act.includes(1) ? effGap(1) / 100 + wallWidth(1) * MM : 1) * 0.5 + 0.55))]; if (S.layout === 'Lr') return [F.xR - 1.05, 1.1]; return [F.x0 + F.backW / 2, S.layout === 'U' ? 1.2 : 1.05]; }
 function buildRug() {
   const R = S.rug; if (!R || S.floor === 'carpet') return;
-  const round = R.shape === 'round', fluffy = R.pile === 'fluffy', th = fluffy ? 0.024 : 0.006, w = round ? 1.5 : 1.8, d = round ? 1.5 : 1.2, [t, tn] = rugTex(fluffy);
+  const round = R.shape === 'round', fluffy = R.pile === 'fluffy', jute = R.pile === 'jute', rk = Math.max(0.5, Math.min(2, R.k || 1)), th = fluffy ? 0.024 : jute ? 0.01 : 0.006, w = (round ? 1.5 : 1.8) * rk, d = (round ? 1.5 : 1.2) * rk, [t, tn] = rugTex(jute ? 'jute' : fluffy);
   const mt = t.clone(), mn = tn.clone(); mt.needsUpdate = mn.needsUpdate = true; mt.repeat.set(fluffy ? 2.5 : 1, fluffy ? 2.5 : (round ? 1 : 1)); mn.repeat.copy(mt.repeat);
   const mat = new THREE.MeshStandardMaterial({ color: 0xd8cfc0, map: mt, normalMap: mn, normalScale: new THREE.Vector2(fluffy ? 0.9 : 0.5, fluffy ? 0.9 : 0.5), roughness: 1, envMapIntensity: 0.25 });
   const geo = round ? new THREE.CylinderGeometry(w / 2, w / 2 - (fluffy ? 0.012 : 0.002), th, 96) : new RoundedBoxGeometry(w, th, d, 3, fluffy ? 0.011 : 0.0028);
   if (round) { const uv = geo.attributes.uv, p = geo.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, p.getX(i) / w + 0.5, p.getZ(i) / w + 0.5); }
   else { const uv = geo.attributes.uv, p = geo.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, p.getX(i) / w + 0.5, p.getZ(i) / d + 0.5); }
-  const m = new THREE.Mesh(geo, mat), [x, z] = rugSpot(); m.position.set(x, th / 2 + 0.001, z); m.receiveShadow = true; m.castShadow = false; decor.add(m);
+  if (jute) { mat.color.set(0xffffff); mat.normalScale.set(1.1, 1.1); mt.repeat.set(w / 0.6, d / 0.6); mn.repeat.copy(mt.repeat); }
+  const m = new THREE.Mesh(geo, mat), sp = rugSpot(), x = R.x ?? sp[0], z = R.z ?? sp[1]; m.position.set(x, th / 2 + 0.001, z); if (!round) m.rotation.y = R.r || 0; m.userData.rug = true; m.receiveShadow = true; m.castShadow = false; decor.add(m);
 }
 // ---- plants: procedural potted plants, draggable on the floor ----
 var PLANTS = { fig: 'Фикус лировидный', monstera: 'Монстера', olive: 'Оливковое дерево', mirror: 'Зеркало в черной раме', pouf: 'Пуф' };
@@ -998,7 +1011,7 @@ function applyCam(cam = camera) {
   o.h = Math.max(0.05, Math.min(o.T.y + o.R * 4, Math.max(o.h, o.T.y - o.R * 3)));
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   if (ROOMB && !S.studio) { cam.position.x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, cam.position.x)); cam.position.z = Math.max(0.4, cam.position.z); }
-  const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 0.62); // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
+  const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 1.2); // level camera + lens shift (two-point perspective): uprights stay vertical; real pitch only for near-top views
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   const yN = -Math.tan(a - p) / Math.tan(cam.fov * Math.PI / 360);
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
@@ -1064,6 +1077,13 @@ function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.
   if (c.color) c.color.set(0x5b9bff); if (c.emissive) { c.emissive.set(0x1f66ff); c.emissiveIntensity = 0.55; } if (c.map && c.color) c.color.set(0x8fbaff); if ('sheen' in c) c.sheen = 0; m.material = c; }); }
 function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
 let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
+// shadow controls: strength, length, softness, direction of the baked wall shadows; «Реализм» only for 📷
+function shSliders() { let el = $('shSl'); if (!el) { el = document.createElement('div'); el.id = 'shSl'; $('shPBtns').after(el); } const R = S.room;
+  const sl = (k, t, lo, hi, st, d) => `<label class="rng">${t}<input type="range" data-shs="${k}" min="${lo}" max="${hi}" step="${st}" value="${R[k] ?? d}"></label>`;
+  el.innerHTML = sl('shK', 'Сила тени', 0, 2, 0.05, 1) + sl('shL', 'Длина тени', 0.4, 2.5, 0.05, 1) + sl('shS', 'Мягкость', 0.3, 2.5, 0.05, 1) + sl('shD', 'Направление', -1, 1, 0.05, 0)
+    + `<label class="chk"><input type="checkbox" id="realT" ${S.real ? 'checked' : ''}> Реализм для 📷 (мягкие тени, виньетка, высокое разрешение)</label>`;
+  el.querySelectorAll('[data-shs]').forEach(i => { i.oninput = () => { R[i.dataset.shs] = +i.value; clearTimeout(i._t); i._t = setTimeout(() => { rebuild(); }, 120); }; });
+  $('realT').onchange = e => { S.real = e.target.checked; localStorage.setItem('gs_auto', JSON.stringify(S)); }; }
 function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') fitView(); }
 function camTo0(kind) {
   if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
@@ -1771,10 +1791,12 @@ function renderDeco() {
   $('floorBtns').querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { S.floor = b.dataset.fl; $('floor').value = S.floor; rebuild(); renderDeco(); });
   // rug: shape x pile
   const rg = S.rug, carpet = S.floor === 'carpet';
-  $('rugBox').innerHTML = carpet ? '' : `<div class="sz"><button data-rs="round" class="${rg && rg.shape === 'round' ? 'on' : ''}">Круглый</button><button data-rs="rect" class="${rg && rg.shape === 'rect' ? 'on' : ''}">Прямоугольный</button></div><div class="sz"><button data-rp="fluffy" class="${rg && rg.pile === 'fluffy' ? 'on' : ''}">Пушистый</button><button data-rp="flat" class="${rg && rg.pile === 'flat' ? 'on' : ''}">Плоский</button><button data-rugoff="1" class="${rg ? '' : 'on'}">Убрать ковер</button></div>`;
+  $('rugBox').innerHTML = carpet ? '' : `<div class="sz"><button data-rs="round" class="${rg && rg.shape === 'round' ? 'on' : ''}">Круглый</button><button data-rs="rect" class="${rg && rg.shape === 'rect' ? 'on' : ''}">Прямоугольный</button></div><div class="sz"><button data-rp="fluffy" class="${rg && rg.pile === 'fluffy' ? 'on' : ''}">Пушистый</button><button data-rp="flat" class="${rg && rg.pile === 'flat' ? 'on' : ''}">Плоский</button><button data-rp="jute" class="${rg && rg.pile === 'jute' ? 'on' : ''}">Джут</button><button data-rugoff="1" class="${rg ? '' : 'on'}">Убрать ковер</button></div>`;
   $('rugNote').textContent = carpet ? 'На ковролин ковер не кладется: выберите другой пол.' : '';
-  $('rugBox').querySelectorAll('[data-rs]').forEach(b => b.onclick = () => { S.rug = { shape: b.dataset.rs, pile: (S.rug && S.rug.pile) || 'flat' }; rebuild(); renderDeco(); });
-  $('rugBox').querySelectorAll('[data-rp]').forEach(b => b.onclick = () => { S.rug = { shape: (S.rug && S.rug.shape) || 'rect', pile: b.dataset.rp }; rebuild(); renderDeco(); });
+  $('rugBox').querySelectorAll('[data-rs]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: b.dataset.rs, pile: (S.rug && S.rug.pile) || 'flat' }; rebuild(); renderDeco(); });
+  $('rugBox').querySelectorAll('[data-rp]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: (S.rug && S.rug.shape) || 'rect', pile: b.dataset.rp }; rebuild(); renderDeco(); });
+  if (rg && !carpet) { const ex = document.createElement('div'); ex.innerHTML = `<label class="rng">Размер<input type="range" id="rugK" min="0.5" max="2" step="0.05" value="${rg.k || 1}"></label>` + (rg.shape === 'round' ? '' : `<label class="rng">Поворот<input type="range" id="rugR" min="-1.57" max="1.57" step="0.02" value="${rg.r || 0}"></label>`) + '<p class="foot">Ковер можно двигать пальцем по полу.</p>'; $('rugBox').appendChild(ex);
+    const up = (k, el) => el && (el.oninput = () => { S.rug[k] = +el.value; clearTimeout(el._t); el._t = setTimeout(() => rebuild(), 60); }); up('k', $('rugK')); up('r', $('rugR')); }
   $('rugBox').querySelectorAll('[data-rugoff]').forEach(b => b.onclick = () => { S.rug = null; rebuild(); renderDeco(); });
   // openings
   $('openBtns').innerHTML = `<button data-op="win" class="${R.win ? 'on' : ''}">Окно</button><button data-op="door" class="${R.door ? 'on' : ''}">Дверной проем</button>`;
@@ -1797,6 +1819,7 @@ function renderDeco() {
 let plantSel = -1;
 function renderLight() {
   const R = S.room;
+  shSliders();
   $('shPBtns').innerHTML = [['soft', 'Мягкая'], ['left', 'Слева'], ['right', 'Справа'], ['top', 'Сверху'], ['sharp', 'Четкая'], ['sun', 'Солнечный свет'], ['none', 'Без тени']].map(([k, t]) => `<button data-shp="${k}" class="${(R.shP || 'soft') === k ? 'on' : ''}">${t}</button>`).join('');
   $('glMBtns').innerHTML = [['soft', 'Мягкие'], ['bright', 'Яркие'], ['off', 'Выкл']].map(([k, t]) => `<button data-glm="${k}" class="${(R.glareM || 'soft') === k ? 'on' : ''}">${t}</button>`).join('');
   $('winL').value = R.winL || 'off'; $('winL').disabled = !!S.studio;
@@ -1872,11 +1895,12 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest('#wallsPop
 function snap34() {
   const CW = 1800, CH = 2400, sv = { pos: camera.position.clone(), q: camera.quaternion.clone(), pr: renderer.getPixelRatio() }, sm = sun.shadow.mapSize.x;
   sun.shadow.mapSize.set(4096, 4096); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
+  const real = !!S.real, rsv = { cs: sun.castShadow, r: sun.shadow.radius, fx: localStorage.getItem('gs_fx') }; if (real) { sun.castShadow = true; sun.shadow.radius = 9; sun.shadow.needsUpdate = true; localStorage.setItem('gs_fx', '1'); }
   renderer.setPixelRatio(1); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix(); if (orb.on) applyCam();
   renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   if (photoImg && !$('showRoom').checked) { const s = Math.max(CW / photoImg.width, CH / photoImg.height), iw = photoImg.width * s, ih = photoImg.height * s; g.drawImage(photoImg, (CW - iw) / 2, (CH - ih) / 2, iw, ih); }
-  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH);
+  g.drawImage(renderer.domElement, 0, 0, CW, CH); fxBake(g, CW, CH); if (real) { sun.castShadow = rsv.cs; sun.shadow.radius = rsv.r; if (rsv.fx == null) localStorage.removeItem('gs_fx'); else localStorage.setItem('gs_fx', rsv.fx); }
   sun.shadow.mapSize.set(sm, sm); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q); if (orb.on) applyCam();
   return out;
@@ -1972,6 +1996,38 @@ renderPropBtns();
     const lp = pd.wg.worldToLocal(q), { x0, x1, hw } = pd.pr, xa = x0 + 0.02 + hw, xb = x1 - 0.02 - hw; if (xb <= xa) return;
     const x = Math.max(xa, Math.min(xb, lp.x + pd.dx)); pd.g.position.x = x; pd.u = (x - xa) / (xb - xa); pd.moved = true; }, true);
   const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); const p = pd; pd = null; setTimeout(() => { window.__plantTap = false; }, 0);
+    // dropped onto another fitting shelf / rod: move it there (snaps along that item); dropped elsewhere: it springs back
+    if (p.moved) { const h = pickHits(e).find(x => { let g = x.object; while (g && !g.userData.ref) g = g.parent; return g && !x.object.userData.prop; }); let tg = h && h.object; while (tg && !tg.userData.ref) tg = tg.parent;
+      const src = S.walls[p.pr.wi].sections[p.pr.si].items[p.pr.ii], pv = src && src.pr && src.pr[p.pr.pi];
+      if (tg && pv) { const r = tg.userData.ref, it2 = S.walls[r.wi].sections[r.si].items[r.ii]; if (it2 && it2 !== src && propFits(pv.k, it2.t)) { const lp = WG[r.wi].worldToLocal(h.point.clone()), xs = [0]; S.walls[r.wi].sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
+        const hw = PROPK[pv.k][2] / 2, xa = xs[r.si] + 0.02 + hw, xb = xs[r.si + 1] - 0.02 - hw; src.pr.splice(p.pr.pi, 1); it2.pr = [...(it2.pr || []), { k: pv.k, u: xb > xa ? Math.max(0, Math.min(1, (lp.x - xa) / (xb - xa))) : 0.5 }];
+        window.__propSel = { wi: r.wi, si: r.si, ii: r.ii, pi: it2.pr.length - 1 }; HLG = null; rebuild(); pushHist(); return; } }
+      const f0 = pickHits(e)[0], overSelf = f0 && f0.object.userData.prop === p.pr; if (!h && !overSelf) { HLG = null; rebuild(); msg('Вещь вернулась на место'); return; } }
     if (p.moved && p.u != null) { const it = S.walls[p.pr.wi].sections[p.pr.si].items[p.pr.ii]; if (it && it.pr && it.pr[p.pr.pi]) it.pr[p.pr.pi].u = Math.round(p.u * 1000) / 1000; localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); }
     else msg((PROPK[(S.walls[p.pr.wi].sections[p.pr.si].items[p.pr.ii].pr[p.pr.pi] || {}).k] || ['Вещь'])[0] + ': выбрано, 🗑 удалит'); };
+  el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true); }
+
+// ---- room presets: one tap sets walls, floor, rug, window, light and decor (the wardrobe itself is untouched)
+const ROOMP = {
+  loft: ['Кирпичный лофт', { wallFin: 'relief', fv: 'brick', wall: '#f4f2ee', floor: 'marble', rug: { shape: 'rect', pile: 'jute' }, win: true, winX: -1, shP: 'soft', plants: ['mirror', 'pouf'] }],
+  beige: ['Светлый бежевый', { wallFin: 'plaster', fv: 'beige', wall: '#e9dcc8', floor: 'oak', rug: { shape: 'round', pile: 'fluffy' }, win: true, winX: 0, shP: 'sun', winL: 'both', plants: ['olive'] }],
+  scandi: ['Скандинавский', { wallFin: 'paint', fv: 'matte', wall: '#f1efea', floor: 'lam', rug: { shape: 'rect', pile: 'flat' }, win: false, shP: 'soft', plants: ['fig', 'pouf'] }],
+  conc: ['Бетон и дуб', { wallFin: 'relief', fv: 'conc2', wall: '#d9d6d1', floor: 'lamD', rug: null, win: false, shP: 'left', plants: ['monstera', 'mirror'] }] };
+function applyRoomPreset(k) { const p = ROOMP[k][1], R = S.room; S.wallFin = p.wallFin; S.wallVar = Object.assign({}, S.wallVar, { [p.wallFin]: p.fv }); S.wall = p.wall; S.wallCustom = true;
+  if (FLOORS[p.floor]) S.floor = p.floor; S.rug = p.rug; R.win = p.win; if (p.winX != null) R.winX = p.winX; R.shP = p.shP; R.shOn = p.shP !== 'none'; R.winL = p.winL || 'off'; S.studio = false; S.decor = true;
+  S.plants = []; rebuild(); p.plants.forEach(pk => { const b = document.querySelector(`[data-pa="${pk}"]`); if (b) b.click(); });
+  S.roomPre = k; rebuild(); fillGeneral(); renderDeco(); setBg(); pushHist(); msg(ROOMP[k][0]); renderRoomPre(); }
+function renderRoomPre() { const el = $('roomPre'); if (!el) return; el.innerHTML = Object.entries(ROOMP).map(([k, v]) => `<button data-rpre="${k}" class="${S.roomPre === k ? 'on' : ''}">${v[0]}</button>`).join(''); el.querySelectorAll('[data-rpre]').forEach(b => b.onclick = () => applyRoomPreset(b.dataset.rpre)); }
+renderRoomPre();
+
+// ---- rug: drag on the floor with a finger (tap selects it, blue highlight)
+{ const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0); let pd = null;
+  const ray = e => { const r = el.getBoundingClientRect(); RC.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera); };
+  el.addEventListener('pointerdown', e => { if (!orb.on || e.button !== 0 || !S.rug || !decor.visible || pd) return; ray(e);
+    const h = RC.intersectObjects(decor.children, true)[0]; if (!h || !h.object.userData.rug) return; const mh = pickHits(e)[0]; if (mh && mh.distance < h.distance) return;
+    const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return; const m = h.object; pd = { m, dx: m.position.x - q.x, dz: m.position.z - q.z, id: e.pointerId }; hlOnly(m); window.__plantTap = true;
+    e.stopImmediatePropagation(); el.setPointerCapture(e.pointerId); }, true);
+  el.addEventListener('pointermove', e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); ray(e); const q = new THREE.Vector3(); if (!RC.ray.intersectPlane(fp, q)) return;
+    let x = q.x + pd.dx, z = Math.max(0.3, Math.min(9, q.z + pd.dz)); if (ROOMB) x = Math.max(ROOMB.l + 0.3, Math.min(ROOMB.r - 0.3, x)); pd.m.position.x = x; pd.m.position.z = z; S.rug.x = x; S.rug.z = z; }, true);
+  const up = e => { if (!pd || e.pointerId !== pd.id) return; e.stopImmediatePropagation(); pd = null; setTimeout(() => { window.__plantTap = false; }, 0); localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true); }
