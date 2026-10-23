@@ -1054,20 +1054,20 @@ function syncFromCam(kind) {
   orb.T.copy(T); orb.az = Math.atan2(p.x - T.x, p.z - T.z); orb.R = Math.max(0.5, Math.hypot(p.x - T.x, p.z - T.z)); orb.h = p.y; applyCam();
 }
 function applyCam(cam = camera) {
-  // v11y: v11i (c886c31) camera one-to-one: full 360, ±87°, never under the floor, lens shift up to 30°, real tilt blends in 40-65°
-  const o = orb;
-  if (o.free) { o.R = Math.max(ORB_RMIN(), o.R); cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az)); cam.up.set(0, 1, 0); cam.lookAt(o.T); cam.clearViewOffset(); cam.updateMatrixWorld(); if (window.FSLAB) window.FSLAB.visible = o.h > 0.01; return; }
+  // v11z: pure spherical orbit, always lookAt the target; no lens shift, no tilt hand-over, telephoto lens (verticals near-parallel)
+  const o = orb, D2R = Math.PI / 180; o.free = false;
   if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.h = Math.max(0.08, o.T.y - o.R * 20, Math.min(o.T.y + o.R * 20, o.h)); // camera never dips under the floor (floor stays visible) // up to ~87 deg above/below: straight-down view possible
+  let D = Math.max(0.5, Math.hypot(o.R, o.h - o.T.y)), el = Math.atan2(o.h - o.T.y, o.R);
+  el = Math.max(-10 * D2R, Math.min(85 * D2R, el));
+  const elMin = Math.asin(Math.max(-1, Math.min(1, (0.08 - o.T.y) / D))); if (el < elMin) el = elMin; // never under the floor
+  o.R = D * Math.cos(el); o.h = o.T.y + D * Math.sin(el);
+  if (cam.fov < 10 || cam.fov > 20) { cam.fov = Math.max(10, Math.min(20, cam.fov)); }
+  const nr = Math.max(0.1, D * 0.25), fr = D * 2.5 + 30; if (Math.abs(cam.near - nr) > 1e-3 || Math.abs(cam.far - fr) > 1e-2) { cam.near = nr; cam.far = fr; }
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
-  // plain perspective: true tilt at every angle, no lens shift, free orbit all around (walls facing the camera hide via tickOcc) // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
-  // two-point perspective: level camera + vertical lens shift keeps verticals straight at normal angles;
-  // the shift is capped (30°) so the image never stretches, and from 40° to 65° it hands over smoothly to a real tilt
-  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, bt = Math.max(0, Math.min(1, (ea - 40 * D2R) / (25 * D2R))), sh = Math.min(ea, 30 * D2R) * (1 - bt * bt * (3 - 2 * bt)), p = Math.sign(a) * (ea - sh);
-  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  cam.up.set(0, 1, 0); cam.lookAt(o.T); cam.clearViewOffset(); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
   if (window.FSLAB) window.FSLAB.visible = true;
-  if (sh > 1e-4) { const yN = -Math.tan(Math.sign(a) * sh) / Math.tan(cam.fov * Math.PI / 360), H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); }
 }
+function orbZoom(k) { const o = orb; o.R = o.R * k; o.h = o.T.y + (o.h - o.T.y) * k; const D = Math.hypot(o.R, o.h - o.T.y); if (D < 2) { o.R *= 2 / D; o.h = o.T.y + (o.h - o.T.y) * 2 / D; } if (D > 120) { o.R *= 120 / D; o.h = o.T.y + (o.h - o.T.y) * 120 / D; } }
 function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return Math.max(0.8, Math.min(1.6, Math.max(sz.x, sz.y) * 0.35)); } catch (e) { return 0.8; } }
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
@@ -1081,20 +1081,20 @@ function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return
     const hpx = el.clientHeight || 600, unit = orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
     if (P.size >= 2) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinch) { orb.R = Math.max(0.25, Math.min(30, orb.R * pinch / Math.max(d, 1))); }
+      if (pinch) orbZoom(pinch / Math.max(d, 1));
       pinch = d; const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az));
       orb.T.addScaledVector(rt, -dx * unit / 2); orb.T.y += dy * unit / 2; return;
     }
     if (p.b === 2 || p.b === 1 || p.sh) { const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)); orb.T.addScaledVector(rt, -dx * unit); orb.T.y += dy * unit; return; }
-    if (orb.free) { orb.free = false; } orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-1.52, Math.min(1.52, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = Math.max(0.05, D * Math.cos(el)); orb.h = orb.T.y + D * Math.sin(el); } // v11i true spherical orbit
+    if (orb.free) { orb.free = false; } orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-0.175, Math.min(1.484, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = Math.max(0.05, D * Math.cos(el)); orb.h = orb.T.y + D * Math.sin(el); } // v11i true spherical orbit
   });
-  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(0.25, Math.min(30, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
+  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orbZoom(Math.exp(e.deltaY * 0.001)); }, { passive: false });
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
 function camK() { const k = localStorage.getItem('gs_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'int'; } // default: «Интерьер» photo preset, closest to the client renders
 var CAMS = [['std', 'Стандарт'], ['int', 'Интерьер'], ['por', 'Портрет'], ['top3', 'Сверху 3/4']];
-const LENSF = () => 28;
+const LENSF = () => 14; // v11z telephoto
 function CAMEXP() { return { int: 1.1, por: 1.03 }[camK()] || 1.0; }
 // interior-photographer cameras: own lens, height and viewpoint; verticals stay vertical (level camera + lens shift)
 function camPhoto(k) {
@@ -1130,12 +1130,12 @@ function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.
   if (c.color) c.color.set(0x5b9bff); if (c.emissive) { c.emissive.set(0x1f66ff); c.emissiveIntensity = 0.55; } if (c.map && c.color) c.color.set(0x8fbaff); if ('sheen' in c) c.sheen = 0; m.material = c; }); }
 function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
 let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
-function camTo(kind) { if (kind === 'iso') kind = 'nice'; if (kind === 'front' || kind === 'top' || kind === 'card') return camLevel(kind); camTo0(kind); fitView(); }
+function camTo(kind) { if (kind === 'iso') kind = 'nice'; return camLevel(kind); camTo0(kind); fitView(); }
 // v11p: Готово views - level camera (full lens shift) + fit with air margins
 function camLevel(kind) { const c = bbox.getCenter(new THREE.Vector3()), sg = S.layout === 'Lr' ? -1 : 1, corner = S.layout === 'L' || S.layout === 'Lr';
-  const P = { front: { az: corner ? sg * Math.PI / 4 : 0, el: 0.04, m: [0.17, 0.2] }, top: { az: corner ? sg * 0.5 : 0, el: 1.25, m: [0.2, 0.17] }, card: { az: corner ? sg * 0.62 : 0.3, el: 0.2, m: [0.16, 0.22] } }[kind];
-  camera.fov = LENSF(); camera.updateProjectionMatrix(); orb.on = true; controls.enabled = false; orb.snapAz = false; orb.free = kind === 'top'; orb.T.copy(c); orb.az = P.az; orb.R = 6; orb.h = c.y + 6 * Math.tan(P.el);
-  fitView(P.m); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); applyLights && applyLights(); }
+  const flat = S.layout === 'straight' || S.layout === 'U'; const P = { nice: { az: flat ? sg * 0.3 : sg * 0.7, el: 12 * Math.PI / 180, m: [0.1, 0.12] }, front: { az: corner ? sg * Math.PI / 4 : 0, el: 0.04, m: [0.1, 0.12] }, top: { az: corner ? sg * 0.5 : 0, el: 1.25, m: [0.2, 0.17] }, card: { az: corner ? sg * 0.62 : 0.3, el: 0.2, m: [0.16, 0.22] } }[kind];
+  camera.fov = LENSF(); camera.updateProjectionMatrix(); orb.on = true; controls.enabled = false; orb.snapAz = false; orb.free = false; orb.T.copy(c); orb.az = P.az; orb.R = 30 * Math.cos(P.el); orb.h = c.y + 30 * Math.sin(P.el);
+  fitView(P.m); if (WG.length) rebuildDims(); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); applyLights && applyLights(); }
 function camTo0(kind) {
   if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
@@ -1676,7 +1676,7 @@ const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textConte
 $('shareBtn').onclick = async () => { const u = location.origin + location.pathname + '?cfg=' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); try { await navigator.clipboard.writeText(u); msg('Ссылка скопирована'); } catch (e) { prompt('Ссылка на конфигурацию', u); } };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = migrate(v); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); renderDeco(); setBg(); camTo(lastCam); msg('Конфигурация загружена'); };
-$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname + '?v=v11y&r=' + Date.now()); return; /* v11x: keep cache-busting query, plain pathname could load a cached old build */ S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
+$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname + '?v=v11z&r=' + Date.now()); return; /* v11x: keep cache-busting query, plain pathname could load a cached old build */ S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
 
 async function fontsFor(C) { const f = { montserrat: 'Montserrat', inter: 'Inter', playfair: 'Playfair Display' }[C.font] || 'Manrope'; await Promise.all([document.fonts.load(`700 60px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load('500 30px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load('800 48px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load(`800 48px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load(`500 30px "${f}"`, 'Наполнение КАРКАС 0123')]).catch(() => {}); }
 $('cardBtn').onclick = async () => { cardRead(); await fontsFor(S.card); const o = cleanShot(makeCard); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
