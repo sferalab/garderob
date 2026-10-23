@@ -706,7 +706,7 @@ function buildRoom() {
     pv.userData.occ = wallPlane(sideLen, 0, sideLen / 2, L ? Math.PI / 2 : -Math.PI / 2, pv, so);
     if (ST) return;
     // v13b: floor fill under this side wall, shaped each frame to the folded-floor wedge (no white gap from below)
-    { const fm = floorM.clone(); fm.side = THREE.DoubleSide; const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(new Array(9).fill(0), 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(6).fill(0), 2)); const f = new THREE.Mesh(fg, fm); f.frustumCulled = false; f.visible = false; f.userData.floorFill = { L, len: 60 }; pv.add(f); FILLS.push(f); }
+    { floorM.side = THREE.DoubleSide; const fm = floorM; /* v13b: same material as the main floor */ const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(new Array(9).fill(0), 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(6).fill(0), 2)); const f = new THREE.Mesh(fg, fm); f.frustumCulled = false; f.visible = false; f.userData.floorFill = { L, len: 60 }; f.receiveShadow = !ST; pv.add(f); FILLS.push(f); }
     const fr = new THREE.Group(); fr.rotation.y = L ? Math.PI / 2 : -Math.PI / 2; if (L) fr.scale.x = -1; pv.add(fr); // local x = u (z in room), local z into the room
     if (!ST && S.room.skirting !== false) skirt(fr, 0, sideLen, doorCuts(ops.filter(o => o.wall === (L ? 'L' : 'R')), 'z'), () => {});
     if (S.room.cornice) cornice(sideLen, g => g.position.x = sideLen / 2, fr);
@@ -1040,12 +1040,12 @@ function syncFromCam(kind) {
 }
 function applyCam(cam = camera) {
   const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.h = Math.max(o.T.y - o.R * 20, Math.min(o.T.y + o.R * 20, o.h)); // up to ~87 deg above/below: straight-down view possible
+  o.h = Math.max(o.T.y - o.R * 20, Math.min(o.T.y + o.R * Math.tan(35 * Math.PI / 180), o.h)); // v13b: top capped at 35 deg (pure lens shift, stretch ~1.22); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   // plain perspective: true tilt at every angle, no lens shift, free orbit all around (walls facing the camera hide via tickOcc) // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
   // two-point perspective: level camera + vertical lens shift keeps verticals straight at normal angles;
   // the shift is capped (30°) so the image never stretches, and from 40° to 65° it hands over smoothly to a real tilt
-  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, bt = Math.max(0, Math.min(1, (ea - 15 * D2R) / (15 * D2R))), sh = Math.min(ea, 18 * D2R) * (1 - bt * bt * (3 - 2 * bt)), p = Math.sign(a) * (ea - sh);
+  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, sh = ea, p = 0; /* v13b: pure lens shift at all elevations - pitch always 0, verticals stay vertical */
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   if (sh > 1e-4) { const yN = -Math.tan(Math.sign(a) * sh) / Math.tan(cam.fov * Math.PI / 360), H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); }
 }
@@ -1189,8 +1189,15 @@ const _sc = new THREE.OrthographicCamera();
 // the highlight light rides with the camera (up and to the right), so edge highlights travel as the view turns
 const _cr = new THREE.Vector3(), _cu = new THREE.Vector3(), _co = new THREE.Vector3();
 // walls and ceiling between the camera and the wardrobe disappear, so the view can go anywhere
-function fillFold(th) { const s = Math.sin(th), k = Math.cos(th), Z = 30; FILLS.forEach(f => { f.visible = th > 0.001; if (!f.visible) return; const x = f.userData.floorFill.L ? 0.001 : -0.001, p = f.geometry.attributes.position, uv = f.geometry.attributes.uv, R = 1 / 2.25;
-  p.setXYZ(0, x, 0.0005, 0); p.setXYZ(1, x, 0.0005, Z); p.setXYZ(2, x, -Z * s, Z * k); uv.setXY(0, 0, 0); uv.setXY(1, Z * R, 0); uv.setXY(2, Z * k * R, -Z * s * R); p.needsUpdate = uv.needsUpdate = true; f.geometry.computeVertexNormals(); f.geometry.computeBoundingSphere(); }); }
+function fillFold(th) { const s = Math.sin(th), k = Math.cos(th), Z = 30, fl = room.children.find(c => c.userData.floorM); FILLS.forEach(f => { f.visible = th > 0.001; if (!f.visible) return; const x = f.userData.floorFill.L ? 0.001 : -0.001, p = f.geometry.attributes.position, uv = f.geometry.attributes.uv;
+  p.setXYZ(0, x, 0.0005, 0); p.setXYZ(1, x, 0.0005, Z); p.setXYZ(2, x, -Z * s, Z * k); f.updateMatrixWorld(true);
+  /* v13b: UVs continue the main floor's texture (project into the floor plane), normals = main floor normal -> same tone, no seam */
+  let n = V(0, 0, 1); if (fl) { fl.updateMatrixWorld(true); n = V(0, 0, 1).transformDirection(fl.matrixWorld); const inv = new THREE.Matrix4().copy(f.matrixWorld).invert(); n.transformDirection(inv); }
+  if (!f.geometry.attributes.normal) f.geometry.setAttribute('normal', new THREE.Float32BufferAttribute(new Array(9).fill(0), 3));
+  const nr = f.geometry.attributes.normal;
+  { const w0 = V(p.getX(0), p.getY(0), p.getZ(0)).applyMatrix4(f.matrixWorld), w1 = V(p.getX(1), p.getY(1), p.getZ(1)).applyMatrix4(f.matrixWorld), w2 = V(p.getX(2), p.getY(2), p.getZ(2)).applyMatrix4(f.matrixWorld), gn = w1.clone().sub(w0).cross(w2.clone().sub(w0)); if (gn.dot(camera.position.clone().sub(w0)) < 0) { const t = [p.getX(1), p.getY(1), p.getZ(1)]; p.setXYZ(1, p.getX(2), p.getY(2), p.getZ(2)); p.setXYZ(2, t[0], t[1], t[2]); } } // front face toward the camera so DoubleSide never flips the normal
+  for (let q = 0; q < 3; q++) { const w = V(p.getX(q), p.getY(q), p.getZ(q)).applyMatrix4(f.matrixWorld); if (fl) { fl.worldToLocal(w); uv.setXY(q, w.x / 60 + 0.5, w.y / 60 + 0.5); } nr.setXYZ(q, n.x, n.y, n.z); }
+  p.needsUpdate = uv.needsUpdate = nr.needsUpdate = true; f.geometry.computeBoundingSphere(); }); }
 function tickOcc() { const cp = camera.position, und = cp.y < 0.002;  decor.children.forEach(c => { if (c.userData.rug) c.visible = !und; }); room.children.forEach(c => { const u = c.userData; if (u.floorM) { if (!u.fb) u.fb = { p: c.position.clone(), r: c.rotation.x }; const th = cp.y < 0.15 ? Math.min(1.45, Math.atan2(0.15 - cp.y, Math.max(0.3, cp.z)) * 1.25) : 0, s = Math.sin(th), k = Math.cos(th); c.rotation.x = u.fb.r + th; c.position.set(u.fb.p.x, u.fb.p.y - u.fb.p.z * s, u.fb.p.z * k); fillFold(th); return; } if (u.occ) { _co.copy(cp); u.occ.worldToLocal(_co); c.visible = _co.z > -0.08; } else if (u.occC != null) c.visible = cp.y < u.occC - 0.005; }); }
 function tickSpec() { if (!specL.intensity) return; _cr.set(1, 0, 0).applyQuaternion(camera.quaternion); _cu.set(0, 1, 0).applyQuaternion(camera.quaternion); specL.position.copy(camera.position).addScaledVector(_cr, 1.6).addScaledVector(_cu, 1.4); }
 function applyGlareShadow() {
