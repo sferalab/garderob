@@ -8,7 +8,7 @@ const $ = id => document.getElementById(id);
 const MM = 0.001;
 const METAL = { white: 0xf7f9fc, black: 0x202124, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
-/* v12c «Длина тени» 0..1: 0 = tight contact shadow at the construction, grows with the slider */
+/* v12d «Длина тени» 0..1: 0 = tight contact shadow at the construction, grows with the slider */
 function shK() { const v = S.room && S.room.shLen != null ? S.room.shLen : 0.15; return 0.2 + v * 1.8; }
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
 const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
@@ -52,7 +52,7 @@ function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.
   // v9: ceiling always on (a bit higher), walls at full width, short attached shadows
   if (!S.v9) { S.v9 = 1; S.room.ceilH = Math.max(285, S.room.ceilH || 0); if (S.room.glareM === 'bright') S.room.glareM = 'soft'; }
   if (!S.v91) { S.v91 = 1; S.room.ceilH = Math.max(300, S.room.ceilH || 0); S.__gapFix = true; }
-  if (!S.v12c) { S.v12c = 1; S.room.ceiling = true; } S.room.extra = 400; /* v12c: ceiling follows the Потолок toggle in every layout */ S.room.ceilH = Math.max(230, Math.min(400, S.room.ceilH || 300));
+  if (!S.v12d) { S.v12d = 1; S.room.ceiling = true; } S.room.extra = 400; /* v12d: ceiling follows the Потолок toggle in every layout */ S.room.ceilH = Math.max(230, Math.min(400, S.room.ceilH || 300));
   S.walls.forEach(w => { if (w.gap == null) w.gap = 0; }); if (S.walls[0].gapR == null) S.walls[0].gapR = 0; return S; }
 function setTemplate(t) {
   const m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y: y + 3 }), sh = y => ({ t: 'shoe', d: 40, y }), pu = (y, h) => ({ t: 'pull', d: 40, y, h });
@@ -171,7 +171,7 @@ function carpetTex() {
 function floorMat() {
   const [n, mx, tint, , , my] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
   if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2 }); }
-  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: S.floor === 'marble' ? 0.5 : S.floor === 'conc' ? 0.15 : 0, clearcoatRoughness: S.floor === 'marble' ? 0.2 : 0.5, envMapIntensity: S.floor === 'marble' ? 0.7 : 0.12, specularIntensity: S.floor === 'marble' ? 1 : S.floor === 'conc' ? 0.35 : 0.05 }); /* v12c: wood floors matte, no wet shine */
+  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: S.floor === 'marble' ? 0.5 : S.floor === 'conc' ? 0.15 : 0, clearcoatRoughness: S.floor === 'marble' ? 0.2 : 0.5, envMapIntensity: S.floor === 'marble' ? 0.7 : 0.12, specularIntensity: S.floor === 'marble' ? 1 : S.floor === 'conc' ? 0.35 : 0.05 }); /* v12d: wood floors matte, no wet shine */
 }
 let PAPER;
 function paperTex() {
@@ -330,7 +330,7 @@ function makeMats() {
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xf2f5f8, metalness: 1, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.03, specularIntensity: 1, emissive: new THREE.Color(0x3c4046), envMap: chromeSheetEnv(), envMapIntensity: 1.9, userData: { chrome: true } }); /* v12c: real photo of a brushed metal sheet with light sheen as reflection (tex/chrome_sheet.jpg, public domain) */ /* v12c: polished chrome - own studio env with bright softbox streak, never black at distance */
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xf2f5f8, metalness: 1, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.03, specularIntensity: 1, emissive: new THREE.Color(0x3c4046), envMap: chromeSheetEnv(), envMapIntensity: 1.9, userData: { chrome: true } }); /* v12d: real photo of a brushed metal sheet with light sheen as reflection (tex/chrome_sheet.jpg, public domain) */ /* v12d: polished chrome - own studio env with bright softbox streak, never black at distance */
   M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
@@ -665,7 +665,7 @@ function buildRoom() {
     const q = new THREE.Mesh(geo, wallShadowMat()); q.receiveShadow = true; grp.add(q);
     holes.forEach(o => buildOpening(grp, o, WH)); grp.userData.wallG = true; return grp;
   };
-  const bL = cl ? left : left - 25, bR = cr ? right : right + 25, bcx = (bL + bR) / 2; /* v12c: open wall ends run far, no background gap */
+  const bL = cl ? left : left - 25, bR = cr ? right : right + 25, bcx = (bL + bR) / 2; /* v12d: open wall ends run far, no background gap */
   const bo = ops.filter(o => o.wall === 'B').map(o => ({ ...o, c: o.x - bcx }));
   bk.userData.occ = wallPlane(bR - bL, bcx, 0, 0, bk, bo); bo.forEach(o => o.c = o.x - cx);
   const skM = new THREE.MeshStandardMaterial({ color: S.room.skirtColor || '#ffffff', roughness: 0.6 });
@@ -947,15 +947,15 @@ function rebuild() {
     WG[wi] = g;
   });
   model.traverse(o => { if (o.isMesh && o !== catcher && !o.userData.dims && !o.userData.keep) { const f = !!o.userData.frame; o.visible = S.view === 'all' || (S.view === 'frame' ? f : !f); } });
-const WHITE_EDGES = false; // v12c: outline disabled — renders as black blocks on desktop path; next release
-  if (WHITE_EDGES && S.metal === 'white') { /* v12c: barely visible darker edges on white so cells, shelves and wires never merge */ const LM = window.__EDGM || (window.__EDGM = new THREE.LineBasicMaterial({ color: 0x9aa1aa, transparent: true, opacity: 0.32, depthWrite: false })), EC = window.__EDGC || (window.__EDGC = new Map()), L = [];
+const WHITE_EDGES = false; // v12d: outline disabled — renders as black blocks on desktop path; next release
+  if (WHITE_EDGES && S.metal === 'white') { /* v12d: barely visible darker edges on white so cells, shelves and wires never merge */ const LM = window.__EDGM || (window.__EDGM = new THREE.LineBasicMaterial({ color: 0x9aa1aa, transparent: true, opacity: 0.32, depthWrite: false })), EC = window.__EDGC || (window.__EDGC = new Map()), L = [];
     model.traverse(o => { if (!o.isMesh || o.isInstancedMesh || o === catcher || o.userData.dims || !o.material || Array.isArray(o.material) || o.material === M.chrome || o.material === M.rod || !o.material.color || o.material.color.getHex() !== 0xffffff || !o.geometry) return; let eg = EC.get(o.geometry.uuid); if (!eg) { eg = new THREE.EdgesGeometry(o.geometry, 35); EC.set(o.geometry.uuid, eg); } const ln = new THREE.LineSegments(eg, LM); ln.raycast = () => {}; ln.userData.keep = true; L.push([o, ln]); });
     L.forEach(([o, ln]) => o.add(ln)); }
   applyModelXf();
   bbox = new THREE.Box3();
   model.children.forEach(c => { if (c !== catcher) bbox.expandByObject(c); }); if (bbox.isEmpty()) bbox.set(V(F.x0, 0, 0), V(F.x0 + Math.max(0.6, F.backW), S.railTop / 100, 0.45)); { const cc = bbox.getCenter(new THREE.Vector3()); bbox.expandByPoint(V(cc.x, 0, Math.max(bbox.max.z, 0.5))); }
   buildDecor(bbox.getCenter(new THREE.Vector3()));
-  { const sz = bbox.getSize(new THREE.Vector3()), k = S.layout.replace('Lr', 'L') + ':' + sz.x.toFixed(2) + ':' + sz.z.toFixed(2); if (window.__fitK && window.__fitK !== k && orb.on && !histLock) setTimeout(fitView, 0); window.__fitK = k; } // width / type changed: refit
+  { const sz = bbox.getSize(new THREE.Vector3()), k = S.layout.replace('Lr', 'L') + ':' + sz.x.toFixed(2) + ':' + sz.z.toFixed(2); window.__fitK = k; } // v12d: config changes NEVER move the camera (no auto-refit); only load / Стандарт / С нуля / Сброс reset to DEFAULT_VIEW
   rebuildDims();
   if (cur.it >= 0) model.traverse(o => { const r = o.userData.ref; if (r && r.wi === cur.w && r.si === cur.s && r.ii === cur.it) hlOn(o); });
   const c = bbox.getCenter(new THREE.Vector3());
@@ -1010,16 +1010,16 @@ function levelCam(cam, tg, k) {
 // ---- level orbit: pitch always 0, height + lens shift ----
 const orb = { on: false, T: V(0, 1, 0), az: 0, R: 4, h: 1.5 };
 function syncFromCam(kind) {
-  orb.on = true; controls.enabled = false; // v12c: every view goes through the level camera
+  orb.on = true; controls.enabled = false; // v12d: every view goes through the level camera
   if (!orb.on) { camera.clearViewOffset(); return; }
   const T = controls.target.clone(), p = camera.position;
   orb.T.copy(T); orb.az = Math.atan2(p.x - T.x, p.z - T.z); orb.R = Math.max(0.5, Math.hypot(p.x - T.x, p.z - T.z)); orb.h = p.y; applyCam();
 }
-// ===== CAMERA INVARIANT (v12c) =====
+// ===== CAMERA INVARIANT (v12d) =====
 // Uprights are ALWAYS exactly vertical: the camera NEVER pitches (up = world Y, view direction horizontal).
 // "Elevation" = camera height only, the picture is re-centred with a vertical lens shift (setViewOffset).
 // Elevation is clamped to EL_MIN..EL_MAX so the off-axis lens shift never visibly stretches near shelves.
-// Do not add any real tilt / hand-over here. qa_v12c/qa_default_view.py sweeps 0..360 x EL_MIN..EL_MAX and must pass.
+// Do not add any real tilt / hand-over here. qa_v12d/qa_default_view.py sweeps 0..360 x EL_MIN..EL_MAX and must pass.
 const EL_MIN = -20 * Math.PI / 180, EL_MAX = Math.atan(0.75); // -20°..+37°: top as in the a095b25 level camera; 45° stretched near shelves ~1.4x, so capped at 37° (~1.25x)
 function applyCam(cam = camera) {
   const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
@@ -1034,7 +1034,7 @@ function applyCam(cam = camera) {
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
   el.addEventListener('contextmenu', e => e.preventDefault());
-  el.addEventListener('pointerdown', e => { if (!orb.on) return; orb.snapAz = false; if (e.isPrimary) { P.clear(); } /* v12c: iOS may drop pointerup - stale pointers made 1-finger drags act as pinch (stuck rotation) */ el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
+  el.addEventListener('pointerdown', e => { if (!orb.on) return; orb.snapAz = false; if (e.isPrimary) { P.clear(); } /* v12d: iOS may drop pointerup - stale pointers made 1-finger drags act as pinch (stuck rotation) */ el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
   // straight and U: a near-frontal view settles exactly frontal, so the ceiling and floor edges read level
   const end = e => { P.delete(e.pointerId); last = null; pinch = null; if (!P.size && (S.layout === 'straight' || S.layout === 'U') && Math.abs(orb.az) < 0.16) orb.snapAz = true; };
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); el.addEventListener('lostpointercapture', end);
@@ -1045,9 +1045,9 @@ function applyCam(cam = camera) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
       if (pinch) { orb.R = Math.max(0.25, Math.min(30, orb.R * pinch / Math.max(d, 1))); }
       pinch = d; const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az));
-      return; /* v12c: pivot locked to the wardrobe centre - no two-finger pan */
+      return; /* v12d: pivot locked to the wardrobe centre - no two-finger pan */
     }
-    if (p.b === 2 || p.b === 1 || p.sh) return; /* v12c: no pan, pivot stays at the bbox centre */
+    if (p.b === 2 || p.b === 1 || p.sh) return; /* v12d: no pan, pivot stays at the bbox centre */
     orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(EL_MIN, Math.min(EL_MAX, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = Math.max(0.05, D * Math.cos(el)); orb.h = orb.T.y + D * Math.sin(el); } // true spherical orbit: straight-down view reachable
   });
   el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(0.25, Math.min(30, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
@@ -1081,7 +1081,7 @@ function fitView() { if (!orb.on || !WG.length) return; const b = meshBox(); if 
     const s = Math.max((x1 - x0) / (sf.x1 - sf.x0), (y1 - y0) / (sf.y1 - sf.y0)); if (!isFinite(s) || s <= 0) return;
     const dist = camera.position.distanceTo(orb.T), t = Math.tan(camera.fov * Math.PI / 360), rt = V(1, 0, 0).applyQuaternion(camera.quaternion);
     const dx = ((x0 + x1) - (sf.x0 + sf.x1)) / 2 * dist * t * camera.aspect, dy = ((y0 + y1) - (sf.y0 + sf.y1)) / 2 * dist * t;
-    orb.T.y += dy; orb.h += dy; /* v12c: horizontal pivot stays at the bbox centre (no wobble); only vertical framing */
+    orb.T.y += dy; orb.h += dy; /* v12d: horizontal pivot stays at the bbox centre (no wobble); only vertical framing */
     const k = Math.max(0.5, Math.min(2, s)); orb.h = orb.T.y + (orb.h - orb.T.y) * k; orb.R *= k;
     if (Math.abs(s - 1) < 0.02 && Math.abs(dx) < 0.005 && Math.abs(dy) < 0.005) break;
     // the room walls stop the camera from backing off sideways: turn a little more frontal instead
@@ -1092,7 +1092,7 @@ function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.
   if (c.color) c.color.set(0x5b9bff); if (c.emissive) { c.emissive.set(0x1f66ff); c.emissiveIntensity = 0.55; } if (c.map && c.color) c.color.set(0x8fbaff); if ('sheen' in c) c.sheen = 0; m.material = c; }); }
 function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
 let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
-// v12c DEFAULT_VIEW: the ONE start camera for page load, Стандарт угловая, Стандарт прямая, С нуля and Сброс.
+// v12d DEFAULT_VIEW: the ONE start camera for page load, Стандарт угловая, Стандарт прямая, С нуля and Сброс.
 // STRICTLY FRONTAL («ровно в кадре»): straight layouts head-on, corner layouts looking symmetrically into the corner.
 // Camera rewrites must NOT change this constant or bypass it.
 const DEFAULT_VIEW = Object.freeze({ azFlat: 0, azCorner: Math.PI / 4, el: 5 * Math.PI / 180 });
@@ -1113,9 +1113,9 @@ function camTo0(kind) {
   document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind));
   if (WG.length) rebuildDims();
 }
-function resize() { const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return; /* v12c: never set a 0/NaN aspect (squeezed corner) */ renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; camera.aspect = w / h; camera.updateProjectionMatrix(); }
+function resize() { const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return; /* v12d: never set a 0/NaN aspect (squeezed corner) */ renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(view);
-/* v12c: per-frame guard - camera aspect always equals the canvas box, so the 90° corner never looks squeezed */
+/* v12d: per-frame guard - camera aspect always equals the canvas box, so the 90° corner never looks squeezed */
 function aspectGuard() { const w = view.clientWidth, h = view.clientHeight; if (w && h && (Math.abs(camera.aspect - w / h) > 1e-3 || Math.abs(renderer.domElement.width - Math.round(w * renderer.getPixelRatio())) > 1)) { resize(); if (orb.on) applyCam(); } }
 let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
 function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
@@ -1630,7 +1630,7 @@ const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textConte
 $('shareBtn').onclick = async () => { const u = location.origin + location.pathname + '?cfg=' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); try { await navigator.clipboard.writeText(u); msg('Ссылка скопирована'); } catch (e) { prompt('Ссылка на конфигурацию', u); } };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = migrate(v); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); renderDeco(); setBg(); camTo(lastCam); msg('Конфигурация загружена'); };
-$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname + '?v=v12c&r=' + Date.now()); return; /* cache-bust */ S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
+$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname + '?v=v12d&r=' + Date.now()); return; /* cache-bust */ S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
 
 async function fontsFor(C) { const f = { montserrat: 'Montserrat', inter: 'Inter', playfair: 'Playfair Display' }[C.font] || 'Manrope'; await Promise.all([document.fonts.load(`700 60px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load('500 30px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load('800 48px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load(`800 48px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load(`500 30px "${f}"`, 'Наполнение КАРКАС 0123')]).catch(() => {}); }
 $('cardBtn').onclick = async () => { cardRead(); await fontsFor(S.card); const o = cleanShot(makeCard); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
