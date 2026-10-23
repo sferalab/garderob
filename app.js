@@ -125,6 +125,7 @@ const scene = new THREE.Scene();
 const pm = new THREE.PMREMGenerator(renderer);
 scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 // indoor HDRI (Poly Haven studio_small_09, CC0) for metal/chrome reflections; background unchanged
+import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/interior_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; window.ROD_ENV = pm.fromEquirectangular(t).texture; t.dispose(); /* v11t: real interior photo (Poly Haven lebombo, CC0) reflected only in chrome */ scene.traverse(o => { if (o.isMesh && o.material && o.material.userData && o.material.userData.chrome) { o.material.envMap = window.ROD_ENV; o.material.needsUpdate = true; } }); if (M.chrome) M.chrome.envMap = window.ROD_ENV; })).catch(() => {});
 import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; window.HDR_ENV = pm.fromEquirectangular(t).texture; t.dispose(); try { applyGlareShadow(); } catch (e) {} })).catch(() => {});
 // SSAO only for the 📷 snapshot (loaded in the background, never used in the live view)
 let POST = null; Promise.all(['postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/SAOPass.js', 'postprocessing/OutputPass.js'].map(f => import('three/addons/' + f))).then(m => { POST = Object.assign({}, ...m); }).catch(() => {});
@@ -325,9 +326,9 @@ function makeMats() {
   const gm = { soft: 1, bright: 1, off: 0.3 }[S.room.glareM || 'soft'] || 1, bright = S.room.glareM === 'bright';
   const PB = {
     white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.6, clearcoatRoughness: bright ? 0.05 : 0.16, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0x50555f), envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
-    silver: { color: METAL.silver, metalness: 0.62, roughness: 0.4, clearcoat: bright ? 0.6 : 0.25, clearcoatRoughness: bright ? 0.12 : 0.4, specularIntensity: 0.75, envMapIntensity: 1.35 * gm },
+    silver: { color: 0xe4e7eb, metalness: 0.8, roughness: 0.3, clearcoat: bright ? 0.5 : 0.25, clearcoatRoughness: 0.25, specularIntensity: 0.9, envMapIntensity: 1.5 * gm }, /* v11t: light satin silver like the Titan drawing */
     black: { color: METAL.black, metalness: 0.35, roughness: 0.5, clearcoat: bright ? 0.4 : 0.12, clearcoatRoughness: 0.4, specularIntensity: 0.7, /* v11s: satin black powder coat as in the photo */ sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
-  }[S.metal] || {};
+  }[S.metal] || {}; if (S.metal === 'silver') Object.assign(PB, { map: tex('rodmetal_diff', true, '4x4'), roughnessMap: tex('rodmetal_rough', false, '4x4') });
   const G = grainTex();
   M.metal = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 6, 6), normalScale: new THREE.Vector2(0.22, 0.22), roughnessMap: rep(G.rough, 6, 6) });
   M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: S.metal === 'black' ? 0.45 : 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
@@ -338,7 +339,7 @@ function makeMats() {
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.05, clearcoat: 0.6, clearcoatRoughness: 0.02, specularIntensity: 1, emissive: new THREE.Color(0x000000), envMap: chromeEnv(), envMapIntensity: 1.9, userData: { chrome: true } });
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.1, clearcoat: 0.5, clearcoatRoughness: 0.05, specularIntensity: 1, emissive: new THREE.Color(0x000000), map: tex('rodmetal_diff', true, '1x8'), roughnessMap: tex('rodmetal_rough', false, '1x8'), envMap: window.ROD_ENV || chromeEnv(), envMapIntensity: 1.6, /* v11t: CC0 brushed sheet (ambientCG Metal001) as base */ userData: { chrome: true } });
   M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.1, specularIntensity: 0.6, envMapIntensity: 0.7 })
     : S.rod === 'black' ? new THREE.MeshPhysicalMaterial({ color: 0x141414, metalness: 0.3, roughness: 0.35, clearcoat: 0.7, clearcoatRoughness: 0.15, specularIntensity: 0.8, envMapIntensity: 1.0 })
     : S.rod === 'metal' ? new THREE.MeshPhysicalMaterial({ color: 0xd4d7db, metalness: 0.9, roughness: 0.32, clearcoat: 0.3, clearcoatRoughness: 0.3, envMap: chromeEnv(), envMapIntensity: 1.3, userData: { chrome: true } }) : M.chrome; /* v11r: four rod colors */
@@ -434,15 +435,25 @@ let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = documen
   const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#eef0f2'); gr.addColorStop(0.24, '#f6f7f8'); gr.addColorStop(0.28, '#ffffff'); gr.addColorStop(0.33, '#ffffff'); gr.addColorStop(0.37, '#e2e5e8'); gr.addColorStop(0.6, '#e8eaec'); gr.addColorStop(0.76, '#c8cbcf'); gr.addColorStop(0.84, '#5e6166'); gr.addColorStop(1, '#3a3d41'); /* v11s: photo chrome - light overall, crisp highlight line, dark underside band */ /* v11r: bright chrome, soft dark bands */ g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
   g.fillStyle = '#ffffff'; [[30, 40], [250, 56], [470, 18]].forEach(([x, w]) => g.fillRect(x, 60, w, 50)); g.fillStyle = 'rgba(60,63,67,0.18)'; [[100, 14], [215, 10], [330, 16], [440, 10]].forEach(([x, w]) => g.fillRect(x, 0, w, 256));
   const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; _CHE = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; return _CHE; }
-function rodHolder(g, x, by, ry, zr) {
-  // Titan-GS: slim pressed-steel strap from the shelf bracket down to a neat cup sized to the rod (system color, clean powder coat)
-  const top = by - 0.014, bot = ry + 0.008, len = Math.max(0.02, top - bot), RR = 0.017;
-  const st = new THREE.Mesh(new RoundedBoxGeometry(0.0025, len + 0.008, 0.03, 2, 0.001), M.brk); st.position.set(x, bot + len / 2 + 0.002, zr); st.castShadow = true; g.add(st);
-  [top - 0.004, top - 0.02].forEach(yy => { const r = new THREE.Mesh(RIV_G, M.brk); r.scale.set(0.7, 0.6, 0.7); r.rotation.z = Math.PI / 2; r.position.set(x, yy, zr); g.add(r); });
-  const cup = new THREE.Mesh(CUP_G || (CUP_G = new THREE.TorusGeometry(RR + 0.0016, 0.0016, 8, 32, Math.PI * 1.25)), M.brk); cup.rotation.y = Math.PI / 2; cup.rotation.x = Math.PI * 0.375 + Math.PI; cup.scale.set(1, 1, 6); cup.position.set(x, ry, zr); cup.castShadow = true; g.add(cup);
-  const fl = new THREE.Mesh(new THREE.CylinderGeometry(RR + 0.002, RR + 0.002, 0.0015, 32), M.brk); fl.rotation.z = Math.PI / 2; fl.position.set(x, ry, zr); g.add(fl);
+function rodHolder(g, x, by, ry, zr, side) {
+  // v11t: Titan-GS «кронштейн для перекладины» - one flat bent steel strip 30 x 2 mm (system color):
+  // slotted tab hooked on the shelf bracket, straight drop, dog-leg toward the rod, open U cradle the 25 mm rod lies in
+  const RR = 0.0125, T = 0.002, W = 0.03, zb = zr - 0.03, r = RR + 0.0008, yTop = by - 0.002, yLeg = ry + 0.035, pts = [];
+  pts.push([yTop, zb], [yLeg + 0.012, zb]);
+  for (let k = 1; k <= 6; k++) { const t = k / 6, e = t * t * (3 - 2 * t); pts.push([yLeg + 0.012 - 0.03 * t, zb + (zr - r - zb) * e]); }
+  pts.push([ry, zr - r]);
+  for (let k = 1; k <= 20; k++) { const f = Math.PI * 0.85 * k / 20; pts.push([ry - r * Math.sin(f), zr - r * Math.cos(f)]); }
+  // profile as a thick polyline in (z, y)
+  const L = [], Rr = [];
+  pts.forEach((p, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dy = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dy, dz) || 1, ny = -dz / l, nz = dy / l;
+    L.push([p[1] + nz * T / 2, p[0] + ny * T / 2]); Rr.push([p[1] - nz * T / 2, p[0] - ny * T / 2]); });
+  const sh = new THREE.Shape(); sh.moveTo(L[0][0], L[0][1]); L.slice(1).forEach(q => sh.lineTo(q[0], q[1])); Rr.reverse().forEach(q => sh.lineTo(q[0], q[1])); sh.closePath();
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: W, bevelEnabled: true, bevelThickness: 0.0004, bevelSize: 0.0004, bevelSegments: 1, curveSegments: 4 });
+  const m = new THREE.Mesh(geo, M.brk); m.rotation.y = -Math.PI / 2; m.position.set(x + W / 2, 0, 0); m.castShadow = true; g.add(m);
+  // slot in the tab: dark notch where it hooks over the bracket edge
+  const nt = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.022, T * 1.6), M.rubber); nt.position.set(x, yTop - 0.011, zb); g.add(nt);
 }
-let CUP_G = null;
+let CUP_G = null, CAP_M = null;
 function buildItem(g, item, x0, x1, sec) {
   const y = item.y * 10 * MM, dep = (REAL_DEPTH[item.t][item.d] || 400) * MM, z0 = ZI, zf = z0 + dep;
   const a = x0 + 0.014, b = x1 - 0.014, L = b - a, mid = (x0 + x1) / 2;
@@ -516,7 +527,7 @@ function buildItem(g, item, x0, x1, sec) {
     if (!sh) { bracket(g, x0, by, 0.355); bracket(g, x1, by, 0.355); }
     const ca = x0 + 0.004, cb = x1 - 0.004; g.userData.rodZ = zr;
     [x0, x1].forEach(x => rodHolder(g, x, by, y, zr));
-    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.017]], M.rod); rr.geometry = ROD_G; g.add(rr);
+    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.0125]], M.rod); rr.geometry = ROD_G; g.add(rr); [ca, cb].forEach(xc => { const cp = new THREE.Mesh(new THREE.CylinderGeometry(0.0132, 0.0132, 0.004, 24), CAP_M || (CAP_M = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.45 }))); cp.rotation.z = Math.PI / 2; cp.position.set(xc, y, zr); g.add(cp); }); /* end caps */
   }
 }
 
@@ -1048,9 +1059,16 @@ function applyCam(cam = camera) {
   // further up/down the lens gradually tilts toward the target, so the shift never grows large and nothing stretches.
   let D = Math.hypot(o.R, o.h - o.T.y), el = Math.atan2(o.h - o.T.y, o.R); D = Math.max(ORB_RMIN(), D); el = Math.max(-1.5, Math.min(1.5, el));
   o.R = D * Math.cos(el); o.h = o.T.y + D * Math.sin(el);
-  cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
+  // v11t: dolly-zoom toward orthographic as |pitch| grows - camera backs off and the lens narrows by the same factor,
+  // so framing stays the same while verticals become parallel (no roll: they stay screen-vertical), nothing stretches
+  const ae0 = Math.abs(el), u2 = Math.max(0, Math.min(1, (ae0 - 0.08) / 0.55)), mz = 1 + 14 * u2 * u2 * (3 - 2 * u2), ud = cam.userData;
+  if (ud.dz && cam.fov !== ud.lf) ud.f0 = cam.fov; /* fov set elsewhere (views, lens) becomes the new base */
+  if (mz > 1.0005) { if (!ud.dz) { ud.dz = true; ud.f0 = cam.fov; } cam.fov = ud.lf = 2 * Math.atan(Math.tan(ud.f0 * Math.PI / 360) / mz) * 180 / Math.PI; }
+  else if (ud.dz) { ud.dz = false; cam.fov = ud.f0; }
+  cam.near = 0.08 * Math.min(mz, 6); cam.far = Math.max(160, D * mz + 60); cam.updateProjectionMatrix();
+  cam.position.set(o.T.x + mz * o.R * Math.sin(o.az), o.T.y + mz * (o.h - o.T.y), o.T.z + mz * o.R * Math.cos(o.az));
   const ae = Math.abs(el), u = Math.max(0, Math.min(1, (ae - 0.3) / 0.7)), s = u * u * (3 - 2 * u), pt = el * s;
-  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(pt), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, cam.position.y - mz * o.R * Math.tan(pt), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   const q = o.T.clone().applyMatrix4(cam.matrixWorldInverse), yN = (q.y / -q.z) / Math.tan(cam.fov * Math.PI / 360);
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
 }
@@ -1064,7 +1082,7 @@ function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   el.addEventListener('pointermove', e => {
     if (!orb.on || !P.has(e.pointerId)) return; if (window.__rugDrag) { const q = P.get(e.pointerId); q.x = e.clientX; q.y = e.clientY; last = null; pinch = null; return; } const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
-    const hpx = el.clientHeight || 600, unit = orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
+    const hpx = el.clientHeight || 600, unit = orb.R * Math.tan((camera.userData.dz ? camera.userData.f0 : camera.fov) * Math.PI / 360) * 2 / hpx;
     if (P.size >= 2) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
       if (pinch) { { const f = Math.max(0.2, Math.min(5, pinch / Math.max(d, 1))); orb.R *= f; orb.h = orb.T.y + (orb.h - orb.T.y) * f; } }
@@ -1072,7 +1090,7 @@ function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return
       orb.T.addScaledVector(rt, -dx * unit / 2); orb.T.y += dy * unit / 2; return;
     }
     if (p.b === 2 || p.b === 1 || p.sh) { const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)); orb.T.addScaledVector(rt, -dx * unit); orb.T.y += dy * unit; return; }
-    if (orb.free) { orb.free = false; } orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-1.5, Math.min(1.5, Math.atan2(orb.h - orb.T.y, orb.R) + dy * unit * 1.2 / Math.max(0.5, D) / Math.max(0.35, Math.cos(Math.atan2(orb.h - orb.T.y, orb.R)))))  /* v11s: a095b25 vertical feel (height-based speed) */; orb.R = D * Math.cos(el); orb.h = orb.T.y + D * Math.sin(el); } // v11r: free orbit up/down; // v11q: level orbit - dragging moves the camera up/down, the lens stays level
+    if (orb.free) { orb.free = false; } orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-1.5, Math.min(1.5, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = D * Math.cos(el); orb.h = orb.T.y + D * Math.sin(el); } // v11r: free orbit up/down; // v11q: level orbit - dragging moves the camera up/down, the lens stays level
   });
   el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); { const f = Math.exp(e.deltaY * 0.001); if (Math.hypot(orb.R, orb.h - orb.T.y) * f < 30) { orb.R *= f; orb.h = orb.T.y + (orb.h - orb.T.y) * f; } } }, { passive: false });
 }
