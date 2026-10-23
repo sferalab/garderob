@@ -23,10 +23,11 @@ const lensOf = o => o.t === 'pull' && o.v === 'fine' ? LENS.fine : LENS[o.t];
 const depthsOf = o => o.t === 'pull' && o.v === 'fine' ? [40] : DEPTHS[o.t];
 const secW = mm => nearest([45, 60, 90, 120], mm / 10);
 const LAYOUTS = { straight: 'Прямая (одна стена)', L: 'Угловая, угол слева', Lr: 'Угловая, угол справа', U: 'П-образная' };
+const KIT_TINT = 0xe8edf4; /* v11u: shared cool tint of chrome rod + silver system */
 const CATS = { shelf: 'Полка', rod: 'Штанга', combo: 'Полка со штангой', basket: 'Корзина', trouser: 'Брючница' };
 const rowCat = o => o.g ? 'combo' : catOf(o.t);
 const catOf = t => t === 'rail' ? 'rod' : t === 'basket' || t === 'pull' ? 'basket' : t === 'trouser' ? 'trouser' : 'shelf';
-const VARS = { shelf: [['mesh', 'Сетчатая'], ['metal', 'Металлическая'], ['ldsp', 'ЛДСП'], ['shoe', 'Для обуви']], rod: [['rail', 'Штанга на кронштейнах']], combo: [['mesh', 'Сетчатая полка + штанга'], ['metal', 'Металлическая полка + штанга'], ['ldsp', 'Полка ЛДСП + штанга']], basket: [['pull|mesh', 'Сетчатая выдвижная'], ['basket|mesh', 'Стационарная'], ['pull|fine', 'Мелкосетчатая'], ['pull|perf', 'Перфорированная'], ['basket|perf', 'Перфор. стационарная']], trouser: [['trouser', 'Выдвижная']] };
+const VARS = { shelf: [['mesh', 'Сетчатая'], ['metal', 'Металлическая'], ['ldsp', 'ЛДСП'], ['shoe', 'Для обуви']], rod: [['rail', 'Штанга на кронштейнах']], combo: [['mesh', 'Сетчатая полка + штанга'], ['metal', 'Металлическая полка + штанга'], ['ldsp', 'Полка ЛДСП + штанга']], basket: [['pull|mesh', 'Сетчатая выдвижная'], ['basket|mesh', 'Стационарная']], trouser: [['trouser', 'Выдвижная']] };
 const isBasket = t => t === 'basket' || t === 'pull';
 const perfOf = o => (o.v || (S.basketStyle === 'plastic' ? 'perf' : 'mesh')) === 'perf';
 const fineOf = o => o.v === 'fine';
@@ -51,10 +52,11 @@ function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.
   // v9: ceiling always on (a bit higher), walls at full width, short attached shadows
   if (!S.v9) { S.v9 = 1; S.room.ceilH = Math.max(285, S.room.ceilH || 0); if (S.room.glareM === 'bright') S.room.glareM = 'soft'; }
   if (!S.v91) { S.v91 = 1; S.room.ceilH = Math.max(300, S.room.ceilH || 0); S.__gapFix = true; }
-  S.room.ceiling = true; S.room.extra = 400; S.room.ceilH = Math.max(230, Math.min(400, S.room.ceilH || 300));
+  S.room.extra = 400; S.room.ceilH = Math.max(230, Math.min(400, S.room.ceilH || 300));
   // v11p: keep projects; striped/flat rug -> fluffy, basket heights onto 85/185/288, rod always chrome
   if (!S.v11p) { S.v11p = 1; if (S.rug && typeof S.rug === 'object' && S.rug.pile !== 'jute') S.rug.pile = 'fluffy'; if (S.room && S.room.skirting == null) S.room.skirting = true;
     (S.walls || []).forEach(w => (w.sections || []).forEach(sc => (sc.items || []).forEach(o => { if (typeof isBasket === 'function' && isBasket(o.t) && o.h) o.h = [85, 181].reduce((a, b) => Math.abs(b - o.h) < Math.abs(a - o.h) ? b : a); }))); }
+  if (!S.v11u) { S.v11u = 1; S.room.ceiling = true; /* v11u: only Titan catalog baskets: wire mesh, stationary 85, pull-out 85/181 */ S.basketStyle = 'mesh'; if (!['pull|mesh', 'basket|mesh'].includes(S.bKind)) S.bKind = 'pull|mesh'; (S.walls || []).forEach(w => (w.sections || []).forEach(sc => (sc.items || []).forEach(o => { if (o && (o.t === 'basket' || o.t === 'pull')) { o.v = 'mesh'; if (o.t === 'basket') o.h = 85; else o.h = (o.h || 85) > 130 ? 181 : 85; if (![30, 40].includes(o.d)) o.d = 40; } }))); }
   if (!S.v11t) { S.v11t = 1; /* v11t: Titan catalog basket heights 85/181 */ (S.walls || []).forEach(w => (w.sections || []).forEach(sc => (sc.items || []).forEach(o => { if (o && (o.t === 'basket' || o.t === 'pull') && o.h) o.h = o.h > 130 ? 181 : 85; }))); }
   S.walls.forEach(w => { if (w.gap == null) w.gap = 0; }); if (S.walls[0].gapR == null) S.walls[0].gapR = 0; return S; }
 function setTemplate(t) {
@@ -126,7 +128,7 @@ const scene = new THREE.Scene();
 const pm = new THREE.PMREMGenerator(renderer);
 scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 // indoor HDRI (Poly Haven studio_small_09, CC0) for metal/chrome reflections; background unchanged
-import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/interior_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; window.ROD_ENV = pm.fromEquirectangular(t).texture; t.dispose(); /* v11t: real interior photo (Poly Haven lebombo, CC0) reflected only in chrome */ scene.traverse(o => { if (o.isMesh && o.material && o.material.userData && o.material.userData.chrome) { o.material.envMap = window.ROD_ENV; o.material.needsUpdate = true; } }); if (M.chrome) M.chrome.envMap = window.ROD_ENV; })).catch(() => {});
+import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().setDataType(THREE.FloatType).load('tex/interior_1k.hdr', t => { { const d = t.image.data; for (let i = 0; i < d.length; i += 4) { const l = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; d[i] = l * 0.97; d[i + 1] = l; d[i + 2] = l * 1.04; } t.needsUpdate = true; } /* v11u: neutral-cool, no warm cast on chrome */ t.mapping = THREE.EquirectangularReflectionMapping; window.ROD_ENV = pm.fromEquirectangular(t).texture; t.dispose(); /* v11t: real interior photo (Poly Haven lebombo, CC0) reflected only in chrome */ scene.traverse(o => { if (o.isMesh && o.material && o.material.userData && o.material.userData.chrome) { o.material.envMap = window.ROD_ENV; o.material.needsUpdate = true; } }); if (M.chrome) M.chrome.envMap = window.ROD_ENV; })).catch(() => {});
 import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; window.HDR_ENV = pm.fromEquirectangular(t).texture; t.dispose(); try { applyGlareShadow(); } catch (e) {} })).catch(() => {});
 // SSAO only for the 📷 snapshot (loaded in the background, never used in the live view)
 let POST = null; Promise.all(['postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/SAOPass.js', 'postprocessing/OutputPass.js'].map(f => import('three/addons/' + f))).then(m => { POST = Object.assign({}, ...m); }).catch(() => {});
@@ -326,10 +328,10 @@ function makeMats() {
   // Titan-GS powder coat: RAL 9016 snow white (slightly cool, glowing), RAL 9006 silver, RAL 9005 black
   const gm = { soft: 1, bright: 1, off: 0.3 }[S.room.glareM || 'soft'] || 1, bright = S.room.glareM === 'bright';
   const PB = {
-    white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.6, clearcoatRoughness: bright ? 0.05 : 0.16, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0x50555f), envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
-    silver: { color: 0xe4e7eb, metalness: 0.8, roughness: 0.3, clearcoat: bright ? 0.5 : 0.25, clearcoatRoughness: 0.25, specularIntensity: 0.9, envMapIntensity: 1.5 * gm }, /* v11t: light satin silver like the Titan drawing */
-    black: { color: METAL.black, metalness: 0.35, roughness: 0.5, clearcoat: bright ? 0.4 : 0.12, clearcoatRoughness: 0.4, specularIntensity: 0.7, /* v11s: satin black powder coat as in the photo */ sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
-  }[S.metal] || {}; if (S.metal === 'silver') Object.assign(PB, { map: tex('rodmetal_diff', true, '4x4'), roughnessMap: tex('rodmetal_rough', false, '4x4') });
+    white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.55, clearcoatRoughness: bright ? 0.05 : 0.3, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0x50555f), envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
+    silver: { metalness: 0.8, roughness: 0.32, clearcoat: 0.5, clearcoatRoughness: 0.3, specularIntensity: 0.9, color: 0xc9cfd8, emissive: new THREE.Color(0x24272c), envMapIntensity: 1.7 * gm }, /* v11t: light satin silver like the Titan drawing */
+    black: { color: METAL.black, metalness: 0.3, roughness: 0.45, clearcoat: bright ? 0.5 : 0.35, clearcoatRoughness: 0.32, specularIntensity: 0.7, /* v11s: satin black powder coat as in the photo */ sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x4a4d53), envMapIntensity: 0.9 * gm }
+  }[S.metal] || {}; if (S.metal !== 'silver' && S.room.glareM !== 'off') Object.assign(PB, { envMap: window.ROD_ENV || chromeEnv(), userData: { chrome: true } }); /* v11u: soft moving satin sheen from the same neutral interior env */ if (S.metal === 'silver') Object.assign(PB, { map: tex('rodsoft_diff', true, '1x1'), roughnessMap: tex('rodsoft_rough', false, '1x1'), envMap: window.ROD_ENV || chromeEnv(), userData: { chrome: true } }); /* v11u: one kit with the chrome rod: same tint, same env */
   const G = grainTex();
   M.metal = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 6, 6), normalScale: new THREE.Vector2(0.22, 0.22), roughnessMap: rep(G.rough, 6, 6) });
   M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: S.metal === 'black' ? 0.45 : 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
@@ -340,7 +342,7 @@ function makeMats() {
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.1, clearcoat: 0.5, clearcoatRoughness: 0.05, specularIntensity: 1, emissive: new THREE.Color(0x000000), map: tex('rodmetal_diff', true, '1x8'), roughnessMap: tex('rodmetal_rough', false, '1x8'), envMap: window.ROD_ENV || chromeEnv(), envMapIntensity: 1.6, /* v11t: CC0 brushed sheet (ambientCG Metal001) as base */ userData: { chrome: true } });
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: KIT_TINT, metalness: 1, roughness: 0.07, clearcoat: 0.6, clearcoatRoughness: 0.04, specularIntensity: 1, emissive: new THREE.Color(0x000000), map: tex('rodsoft_diff', true, '1x1'), roughnessMap: tex('rodsoft_rough', false, '1x1'), envMap: window.ROD_ENV || chromeEnv(), envMapIntensity: 1.6, /* v11t: CC0 brushed sheet (ambientCG Metal001) as base */ userData: { chrome: true } });
   M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.1, specularIntensity: 0.6, envMapIntensity: 0.7 })
     : S.rod === 'black' ? new THREE.MeshPhysicalMaterial({ color: 0x141414, metalness: 0.3, roughness: 0.35, clearcoat: 0.7, clearcoatRoughness: 0.15, specularIntensity: 0.8, envMapIntensity: 1.0 })
     : S.rod === 'metal' ? new THREE.MeshPhysicalMaterial({ color: 0xd4d7db, metalness: 0.9, roughness: 0.32, clearcoat: 0.3, clearcoatRoughness: 0.3, envMap: chromeEnv(), envMapIntensity: 1.3, userData: { chrome: true } }) : M.chrome; /* v11r: four rod colors */
@@ -439,7 +441,7 @@ let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = documen
 function rodHolder(g, x, by, ry, zr, side) {
   // v11t: Titan-GS «кронштейн для перекладины» - one flat bent steel strip 30 x 2 mm (system color):
   // slotted tab hooked on the shelf bracket, straight drop, dog-leg toward the rod, open U cradle the 25 mm rod lies in
-  const RR = 0.0125, T = 0.002, W = 0.03, zb = zr - 0.03, r = RR + 0.0008, yTop = by - 0.002, yLeg = ry + 0.035, pts = [];
+  const RR = 0.0155, T = 0.002, W = 0.03, zb = zr - 0.03, r = RR + 0.0008, yTop = by - 0.002, yLeg = ry + 0.035, pts = [];
   pts.push([yTop, zb], [yLeg + 0.012, zb]);
   for (let k = 1; k <= 6; k++) { const t = k / 6, e = t * t * (3 - 2 * t); pts.push([yLeg + 0.012 - 0.03 * t, zb + (zr - r - zb) * e]); }
   pts.push([ry, zr - r]);
@@ -528,7 +530,7 @@ function buildItem(g, item, x0, x1, sec) {
     if (!sh) { bracket(g, x0, by, 0.355); bracket(g, x1, by, 0.355); }
     const ca = x0 + 0.004, cb = x1 - 0.004; g.userData.rodZ = zr;
     [x0, x1].forEach(x => rodHolder(g, x, by, y, zr));
-    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.0125]], M.rod); rr.geometry = ROD_G; g.add(rr); [ca, cb].forEach(xc => { const cp = new THREE.Mesh(new THREE.CylinderGeometry(0.0132, 0.0132, 0.004, 24), CAP_M || (CAP_M = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.45 }))); cp.rotation.z = Math.PI / 2; cp.position.set(xc, y, zr); g.add(cp); }); /* end caps */
+    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.0155]], M.rod); rr.geometry = ROD_G; g.add(rr); [ca, cb].forEach(xc => { const cp = new THREE.Mesh(new THREE.CylinderGeometry(0.0163, 0.0163, 0.005, 24), CAP_M || (CAP_M = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.45 }))); cp.rotation.z = Math.PI / 2; cp.position.set(xc, y, zr); g.add(cp); }); /* end caps */
   }
 }
 
@@ -703,7 +705,7 @@ function buildRoom() {
   };
   const bo = ops.filter(o => o.wall === 'B').map(o => ({ ...o, c: o.x - cx }));
   bk.userData.occ = wallPlane(right - left, cx, 0, 0, bk, bo);
-  const skC = new THREE.Color(S.room.skirtColor || '#f6f5f2'), skM = new THREE.MeshLambertMaterial({ color: skC.clone().multiplyScalar(0.3), emissive: skC.clone().multiplyScalar(0.68) }); // v11p: mostly self-lit, no gray shading while orbiting
+  const skC = new THREE.Color(S.room.skirtColor || '#f6f5f2'), skM = new THREE.MeshBasicMaterial({ color: skC.clone().multiplyScalar(0.94) }); /* v11u: plinth unlit - no jumping grey shadow patch */ // v11p: mostly self-lit, no gray shading while orbiting
   // skirting runs along u (local x of a wall frame), cut at doors
   const skirt = (parent, u0, u1, cuts, place) => { if (S.room.skirting === false) return; let segs = [[u0, u1]]; cuts.forEach(([a, b]) => { segs = segs.flatMap(([s, e]) => b <= s || a >= e ? [[s, e]] : [[s, a], [b, e]].filter(([p, q]) => q - p > 0.01)); });
     segs.forEach(([s, e]) => { const g = new THREE.Group(); place(g); [[0.016, 0.08, 0.04, 0.008], [0.022, 0.012, 0.074, 0.011]].forEach(([d, h, y, z]) => { const m = box(e - s, h, d, (s + e) / 2, y, z, skM); m.castShadow = m.receiveShadow = false; g.add(m); }); parent.add(g); }); };
@@ -732,7 +734,7 @@ function buildRoom() {
   if (!ST) skirt(bk, left, right, doorCuts(bo.map(o => ({ ...o, x: o.c + cx })), 'x'), () => {});
   // ceiling: one solid plane over the whole room, seen only from below
   const cg = new THREE.Group(); cg.userData.occC = CH; room.add(cg);
-  { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xfbfbf9, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
+  if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xfbfbf9, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
     if (S.room.cornice) cornice(right - left, g => g.position.x = cx, bk); }
   if (S.room.lamps) { const n = Math.max(2, Math.round((right - left) / 1.2)); for (let i = 0; i < n; i++) { const x = left + (right - left) * (i + 0.5) / n; const d = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.006, 24), new THREE.MeshBasicMaterial({ color: 0xfff6e6, toneMapped: false })); d.position.set(x, CH - 0.007, 0.9); cg.add(d); const rg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.012, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d1e20, roughness: 0.35, metalness: 0.4, side: THREE.DoubleSide })); rg.position.set(x, CH - 0.006, 0.9); cg.add(rg); const rd = new THREE.Mesh(new THREE.RingGeometry(0.035, 0.05, 32), new THREE.MeshStandardMaterial({ color: 0x1d1e20, roughness: 0.35, metalness: 0.4 })); rd.rotation.x = Math.PI / 2; rd.position.set(x, CH - 0.0121, 0.9); cg.add(rd); const pl = new THREE.PointLight(0xffe9cc, 1.0, 0, 2); pl.position.set(x, CH - 0.12, 0.9); cg.add(pl); } }
 }
@@ -1062,13 +1064,13 @@ function applyCam(cam = camera) {
   o.R = D * Math.cos(el); o.h = o.T.y + D * Math.sin(el);
   // v11t: dolly-zoom toward orthographic as |pitch| grows - camera backs off and the lens narrows by the same factor,
   // so framing stays the same while verticals become parallel (no roll: they stay screen-vertical), nothing stretches
-  const ae0 = Math.abs(el), u2 = Math.max(0, Math.min(1, (ae0 - 0.08) / 0.55)), mz = 1 + 14 * u2 * u2 * (3 - 2 * u2), ud = cam.userData;
+  const ae0 = Math.abs(el), u1 = Math.max(0, Math.min(1, (ae0 - 0.22) / 0.4)), s1 = u1 * u1 * (3 - 2 * u1), mz = 1 + 14 * s1 * s1, ud = cam.userData; /* v11u: zoom-out only as fast as the lens tilts, so no oblique shear */
   if (ud.dz && cam.fov !== ud.lf) ud.f0 = cam.fov; /* fov set elsewhere (views, lens) becomes the new base */
   if (mz > 1.0005) { if (!ud.dz) { ud.dz = true; ud.f0 = cam.fov; } cam.fov = ud.lf = 2 * Math.atan(Math.tan(ud.f0 * Math.PI / 360) / mz) * 180 / Math.PI; }
   else if (ud.dz) { ud.dz = false; cam.fov = ud.f0; }
   cam.near = 0.08 * Math.min(mz, 6); cam.far = Math.max(160, D * mz + 60); cam.updateProjectionMatrix();
   cam.position.set(o.T.x + mz * o.R * Math.sin(o.az), o.T.y + mz * (o.h - o.T.y), o.T.z + mz * o.R * Math.cos(o.az));
-  const ae = Math.abs(el), u = Math.max(0, Math.min(1, (ae - 0.3) / 0.7)), s = u * u * (3 - 2 * u), pt = el * s;
+  const pt = el * s1;
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, cam.position.y - mz * o.R * Math.tan(pt), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
   const q = o.T.clone().applyMatrix4(cam.matrixWorldInverse), yN = (q.y / -q.z) / Math.tan(cam.fov * Math.PI / 360);
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
@@ -1406,9 +1408,7 @@ const ICO = {
   trouser: '<svg viewBox="0 0 48 32"><path d="M4 8h40" stroke-width="3"/><path d="M8 8v4h32V8" fill="none" stroke-width="1.5"/><path d="M12 12v14M18 12v14M24 12v14M30 12v14M36 12v14" stroke-width="2.5"/></svg>'
 };
 const BK = [['pull|mesh', 'Сетчатая выдвижная', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M12 6v20M20 6v20M28 6v20M36 6v20M4 16h40" stroke-width="1.3"/><path d="M18 29h12" stroke-width="3"/>'],
-  ['basket|mesh', 'Стационарная', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M12 6v20M20 6v20M28 6v20M36 6v20M4 16h40" stroke-width="1.3"/>'],
-  ['pull|fine', 'Мелкосетчатая', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M8 6v20M12 6v20M16 6v20M20 6v20M24 6v20M28 6v20M32 6v20M36 6v20M40 6v20M4 10h40M4 14h40M4 18h40M4 22h40" stroke-width="0.8"/>'],
-  ['pull|perf', 'Перфорированная', '<rect x="4" y="6" width="40" height="20" rx="2" fill="none" stroke-width="2.5"/><g stroke-width="2.6" stroke-linecap="round"><path d="M10 11v4M16 11v4M22 11v4M28 11v4M34 11v4M40 11v4M10 18v4M16 18v4M22 18v4M28 18v4M34 18v4M40 18v4"/></g>']];
+  ['basket|mesh', 'Стационарная', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M12 6v20M20 6v20M28 6v20M36 6v20M4 16h40" stroke-width="1.3"/>']];
 function presetItems(t) {
   const top = S.railTop - 18, lo = Math.ceil(postBottom() / 10) + 10, mid = Math.round((top + lo) / 2), M_ = y => it('mesh', S.depth || 40, y), R_ = y => it('rail', 30, y), C_ = y => { const [a, b] = newItem('combo'); a.y = y; return [a, b]; }, B_ = y => Object.assign(it('pull', 40, y, 181), { v: 'mesh' });
   const T = { shelves: () => { const a = []; for (let y = top; y >= lo; y -= 36) a.push(M_(y)); return a; }, rod: () => [...C_(top), M_(lo + 20)], two: () => [...C_(top), ...C_(mid)], baskets: () => [M_(top), M_(top - 38), M_(top - 76), B_(lo + 70), B_(lo + 45), B_(lo + 20)], shoes: () => [M_(top), M_(top - 38), M_(top - 76), it('shoe', 40, lo + 50), it('shoe', 40, lo + 25)] };
@@ -1543,12 +1543,14 @@ function renderSec() {
   E.querySelectorAll('[data-bh]').forEach(b => b.onclick = () => { const [i, h] = b.dataset.bh.split(':').map(Number); cur.it = i; s.items[i].h = h; go(); });
   E.querySelectorAll('[data-bw]').forEach(b => b.onclick = () => { s.w = +b.dataset.bw; go(); });
   E.querySelectorAll('[data-dep]').forEach(b => b.onclick = () => { const [i, d] = b.dataset.dep.split(':').map(Number), o = s.items[i]; cur.it = i; o.d = d; s.items.forEach(p => { if (o.g && p.lk === o.g && DEPTHS[p.t].includes(d)) p.d = d; }); go(); });
+  // v11u: a newly selected item (e.g. a basket tapped in 3D) brings its settings block right under the tabs
+  { const key = cur.it >= 0 ? cur.w + ':' + cur.s + ':' + cur.it : ''; if (key && key !== window.__selKey) { const t = E.querySelector(`[data-bset="${cur.it}"]`) || E.querySelector('.item.sel'), P = $('panel'); if (t && P) requestAnimationFrame(() => { const st = document.getElementById('stepper'), pr = P.getBoundingClientRect(), top = Math.max(pr.top, st ? st.getBoundingClientRect().bottom : pr.top); P.scrollTo({ top: P.scrollTop + t.getBoundingClientRect().top - top - 8, behavior: 'smooth' }); }); } window.__selKey = key; }
 }
 
 // v11p: all basket settings in one block right under the basket tiles (length = section width)
 function basketBlock(s) { const bi = s.items.map((o, i) => [o, i]).filter(p => isBasket(p[0].t)); if (!bi.length) return '';
   const [o, i] = (bi.find(p => p[1] === cur.it) || bi[bi.length - 1]);
-  return `<div class="bset" data-bset="${i}"><div class="szlab">Корзина ${bi.length > 1 ? (bi.findIndex(p => p[1] === i) + 1) + ' из ' + bi.length : ''} · длина = ширина секции ${s.w} см</div><div class="ld"><span>Глубина от стены</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div><div class="ld"><span>Высота корзины</span><div class="sz">${BKH.map(h => `<button data-bh="${i}:${h}" class="${(o.h || 85) === h ? 'on' : ''}">${h}</button>`).join('')}</div></div></div>`; }
+  return `<div class="bset" data-bset="${i}"><div class="szlab">Корзина ${bi.length > 1 ? (bi.findIndex(p => p[1] === i) + 1) + ' из ' + bi.length : ''} · длина = ширина секции ${s.w} см</div><div class="ld"><span>Глубина от стены</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div><div class="ld"><span>Высота корзины</span><div class="sz">${(o.t === 'basket' ? [85] : BKH).map(h => `<button data-bh="${i}:${h}" class="${(o.h || 85) === h ? 'on' : ''}">${h}</button>`).join('')}</div></div></div>`; }
 const BKH = [85, 181];
 let lastCam = 'front';
 // ---------- collisions, dims fields, mirror, catalog ----------
@@ -1905,7 +1907,7 @@ function renderDeco() {
     S.plants = [...(S.plants || []), { k, x: px, z: pz, s: 1, r: pr }]; plantSel = n; rebuild(); renderDeco(); });
   $('plantList').querySelectorAll('[data-ps]').forEach(el => { el.oninput = () => { const i = +el.dataset.ps; S.plants[i].s = +el.value; plantSel = i; const g = decor.children.find(c => c.userData.plant === i); if (g) g.scale.setScalar(+el.value); }; el.onchange = () => { rebuild(); }; });
   $('plantList').querySelectorAll('[data-pd]').forEach(b => b.onclick = () => { S.plants.splice(+b.dataset.pd, 1); plantSel = -1; rebuild(); renderDeco(); });
-  $('cornT').checked = !!R.cornice; $('skirtT').checked = R.skirting !== false; $('skirtC').value = R.skirtColor || '#ffffff'; $('cornC').value = R.cornColor || '#fbfaf6'; $('ceilH2').value = R.ceilH || 285; $('ceilV2').textContent = R.ceilH || 285;
+  $('cornT').checked = !!R.cornice; $('skirtT').checked = R.skirting !== false; $('skirtC').value = R.skirtColor || '#ffffff'; $('cornC').value = R.cornColor || '#fbfaf6'; $('ceilH2').value = R.ceilH || 285; if ($('ceilT2')) $('ceilT2').checked = !!R.ceiling; $('ceilV2').textContent = R.ceilH || 285;
   renderLight(); renderSwatches(); renderAng();
   drawWallPick(); drawBgPick();
 }
@@ -1957,6 +1959,7 @@ document.querySelectorAll('[data-dt]').forEach(b => b.onclick = () => { S.studio
 $('cornC').oninput = $('cornC').onchange = e => { S.room.cornColor = e.target.value; S.room.cornice = true; $('cornT').checked = true; rebuild(); localStorage.setItem('gs_auto', JSON.stringify(S)); };
 { let t; $('ceilH2').oninput = e => { S.room.ceilH = +e.target.value; $('ceilV2').textContent = S.room.ceilH; if ($('ceilH')) { $('ceilH').value = S.room.ceilH; } if ($('ceilV')) $('ceilV').textContent = S.room.ceilH; clearTimeout(t); t = setTimeout(rebuild, 40); }; }
 { const o = $('ceilT').onchange; $('ceilT').onchange = e => { o(e); renderDeco(); }; }
+if ($('ceilT2')) { $('ceilT2').onchange = e => { $('ceilT').checked = e.target.checked; $('ceilT').onchange({ target: $('ceilT') }); }; } /* v11u: visible «Потолок» toggle in Оформление */
 { const o = $('layout').onchange; $('layout').onchange = e => { o(e); renderAng(); renderWallsPop(); }; }
 // neighbour distances while dragging: left of the finger, «от пола» on the right
 // both hints sit right beside the dragged item on screen, clamped inside the view

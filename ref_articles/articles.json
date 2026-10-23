@@ -1,0 +1,5620 @@
+{
+ "source_primary": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+ "source_note": "Официальный каталог ТИТАН-GS «Гардеробные системы 2024» (ПАКС-Металл); PDF сохранён в ref_articles/. titangs.ru отдаёт 403 автоматическим запросам. Артикулы 7401xxxx — заводские. У дилеров бывают свои коды (Кувалда ЦБ000005377 — кронштейн перекладины белый; ВсеИнструменты 351920 — стойка 1920 белая) — это НЕ артикулы производителя. Профиль в каталоге 2024: стойка 27×23, рельс 10×45.",
+ "all_catalog_rows": [
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "520x10x45",
+   "article": "74010425",
+   "color": "white"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "520x10x45",
+   "article": "74010464",
+   "color": "silver"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "520x10x45",
+   "article": "74010465",
+   "color": "black"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "700x10x45",
+   "article": "74010057",
+   "color": "white"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "700x10x45",
+   "article": "74010329",
+   "color": "silver"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "700x10x45",
+   "article": "74010330",
+   "color": "black"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "1000x10x45",
+   "article": "74010058",
+   "color": "white"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "1000x10x45",
+   "article": "74010333",
+   "color": "silver"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "1000x10x45",
+   "article": "74010334",
+   "color": "black"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "1260x10x45",
+   "article": "74010078",
+   "color": "white"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "1260x10x45",
+   "article": "74010460",
+   "color": "silver"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "1260x10x45",
+   "article": "74010461",
+   "color": "black"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "1560x10x45",
+   "article": "74010059",
+   "color": "white"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "1560x10x45",
+   "article": "74010337",
+   "color": "silver"
+  },
+  {
+   "section": "РЕЛЬС НЕСУЩИЙ",
+   "size": "1560x10x45",
+   "article": "74010338",
+   "color": "black"
+  },
+  {
+   "section": "ПЕРЕХОДНИК ДЛЯ СТОЙКИ",
+   "size": "112х12х12",
+   "article": "74010033",
+   "color": "white"
+  },
+  {
+   "section": "ПЕРЕХОДНИК ДЛЯ СТОЙКИ",
+   "size": "112х12х12",
+   "article": "74010510",
+   "color": "silver"
+  },
+  {
+   "section": "ПЕРЕХОДНИК ДЛЯ СТОЙКИ",
+   "size": "112х12х12",
+   "article": "74010511",
+   "color": "black"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "512х27х23",
+   "article": "74010065",
+   "color": "white"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "512х27х23",
+   "article": "74010142",
+   "color": "silver"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "512х27х23",
+   "article": "74010143",
+   "color": "black"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1025х27х23",
+   "article": "74010061",
+   "color": "white"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1025х27х23",
+   "article": "74010144",
+   "color": "silver"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1025х27х23",
+   "article": "74010145",
+   "color": "black"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1156х27х23",
+   "article": "74010062",
+   "color": "white"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1156х27х23",
+   "article": "74010149",
+   "color": "silver"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1156х27х23",
+   "article": "74010150",
+   "color": "black"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1536х27х23",
+   "article": "74010063",
+   "color": "white"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1536х27х23",
+   "article": "74010351",
+   "color": "silver"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1536х27х23",
+   "article": "74010352",
+   "color": "black"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1920х27х23",
+   "article": "74010064",
+   "color": "white"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1920х27х23",
+   "article": "74010356",
+   "color": "silver"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "1920х27х23",
+   "article": "74010357",
+   "color": "black"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "2304х27х23",
+   "article": "74010220",
+   "color": "white"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "2304х27х23",
+   "article": "74010526",
+   "color": "silver"
+  },
+  {
+   "section": "СТОЙКА",
+   "size": "2304х27х23",
+   "article": "74010527",
+   "color": "black"
+  },
+  {
+   "section": "КРОНШТЕЙН",
+   "size": "335",
+   "article": "74010025",
+   "color": "white"
+  },
+  {
+   "section": "КРОНШТЕЙН",
+   "size": "335",
+   "article": "74010479",
+   "color": "silver"
+  },
+  {
+   "section": "КРОНШТЕЙН",
+   "size": "335",
+   "article": "74010275",
+   "color": "black"
+  },
+  {
+   "section": "КРОНШТЕЙН",
+   "size": "435",
+   "article": "74010026",
+   "color": "white"
+  },
+  {
+   "section": "КРОНШТЕЙН",
+   "size": "435",
+   "article": "74010147",
+   "color": "silver"
+  },
+  {
+   "section": "КРОНШТЕЙН",
+   "size": "435",
+   "article": "74010148",
+   "color": "black"
+  },
+  {
+   "section": "КРОНШТЕЙН",
+   "size": "535",
+   "article": "74010115",
+   "color": "white"
+  },
+  {
+   "section": "КРОНШТЕЙН",
+   "size": "535",
+   "article": "74010140",
+   "color": "silver"
+  },
+  {
+   "section": "КРОНШТЕЙН",
+   "size": "535",
+   "article": "74010141",
+   "color": "black"
+  },
+  {
+   "section": "НАКЛАДКА ДЛЯ КРОНШТЕЙНА",
+   "size": "17х8х420",
+   "article": "74010426",
+   "color": "white"
+  },
+  {
+   "section": "НАКЛАДКА ДЛЯ КРОНШТЕЙНА",
+   "size": "17х8х420",
+   "article": "74010649",
+   "color": "silver"
+  },
+  {
+   "section": "НАКЛАДКА ДЛЯ КРОНШТЕЙНА",
+   "size": "17х8х420",
+   "article": "74010650",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "463 х 306",
+   "article": "74010042",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "463 х 306",
+   "article": "74010189",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "463 х 306",
+   "article": "74010190",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "463 х 406",
+   "article": "74010043",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "463 х 406",
+   "article": "74010197",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "463 х 406",
+   "article": "74010198",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "603 х 306",
+   "article": "74010044",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "603 х 306",
+   "article": "74010191",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "603 х 306",
+   "article": "74010192",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "603 х 406",
+   "article": "74010045",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "603 х 406",
+   "article": "74010199",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "603 х 406",
+   "article": "74010200",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "603 х 506",
+   "article": "74010046",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "603 х 506",
+   "article": "74010205",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "603 х 506",
+   "article": "74010206",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "903 х 306",
+   "article": "74010047",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "903 х 306",
+   "article": "74010193",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "903 х 306",
+   "article": "74010194",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "903 х 406",
+   "article": "74010048",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "903 х 406",
+   "article": "74010201",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "903 х 406",
+   "article": "74010202",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "903 х 506",
+   "article": "74010117",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "903 х 506",
+   "article": "74010207",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "903 х 506",
+   "article": "74010208",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "1203 х 306",
+   "article": "74010049",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "1203 х 306",
+   "article": "74010195",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "1203 х 306",
+   "article": "74010196",
+   "color": "black"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "1203 х 406",
+   "article": "74010050",
+   "color": "white"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "1203 х 406",
+   "article": "74010203",
+   "color": "silver"
+  },
+  {
+   "section": "СЕТЧАТАЯ ПОЛКА",
+   "size": "1203 х 406",
+   "article": "74010204",
+   "color": "black"
+  },
+  {
+   "section": "МЕТАЛЛИЧЕСКАЯ ПОЛКА",
+   "size": "597 х 327",
+   "article": "74010040",
+   "color": "white"
+  },
+  {
+   "section": "МЕТАЛЛИЧЕСКАЯ ПОЛКА",
+   "size": "597 х 327",
+   "article": "74010482",
+   "color": "silver"
+  },
+  {
+   "section": "МЕТАЛЛИЧЕСКАЯ ПОЛКА",
+   "size": "597 х 327",
+   "article": "74010305",
+   "color": "black"
+  },
+  {
+   "section": "МЕТАЛЛИЧЕСКАЯ ПОЛКА",
+   "size": "597 х 427",
+   "article": "74010041",
+   "color": "white"
+  },
+  {
+   "section": "МЕТАЛЛИЧЕСКАЯ ПОЛКА",
+   "size": "597 х 427",
+   "article": "74010483",
+   "color": "silver"
+  },
+  {
+   "section": "МЕТАЛЛИЧЕСКАЯ ПОЛКА",
+   "size": "597 х 427",
+   "article": "74010306",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "446 х 330",
+   "article": "74010126",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "446 х 330",
+   "article": "74010673",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "446 х 330",
+   "article": "74010674",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "446 х 430",
+   "article": "74010127",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "446 х 430",
+   "article": "74010675",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "446 х 430",
+   "article": "74010676",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "587 х 330",
+   "article": "74010122",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "587 х 330",
+   "article": "74010677",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "587 х 330",
+   "article": "74010678",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "587 х 430",
+   "article": "74010124",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "587 х 430",
+   "article": "74010681",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "587 х 430",
+   "article": "74010682",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "887 х 330",
+   "article": "74010123",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "887 х 330",
+   "article": "74010679",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "887 х 330",
+   "article": "74010680",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "887 х 430",
+   "article": "74010125",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "887 х 430",
+   "article": "74010683",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА ЛДСП",
+   "size": "887 х 430",
+   "article": "74010684",
+   "color": "black"
+  },
+  {
+   "section": "КОМПЛЕКТ КРЕПЛЕНИЯ ПОЛКИ ЛДСП",
+   "size": "30х310х16",
+   "article": "74010010",
+   "color": "white"
+  },
+  {
+   "section": "КОМПЛЕКТ КРЕПЛЕНИЯ ПОЛКИ ЛДСП",
+   "size": "30х310х16",
+   "article": "74010653",
+   "color": "silver"
+  },
+  {
+   "section": "КОМПЛЕКТ КРЕПЛЕНИЯ ПОЛКИ ЛДСП",
+   "size": "30х310х16",
+   "article": "74010654",
+   "color": "black"
+  },
+  {
+   "section": "КОМПЛЕКТ КРЕПЛЕНИЯ ПОЛКИ ЛДСП",
+   "size": "30х410х16",
+   "article": "74010011",
+   "color": "white"
+  },
+  {
+   "section": "КОМПЛЕКТ КРЕПЛЕНИЯ ПОЛКИ ЛДСП",
+   "size": "30х410х16",
+   "article": "74010657",
+   "color": "silver"
+  },
+  {
+   "section": "КОМПЛЕКТ КРЕПЛЕНИЯ ПОЛКИ ЛДСП",
+   "size": "30х410х16",
+   "article": "74010658",
+   "color": "black"
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ ДЛЯ КОРЗИН",
+   "size": "28 х 463 х 410",
+   "article": "74010538",
+   "color": "white"
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ ДЛЯ КОРЗИН",
+   "size": "28 х 463 х 410",
+   "article": "74010540",
+   "color": "silver"
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ ДЛЯ КОРЗИН",
+   "size": "28 х 463 х 410",
+   "article": "74010539",
+   "color": "black"
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ ДЛЯ КОРЗИН",
+   "size": "28 х 603 х 410",
+   "article": "74010056",
+   "color": "white"
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ ДЛЯ КОРЗИН",
+   "size": "28 х 603 х 410",
+   "article": "74010130",
+   "color": "silver"
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ ДЛЯ КОРЗИН",
+   "size": "28 х 603 х 410",
+   "article": "74010131",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "603 х 340 х 85",
+   "article": "74010209",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "603 х 340 х 85",
+   "article": "74010514",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "603 х 340 х 85",
+   "article": "74010515",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "603 х 440 х 85",
+   "article": "74010022",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "603 х 440 х 85",
+   "article": "74010523",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "603 х 440 х 85",
+   "article": "74010266",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "903 х 340 х 85",
+   "article": "74010210",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "903 х 340 х 85",
+   "article": "74010518",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "903 х 340 х 85",
+   "article": "74010519",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "903 х 440 х 85",
+   "article": "74010023",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "903 х 440 х 85",
+   "article": "74010522",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА СТАЦИОНАРНАЯ",
+   "size": "903 х 440 х 85",
+   "article": "74010269",
+   "color": "black"
+  },
+  {
+   "section": "РАЗДЕЛИТЕЛЬ БОКОВОЙ",
+   "size": "10 х 300 х 85",
+   "article": "74010146",
+   "color": "clear"
+  },
+  {
+   "section": "РАЗДЕЛИТЕЛЬ БОКОВОЙ",
+   "size": "10 х 400 х 85",
+   "article": "74010055",
+   "color": "clear"
+  },
+  {
+   "section": "КОРЗИНА ПЛАСТИКОВАЯ",
+   "size": "555 х 430 х 85",
+   "article": "74010021",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ПЛАСТИКОВАЯ",
+   "size": "555 х 430 х 85",
+   "article": "74010263",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ПЛАСТИКОВАЯ",
+   "size": "555 х 430 х 185",
+   "article": "74010020",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ПЛАСТИКОВАЯ",
+   "size": "555 х 430 х 185",
+   "article": "74010260",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "395 х 410 х 85",
+   "article": "74010528",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "395 х 410 х 85",
+   "article": "74010637",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "395 х 410 х 85",
+   "article": "74010638",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "395 х 410 х 185",
+   "article": "74010463",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "395 х 410 х 185",
+   "article": "74010639",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "395 х 410 х 185",
+   "article": "74010640",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "535 х 410 х 85",
+   "article": "74010019",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "535 х 410 х 85",
+   "article": "74010641",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "535 х 410 х 85",
+   "article": "74010257",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "535 х 410 х 185",
+   "article": "74010018",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "535 х 410 х 185",
+   "article": "74010642",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "535 х 410 х 185",
+   "article": "74010254",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "535 х 410 х 285",
+   "article": "74010076",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "535 х 410 х 285",
+   "article": "74010643",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА МЕЛКОСЕТЧАТАЯ",
+   "size": "535 х 410 х 285",
+   "article": "74010644",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 340 х 85",
+   "article": "74010119",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 340 х 85",
+   "article": "74010453",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 340 х 85",
+   "article": "74010435",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 340 х 85",
+   "article": "74010121",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 340 х 85",
+   "article": "74010455",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 340 х 85",
+   "article": "74010439",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 340 х 181",
+   "article": "74010118",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 340 х 181",
+   "article": "74010452",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 340 х 181",
+   "article": "74010434",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 340 х 181",
+   "article": "74010120",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 340 х 181",
+   "article": "74010454",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 340 х 181",
+   "article": "74010438",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 440 х 85",
+   "article": "74010015",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 440 х 85",
+   "article": "74010449",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 440 х 85",
+   "article": "74010244",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 440 х 85",
+   "article": "74010017",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 440 х 85",
+   "article": "74010451",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 440 х 85",
+   "article": "74010251",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 440 х 181",
+   "article": "74010014",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 440 х 181",
+   "article": "74010448",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "563 х 440 х 181",
+   "article": "74010239",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 440 х 181",
+   "article": "74010016",
+   "color": "white"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 440 х 181",
+   "article": "74010450",
+   "color": "silver"
+  },
+  {
+   "section": "КОРЗИНА ВЫДВИЖНАЯ",
+   "size": "863 х 440 х 181",
+   "article": "74010248",
+   "color": "black"
+  },
+  {
+   "section": "ПЕРЕКЛАДИНА ДЛЯ ВЕШАЛОК",
+   "size": "25 х 520 х 25",
+   "article": "74010219",
+   "color": "chrome"
+  },
+  {
+   "section": "ПЕРЕКЛАДИНА ДЛЯ ВЕШАЛОК",
+   "size": "25 х 640 х 25",
+   "article": "74010029",
+   "color": "chrome"
+  },
+  {
+   "section": "ПЕРЕКЛАДИНА ДЛЯ ВЕШАЛОК",
+   "size": "25 х 940 х 25",
+   "article": "74010030",
+   "color": "chrome"
+  },
+  {
+   "section": "ПЕРЕКЛАДИНА ДЛЯ ВЕШАЛОК",
+   "size": "25 х 1240 х 25",
+   "article": "74010031",
+   "color": "chrome"
+  },
+  {
+   "section": "ПЕРЕКЛАДИНА ДЛЯ ВЕШАЛОК",
+   "size": "25 х 2000 х 25",
+   "article": "74010032",
+   "color": "chrome"
+  },
+  {
+   "section": "КРОНШТЕЙН ДЛЯ ПЕРЕКЛАДИНЫ",
+   "size": "30x30x100",
+   "article": "74010024",
+   "color": "white"
+  },
+  {
+   "section": "КРОНШТЕЙН ДЛЯ ПЕРЕКЛАДИНЫ",
+   "size": "30x30x100",
+   "article": "74010534",
+   "color": "silver"
+  },
+  {
+   "section": "КРОНШТЕЙН ДЛЯ ПЕРЕКЛАДИНЫ",
+   "size": "30x30x100",
+   "article": "74010272",
+   "color": "black"
+  },
+  {
+   "section": "СОЕДИНИТЕЛЬ ДЛЯ ПЕРЕКЛАДИНЫ",
+   "size": "30 х 23 х 23",
+   "article": "74010060",
+   "color": "black"
+  },
+  {
+   "section": "КОМПЛЕКТ ЗАГЛУШЕК ДЛЯ ПЕРЕКЛАДИНЫ",
+   "size": "17 х 25,5 х 17",
+   "article": "74010009",
+   "color": "black"
+  },
+  {
+   "section": "КРЮЧОК УНИВЕРСАЛЬНЫЙ",
+   "size": "75х24,5х20",
+   "article": "74010027",
+   "color": "white"
+  },
+  {
+   "section": "КРЮЧОК УНИВЕРСАЛЬНЫЙ",
+   "size": "75х24,5х20",
+   "article": "74010660",
+   "color": "silver"
+  },
+  {
+   "section": "КРЮЧОК УНИВЕРСАЛЬНЫЙ",
+   "size": "75х24,5х20",
+   "article": "74010279",
+   "color": "black"
+  },
+  {
+   "section": "БРЮЧНИЦА ВЫДВИЖНАЯ",
+   "size": "35 х 600 х 440",
+   "article": "74010001",
+   "color": "white"
+  },
+  {
+   "section": "БРЮЧНИЦА ВЫДВИЖНАЯ",
+   "size": "35 х 600 х 440",
+   "article": "74010503",
+   "color": "silver"
+  },
+  {
+   "section": "БРЮЧНИЦА ВЫДВИЖНАЯ",
+   "size": "35 х 600 х 440",
+   "article": "74010241",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА ДЛЯ ОБУВИ",
+   "size": "603 х 406х77",
+   "article": "74010038",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА ДЛЯ ОБУВИ",
+   "size": "603 х 406х77",
+   "article": "74010532",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА ДЛЯ ОБУВИ",
+   "size": "603 х 406х77",
+   "article": "74010300",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА ДЛЯ ОБУВИ",
+   "size": "903 х 406х77",
+   "article": "74010039",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА ДЛЯ ОБУВИ",
+   "size": "903 х 406х77",
+   "article": "74010592",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА ДЛЯ ОБУВИ",
+   "size": "903 х 406х77",
+   "article": "74010303",
+   "color": "black"
+  },
+  {
+   "section": "ОБУВНИЦА ВЫДВИЖНАЯ ДВУХЯРУСНАЯ",
+   "size": "603 х 440х153",
+   "article": "74010002",
+   "color": "white"
+  },
+  {
+   "section": "ОБУВНИЦА ВЫДВИЖНАЯ ДВУХЯРУСНАЯ",
+   "size": "603 х 440х153",
+   "article": "74010500",
+   "color": "silver"
+  },
+  {
+   "section": "ОБУВНИЦА ВЫДВИЖНАЯ ДВУХЯРУСНАЯ",
+   "size": "603 х 440х153",
+   "article": "74010281",
+   "color": "black"
+  },
+  {
+   "section": "ОБУВНИЦА ВЫДВИЖНАЯ ДВУХЯРУСНАЯ",
+   "size": "903 х 440х153",
+   "article": "74010428",
+   "color": "white"
+  },
+  {
+   "section": "ОБУВНИЦА ВЫДВИЖНАЯ ДВУХЯРУСНАЯ",
+   "size": "903 х 440х153",
+   "article": "74010504",
+   "color": "silver"
+  },
+  {
+   "section": "ОБУВНИЦА ВЫДВИЖНАЯ ДВУХЯРУСНАЯ",
+   "size": "903 х 440х153",
+   "article": "74010506",
+   "color": "black"
+  },
+  {
+   "section": "ТУФЕЛЬНИЦА",
+   "size": "596 х 200 х 85",
+   "article": "74010430",
+   "color": "white"
+  },
+  {
+   "section": "ТУФЕЛЬНИЦА",
+   "size": "596 х 200 х 85",
+   "article": "74010663",
+   "color": "silver"
+  },
+  {
+   "section": "ТУФЕЛЬНИЦА",
+   "size": "596 х 200 х 85",
+   "article": "74010664",
+   "color": "black"
+  },
+  {
+   "section": "ПАНЕЛЬ С КРЮЧКАМИ",
+   "size": "68х600х31",
+   "article": "74010072",
+   "color": "white"
+  },
+  {
+   "section": "ПАНЕЛЬ С КРЮЧКАМИ",
+   "size": "68х600х31",
+   "article": "74010486",
+   "color": "silver"
+  },
+  {
+   "section": "ПАНЕЛЬ С КРЮЧКАМИ",
+   "size": "68х600х31",
+   "article": "74010487",
+   "color": "black"
+  },
+  {
+   "section": "ПАНЕЛЬ С КРЮЧКАМИ",
+   "size": "68х900х31",
+   "article": "74010073",
+   "color": "white"
+  },
+  {
+   "section": "ПАНЕЛЬ С КРЮЧКАМИ",
+   "size": "68х900х31",
+   "article": "74010490",
+   "color": "silver"
+  },
+  {
+   "section": "ПАНЕЛЬ С КРЮЧКАМИ",
+   "size": "68х900х31",
+   "article": "74010491",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА УНИВЕРСАЛЬНАЯ GS",
+   "size": "40 х 310 х 85",
+   "article": "74010054",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА УНИВЕРСАЛЬНАЯ GS",
+   "size": "40 х 310 х 85",
+   "article": "74010627",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА УНИВЕРСАЛЬНАЯ GS",
+   "size": "40 х 310 х 85",
+   "article": "74010628",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА УНИВЕРСАЛЬНАЯ GS",
+   "size": "75х595х175",
+   "article": "74010070",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА УНИВЕРСАЛЬНАЯ GS",
+   "size": "75х595х175",
+   "article": "74010597",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА УНИВЕРСАЛЬНАЯ GS",
+   "size": "75х595х175",
+   "article": "74010598",
+   "color": "black"
+  },
+  {
+   "section": "ПОЛКА УНИВЕРСАЛЬНАЯ GS",
+   "size": "75х895х175",
+   "article": "74010071",
+   "color": "white"
+  },
+  {
+   "section": "ПОЛКА УНИВЕРСАЛЬНАЯ GS",
+   "size": "75х895х175",
+   "article": "74010599",
+   "color": "silver"
+  },
+  {
+   "section": "ПОЛКА УНИВЕРСАЛЬНАЯ GS",
+   "size": "75х895х175",
+   "article": "74010600",
+   "color": "black"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "596 х 160",
+   "article": "74010034",
+   "color": "white"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "596 х 160",
+   "article": "74010132",
+   "color": "silver"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "596 х 160",
+   "article": "74010133",
+   "color": "black"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "596 х 288",
+   "article": "74010035",
+   "color": "white"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "596 х 288",
+   "article": "74010134",
+   "color": "silver"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "596 х 288",
+   "article": "74010135",
+   "color": "black"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "896 х 160",
+   "article": "74010036",
+   "color": "white"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "896 х 160",
+   "article": "74010136",
+   "color": "silver"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "896 х 160",
+   "article": "74010137",
+   "color": "black"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "896 х 288",
+   "article": "74010037",
+   "color": "white"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "896 х 288",
+   "article": "74010138",
+   "color": "silver"
+  },
+  {
+   "section": "ПЕРФОРИРОВАННАЯ ПАНЕЛЬ",
+   "size": "896 х 288",
+   "article": "74010139",
+   "color": "black"
+  },
+  {
+   "section": "МЕТАЛЛИЧЕСКИЙ КРЮЧОК",
+   "size": "5",
+   "article": "74006031",
+   "color": "chrome"
+  },
+  {
+   "section": "МЕТАЛЛИЧЕСКИЙ КРЮЧОК",
+   "size": "8",
+   "article": "74006032",
+   "color": "chrome"
+  },
+  {
+   "section": "ДЕРЖАТЕЛЬ ДЛЯ ИНСТРУМЕНТА",
+   "size": "80x315x30",
+   "article": "74010007",
+   "color": "white"
+  },
+  {
+   "section": "ДЕРЖАТЕЛЬ ДЛЯ ИНСТРУМЕНТА",
+   "size": "80x315x30",
+   "article": "74010472",
+   "color": "silver"
+  },
+  {
+   "section": "ДЕРЖАТЕЛЬ ДЛЯ ИНСТРУМЕНТА",
+   "size": "80x315x30",
+   "article": "74010473",
+   "color": "black"
+  },
+  {
+   "section": "ДЕРЖАТЕЛЬ ДЛЯ КЛЮЧЕЙ",
+   "size": "250x80x3",
+   "article": "74010008",
+   "color": "white"
+  },
+  {
+   "section": "ДЕРЖАТЕЛЬ ДЛЯ КЛЮЧЕЙ",
+   "size": "250x80x3",
+   "article": "74010476",
+   "color": "silver"
+  },
+  {
+   "section": "ДЕРЖАТЕЛЬ ДЛЯ КЛЮЧЕЙ",
+   "size": "250x80x3",
+   "article": "74010477",
+   "color": "black"
+  },
+  {
+   "section": "КОРОТКАЯ",
+   "size": "70 х 278 х 155",
+   "article": "74010053",
+   "color": "white"
+  },
+  {
+   "section": "КОРОТКАЯ",
+   "size": "70 х 278 х 155",
+   "article": "74010498",
+   "color": "silver"
+  },
+  {
+   "section": "КОРОТКАЯ",
+   "size": "70 х 278 х 155",
+   "article": "74010499",
+   "color": "black"
+  },
+  {
+   "section": "СРЕДНЯЯ",
+   "size": "70 х 375 х 155",
+   "article": "74010051",
+   "color": "white"
+  },
+  {
+   "section": "СРЕДНЯЯ",
+   "size": "70 х 375 х 155",
+   "article": "74010468",
+   "color": "silver"
+  },
+  {
+   "section": "СРЕДНЯЯ",
+   "size": "70 х 375 х 155",
+   "article": "74010469",
+   "color": "black"
+  },
+  {
+   "section": "ДЛИННАЯ",
+   "size": "70 х 578 х 155",
+   "article": "74010052",
+   "color": "white"
+  },
+  {
+   "section": "ДЛИННАЯ",
+   "size": "70 х 578 х 155",
+   "article": "74010494",
+   "color": "silver"
+  },
+  {
+   "section": "ДЛИННАЯ",
+   "size": "70 х 578 х 155",
+   "article": "74010495",
+   "color": "black"
+  },
+  {
+   "section": "ПАНЕЛЬ С КРЮЧКАМИ",
+   "size": "20x310x55",
+   "article": "74010028",
+   "color": "white"
+  },
+  {
+   "section": "ПАНЕЛЬ С КРЮЧКАМИ",
+   "size": "20x310x55",
+   "article": "74010646",
+   "color": "silver"
+  },
+  {
+   "section": "ПАНЕЛЬ С КРЮЧКАМИ",
+   "size": "20x310x55",
+   "article": "74010284",
+   "color": "black"
+  },
+  {
+   "section": "КОРЗИНА ТЕКСТИЛЬНАЯ",
+   "size": "300x300х300",
+   "article": "74010462",
+   "color": null
+  },
+  {
+   "section": "КОРЗИНА ТЕКСТИЛЬНАЯ",
+   "size": "300x300х150",
+   "article": "74010571",
+   "color": null
+  },
+  {
+   "section": "КРЫШКА",
+   "size": "300x300х20",
+   "article": "74010572",
+   "color": null
+  },
+  {
+   "section": "НАКЛАДКА НА ПОЛКУ",
+   "size": "465х37х32",
+   "article": "74010541",
+   "color": null
+  },
+  {
+   "section": "НАКЛАДКА НА ПОЛКУ",
+   "size": "465х37х32",
+   "article": "74010555",
+   "color": null
+  },
+  {
+   "section": "НАКЛАДКА НА ПОЛКУ",
+   "size": "465х37х32",
+   "article": "74010556",
+   "color": null
+  },
+  {
+   "section": "НАКЛАДКА НА ПОЛКУ",
+   "size": "605х37х32",
+   "article": "74010623",
+   "color": null
+  },
+  {
+   "section": "НАКЛАДКА НА ПОЛКУ",
+   "size": "605х37х32",
+   "article": "74010624",
+   "color": null
+  },
+  {
+   "section": "НАКЛАДКА НА ПОЛКУ",
+   "size": "605х37х32",
+   "article": "74010625",
+   "color": null
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ",
+   "size": "460х440х32",
+   "article": "74010620",
+   "color": null
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ",
+   "size": "460х440х32",
+   "article": "74010621",
+   "color": null
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ",
+   "size": "460х440х32",
+   "article": "74010622",
+   "color": null
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ",
+   "size": "600х440х32",
+   "article": "74010543",
+   "color": null
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ",
+   "size": "600х440х32",
+   "article": "74010559",
+   "color": null
+  },
+  {
+   "section": "РАМА ВЫДВИЖНАЯ",
+   "size": "600х440х32",
+   "article": "74010560",
+   "color": null
+  },
+  {
+   "section": "ПОЛКА ДЕКОР",
+   "size": "460х440х32",
+   "article": "74010617",
+   "color": null
+  },
+  {
+   "section": "ПОЛКА ДЕКОР",
+   "size": "460х440х32",
+   "article": "74010618",
+   "color": null
+  },
+  {
+   "section": "ПОЛКА ДЕКОР",
+   "size": "460х440х32",
+   "article": "74010619",
+   "color": null
+  },
+  {
+   "section": "ПОЛКА ДЕКОР",
+   "size": "600х440х32",
+   "article": "74010542",
+   "color": null
+  },
+  {
+   "section": "ПОЛКА ДЕКОР",
+   "size": "600х440х32",
+   "article": "74010557",
+   "color": null
+  },
+  {
+   "section": "ПОЛКА ДЕКОР",
+   "size": "600х440х32",
+   "article": "74010558",
+   "color": null
+  },
+  {
+   "section": "БРЮЧНИЦА ВЫДВИЖНАЯ",
+   "size": "600х440х32",
+   "article": "74010544",
+   "color": null
+  },
+  {
+   "section": "БРЮЧНИЦА ВЫДВИЖНАЯ",
+   "size": "600х440х32",
+   "article": "74010561",
+   "color": null
+  },
+  {
+   "section": "БРЮЧНИЦА ВЫДВИЖНАЯ",
+   "size": "600х440х32",
+   "article": "74010562",
+   "color": null
+  },
+  {
+   "section": "РАМА ДЛЯ ВЫДВИЖНОЙ ОБУВНИЦЫ",
+   "size": "600х440х32",
+   "article": "74010573",
+   "color": null
+  },
+  {
+   "section": "РАМА ДЛЯ ВЫДВИЖНОЙ ОБУВНИЦЫ",
+   "size": "600х440х32",
+   "article": "74010574",
+   "color": null
+  },
+  {
+   "section": "РАМА ДЛЯ ВЫДВИЖНОЙ ОБУВНИЦЫ",
+   "size": "600х440х32",
+   "article": "74010575",
+   "color": null
+  },
+  {
+   "section": "ОБУВНИЦА ДЛЯ ДЕКОРА",
+   "size": "540х200х150",
+   "article": "74010586",
+   "color": "white"
+  },
+  {
+   "section": "ОБУВНИЦА ДЛЯ ДЕКОРА",
+   "size": "540х200х150",
+   "article": "74010589",
+   "color": "silver"
+  },
+  {
+   "section": "ОБУВНИЦА ДЛЯ ДЕКОРА",
+   "size": "540х200х150",
+   "article": "74010590",
+   "color": "black"
+  }
+ ],
+ "items": [
+  {
+   "key": "rail",
+   "size": 520,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010425",
+   "titan_name": "Рельс несущий 520x10x45",
+   "app_bom_name": "Рельс несущий 520 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 520,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010464",
+   "titan_name": "Рельс несущий 520x10x45",
+   "app_bom_name": "Рельс несущий 520 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 520,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010465",
+   "titan_name": "Рельс несущий 520x10x45",
+   "app_bom_name": "Рельс несущий 520 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 700,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010057",
+   "titan_name": "Рельс несущий 700x10x45",
+   "app_bom_name": "Рельс несущий 700 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 700,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010329",
+   "titan_name": "Рельс несущий 700x10x45",
+   "app_bom_name": "Рельс несущий 700 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 700,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010330",
+   "titan_name": "Рельс несущий 700x10x45",
+   "app_bom_name": "Рельс несущий 700 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 1000,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010058",
+   "titan_name": "Рельс несущий 1000x10x45",
+   "app_bom_name": "Рельс несущий 1000 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 1000,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010333",
+   "titan_name": "Рельс несущий 1000x10x45",
+   "app_bom_name": "Рельс несущий 1000 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 1000,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010334",
+   "titan_name": "Рельс несущий 1000x10x45",
+   "app_bom_name": "Рельс несущий 1000 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 1260,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010078",
+   "titan_name": "Рельс несущий 1260x10x45",
+   "app_bom_name": "Рельс несущий 1260 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 1260,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010460",
+   "titan_name": "Рельс несущий 1260x10x45",
+   "app_bom_name": "Рельс несущий 1260 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 1260,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010461",
+   "titan_name": "Рельс несущий 1260x10x45",
+   "app_bom_name": "Рельс несущий 1260 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 1560,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010059",
+   "titan_name": "Рельс несущий 1560x10x45",
+   "app_bom_name": "Рельс несущий 1560 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 1560,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010337",
+   "titan_name": "Рельс несущий 1560x10x45",
+   "app_bom_name": "Рельс несущий 1560 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rail",
+   "size": 1560,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010338",
+   "titan_name": "Рельс несущий 1560x10x45",
+   "app_bom_name": "Рельс несущий 1560 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 512,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010065",
+   "titan_name": "Стойка 512х27х23",
+   "app_bom_name": "Стойка 512 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 512,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010142",
+   "titan_name": "Стойка 512х27х23",
+   "app_bom_name": "Стойка 512 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 512,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010143",
+   "titan_name": "Стойка 512х27х23",
+   "app_bom_name": "Стойка 512 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1025,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010061",
+   "titan_name": "Стойка 1025х27х23",
+   "app_bom_name": "Стойка 1025 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1025,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010144",
+   "titan_name": "Стойка 1025х27х23",
+   "app_bom_name": "Стойка 1025 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1025,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010145",
+   "titan_name": "Стойка 1025х27х23",
+   "app_bom_name": "Стойка 1025 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1156,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010062",
+   "titan_name": "Стойка 1156х27х23",
+   "app_bom_name": "Стойка 1156 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1156,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010149",
+   "titan_name": "Стойка 1156х27х23",
+   "app_bom_name": "Стойка 1156 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1156,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010150",
+   "titan_name": "Стойка 1156х27х23",
+   "app_bom_name": "Стойка 1156 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1536,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010063",
+   "titan_name": "Стойка 1536х27х23",
+   "app_bom_name": "Стойка 1536 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1536,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010351",
+   "titan_name": "Стойка 1536х27х23",
+   "app_bom_name": "Стойка 1536 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1536,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010352",
+   "titan_name": "Стойка 1536х27х23",
+   "app_bom_name": "Стойка 1536 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1920,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010064",
+   "titan_name": "Стойка 1920х27х23",
+   "app_bom_name": "Стойка 1920 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1920,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010356",
+   "titan_name": "Стойка 1920х27х23",
+   "app_bom_name": "Стойка 1920 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 1920,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010357",
+   "titan_name": "Стойка 1920х27х23",
+   "app_bom_name": "Стойка 1920 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 2304,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010220",
+   "titan_name": "Стойка 2304х27х23",
+   "app_bom_name": "Стойка 2304 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 2304,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010526",
+   "titan_name": "Стойка 2304х27х23",
+   "app_bom_name": "Стойка 2304 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post",
+   "size": 2304,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010527",
+   "titan_name": "Стойка 2304х27х23",
+   "app_bom_name": "Стойка 2304 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket",
+   "size": 335,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010025",
+   "titan_name": "Кронштейн 335",
+   "app_bom_name": "Кронштейн 335 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket",
+   "size": 335,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010479",
+   "titan_name": "Кронштейн 335",
+   "app_bom_name": "Кронштейн 335 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket",
+   "size": 335,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010275",
+   "titan_name": "Кронштейн 335",
+   "app_bom_name": "Кронштейн 335 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket",
+   "size": 435,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010026",
+   "titan_name": "Кронштейн 435",
+   "app_bom_name": "Кронштейн 435 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket",
+   "size": 435,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010147",
+   "titan_name": "Кронштейн 435",
+   "app_bom_name": "Кронштейн 435 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket",
+   "size": 435,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010148",
+   "titan_name": "Кронштейн 435",
+   "app_bom_name": "Кронштейн 435 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket",
+   "size": 535,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010115",
+   "titan_name": "Кронштейн 535",
+   "app_bom_name": "Кронштейн 535 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket",
+   "size": 535,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010140",
+   "titan_name": "Кронштейн 535",
+   "app_bom_name": "Кронштейн 535 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket",
+   "size": 535,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010141",
+   "titan_name": "Кронштейн 535",
+   "app_bom_name": "Кронштейн 535 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "mesh",
+   "size": "463x306",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010042",
+   "titan_name": "Сетчатая полка 463х306",
+   "app_bom_name": "Полка сетчатая 463x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "463x306",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010189",
+   "titan_name": "Сетчатая полка 463х306",
+   "app_bom_name": "Полка сетчатая 463x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "463x306",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010190",
+   "titan_name": "Сетчатая полка 463х306",
+   "app_bom_name": "Полка сетчатая 463x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "463x406",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010043",
+   "titan_name": "Сетчатая полка 463х406",
+   "app_bom_name": "Полка сетчатая 463x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "463x406",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010197",
+   "titan_name": "Сетчатая полка 463х406",
+   "app_bom_name": "Полка сетчатая 463x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "463x406",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010198",
+   "titan_name": "Сетчатая полка 463х406",
+   "app_bom_name": "Полка сетчатая 463x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "463x506",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка сетчатая 463x506",
+   "source": null,
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "463x506",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка сетчатая 463x506",
+   "source": null,
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "463x506",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка сетчатая 463x506",
+   "source": null,
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "603x306",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010044",
+   "titan_name": "Сетчатая полка 603х306",
+   "app_bom_name": "Полка сетчатая 603x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "603x306",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010191",
+   "titan_name": "Сетчатая полка 603х306",
+   "app_bom_name": "Полка сетчатая 603x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "603x306",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010192",
+   "titan_name": "Сетчатая полка 603х306",
+   "app_bom_name": "Полка сетчатая 603x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "603x406",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010045",
+   "titan_name": "Сетчатая полка 603х406",
+   "app_bom_name": "Полка сетчатая 603x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "603x406",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010199",
+   "titan_name": "Сетчатая полка 603х406",
+   "app_bom_name": "Полка сетчатая 603x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "603x406",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010200",
+   "titan_name": "Сетчатая полка 603х406",
+   "app_bom_name": "Полка сетчатая 603x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "603x506",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010046",
+   "titan_name": "Сетчатая полка 603х506",
+   "app_bom_name": "Полка сетчатая 603x506",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "603x506",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010205",
+   "titan_name": "Сетчатая полка 603х506",
+   "app_bom_name": "Полка сетчатая 603x506",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "603x506",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010206",
+   "titan_name": "Сетчатая полка 603х506",
+   "app_bom_name": "Полка сетчатая 603x506",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "903x306",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010047",
+   "titan_name": "Сетчатая полка 903х306",
+   "app_bom_name": "Полка сетчатая 903x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "903x306",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010193",
+   "titan_name": "Сетчатая полка 903х306",
+   "app_bom_name": "Полка сетчатая 903x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "903x306",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010194",
+   "titan_name": "Сетчатая полка 903х306",
+   "app_bom_name": "Полка сетчатая 903x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "903x406",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010048",
+   "titan_name": "Сетчатая полка 903х406",
+   "app_bom_name": "Полка сетчатая 903x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "903x406",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010201",
+   "titan_name": "Сетчатая полка 903х406",
+   "app_bom_name": "Полка сетчатая 903x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "903x406",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010202",
+   "titan_name": "Сетчатая полка 903х406",
+   "app_bom_name": "Полка сетчатая 903x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "903x506",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010117",
+   "titan_name": "Сетчатая полка 903х506",
+   "app_bom_name": "Полка сетчатая 903x506",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "903x506",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010207",
+   "titan_name": "Сетчатая полка 903х506",
+   "app_bom_name": "Полка сетчатая 903x506",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "903x506",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010208",
+   "titan_name": "Сетчатая полка 903х506",
+   "app_bom_name": "Полка сетчатая 903x506",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "1203x306",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010049",
+   "titan_name": "Сетчатая полка 1203х306",
+   "app_bom_name": "Полка сетчатая 1203x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "1203x306",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010195",
+   "titan_name": "Сетчатая полка 1203х306",
+   "app_bom_name": "Полка сетчатая 1203x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "1203x306",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010196",
+   "titan_name": "Сетчатая полка 1203х306",
+   "app_bom_name": "Полка сетчатая 1203x306",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "1203x406",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010050",
+   "titan_name": "Сетчатая полка 1203х406",
+   "app_bom_name": "Полка сетчатая 1203x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "1203x406",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010203",
+   "titan_name": "Сетчатая полка 1203х406",
+   "app_bom_name": "Полка сетчатая 1203x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "1203x406",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010204",
+   "titan_name": "Сетчатая полка 1203х406",
+   "app_bom_name": "Полка сетчатая 1203x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "1203x506",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка сетчатая 1203x506",
+   "source": null,
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "1203x506",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка сетчатая 1203x506",
+   "source": null,
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "mesh",
+   "size": "1203x506",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка сетчатая 1203x506",
+   "source": null,
+   "note": "нет такого размера в каталоге"
+  },
+  {
+   "key": "metal",
+   "size": "597x327",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010040",
+   "titan_name": "Металлическая полка 597х327",
+   "app_bom_name": "Полка металлическая 597x327",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "metal",
+   "size": "597x327",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010482",
+   "titan_name": "Металлическая полка 597х327",
+   "app_bom_name": "Полка металлическая 597x327",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "metal",
+   "size": "597x327",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010305",
+   "titan_name": "Металлическая полка 597х327",
+   "app_bom_name": "Полка металлическая 597x327",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "metal",
+   "size": "597x427",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010041",
+   "titan_name": "Металлическая полка 597х427",
+   "app_bom_name": "Полка металлическая 597x427",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "metal",
+   "size": "597x427",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010483",
+   "titan_name": "Металлическая полка 597х427",
+   "app_bom_name": "Полка металлическая 597x427",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "metal",
+   "size": "597x427",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010306",
+   "titan_name": "Металлическая полка 597х427",
+   "app_bom_name": "Полка металлическая 597x427",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "446x330",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010126",
+   "titan_name": "Полка лдсп 446х330",
+   "app_bom_name": "Полка ЛДСП 446x330",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "446x330",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010673",
+   "titan_name": "Полка лдсп 446х330",
+   "app_bom_name": "Полка ЛДСП 446x330",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "446x330",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010674",
+   "titan_name": "Полка лдсп 446х330",
+   "app_bom_name": "Полка ЛДСП 446x330",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "446x430",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010127",
+   "titan_name": "Полка лдсп 446х430",
+   "app_bom_name": "Полка ЛДСП 446x430",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "446x430",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010675",
+   "titan_name": "Полка лдсп 446х430",
+   "app_bom_name": "Полка ЛДСП 446x430",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "446x430",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010676",
+   "titan_name": "Полка лдсп 446х430",
+   "app_bom_name": "Полка ЛДСП 446x430",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "587x330",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010122",
+   "titan_name": "Полка лдсп 587х330",
+   "app_bom_name": "Полка ЛДСП 587x330",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "587x330",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010677",
+   "titan_name": "Полка лдсп 587х330",
+   "app_bom_name": "Полка ЛДСП 587x330",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "587x330",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010678",
+   "titan_name": "Полка лдсп 587х330",
+   "app_bom_name": "Полка ЛДСП 587x330",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "587x430",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010124",
+   "titan_name": "Полка лдсп 587х430",
+   "app_bom_name": "Полка ЛДСП 587x430",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "587x430",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010681",
+   "titan_name": "Полка лдсп 587х430",
+   "app_bom_name": "Полка ЛДСП 587x430",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "587x430",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010682",
+   "titan_name": "Полка лдсп 587х430",
+   "app_bom_name": "Полка ЛДСП 587x430",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "887x330",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010123",
+   "titan_name": "Полка лдсп 887х330",
+   "app_bom_name": "Полка ЛДСП 887x330",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "887x330",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010679",
+   "titan_name": "Полка лдсп 887х330",
+   "app_bom_name": "Полка ЛДСП 887x330",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "887x330",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010680",
+   "titan_name": "Полка лдсп 887х330",
+   "app_bom_name": "Полка ЛДСП 887x330",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "887x430",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010125",
+   "titan_name": "Полка лдсп 887х430",
+   "app_bom_name": "Полка ЛДСП 887x430",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "887x430",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010683",
+   "titan_name": "Полка лдсп 887х430",
+   "app_bom_name": "Полка ЛДСП 887x430",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp",
+   "size": "887x430",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010684",
+   "titan_name": "Полка лдсп 887х430",
+   "app_bom_name": "Полка ЛДСП 887x430",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp_mount",
+   "size": 330,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010010",
+   "titan_name": "Комплект крепления полки лдсп 30х310х16",
+   "app_bom_name": "Комплект крепления ЛДСП 330 (в BOM приложения пока не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp_mount",
+   "size": 330,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010653",
+   "titan_name": "Комплект крепления полки лдсп 30х310х16",
+   "app_bom_name": "Комплект крепления ЛДСП 330 (в BOM приложения пока не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp_mount",
+   "size": 330,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010654",
+   "titan_name": "Комплект крепления полки лдсп 30х310х16",
+   "app_bom_name": "Комплект крепления ЛДСП 330 (в BOM приложения пока не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp_mount",
+   "size": 430,
+   "color": "white",
+   "ral": "9016",
+   "article": "74010011",
+   "titan_name": "Комплект крепления полки лдсп 30х410х16",
+   "app_bom_name": "Комплект крепления ЛДСП 430 (в BOM приложения пока не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp_mount",
+   "size": 430,
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010657",
+   "titan_name": "Комплект крепления полки лдсп 30х410х16",
+   "app_bom_name": "Комплект крепления ЛДСП 430 (в BOM приложения пока не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "ldsp_mount",
+   "size": 430,
+   "color": "black",
+   "ral": "9005",
+   "article": "74010658",
+   "titan_name": "Комплект крепления полки лдсп 30х410х16",
+   "app_bom_name": "Комплект крепления ЛДСП 430 (в BOM приложения пока не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010209",
+   "titan_name": "Корзина стационарная 603х340х85",
+   "app_bom_name": "Корзина сетчатая стационарная 603x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010514",
+   "titan_name": "Корзина стационарная 603х340х85",
+   "app_bom_name": "Корзина сетчатая стационарная 603x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010515",
+   "titan_name": "Корзина стационарная 603х340х85",
+   "app_bom_name": "Корзина сетчатая стационарная 603x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010022",
+   "titan_name": "Корзина стационарная 603х440х85",
+   "app_bom_name": "Корзина сетчатая стационарная 603x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010523",
+   "titan_name": "Корзина стационарная 603х440х85",
+   "app_bom_name": "Корзина сетчатая стационарная 603x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010266",
+   "titan_name": "Корзина стационарная 603х440х85",
+   "app_bom_name": "Корзина сетчатая стационарная 603x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 603x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 603x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010210",
+   "titan_name": "Корзина стационарная 903х340х85",
+   "app_bom_name": "Корзина сетчатая стационарная 903x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010518",
+   "titan_name": "Корзина стационарная 903х340х85",
+   "app_bom_name": "Корзина сетчатая стационарная 903x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010519",
+   "titan_name": "Корзина стационарная 903х340х85",
+   "app_bom_name": "Корзина сетчатая стационарная 903x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010023",
+   "titan_name": "Корзина стационарная 903х440х85",
+   "app_bom_name": "Корзина сетчатая стационарная 903x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010522",
+   "titan_name": "Корзина стационарная 903х440х85",
+   "app_bom_name": "Корзина сетчатая стационарная 903x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010269",
+   "titan_name": "Корзина стационарная 903х440х85",
+   "app_bom_name": "Корзина сетчатая стационарная 903x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "сетчатая 903x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая стационарная 903x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 603x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 603x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "мелкосетчатая 903x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая стационарная 903x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 603x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 603x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "basket",
+   "size": "перфорированная 903x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная стационарная 903x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: стационарная корзина только крупная сетка, высота 85"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010119",
+   "titan_name": "Корзина выдвижная 563х340х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010453",
+   "titan_name": "Корзина выдвижная 563х340х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010435",
+   "titan_name": "Корзина выдвижная 563х340х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010118",
+   "titan_name": "Корзина выдвижная 563х340х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x340x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010452",
+   "titan_name": "Корзина выдвижная 563х340х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x340x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010434",
+   "titan_name": "Корзина выдвижная 563х340х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x340x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 563x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 563x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 563x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010015",
+   "titan_name": "Корзина выдвижная 563х440х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010449",
+   "titan_name": "Корзина выдвижная 563х440х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010244",
+   "titan_name": "Корзина выдвижная 563х440х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010014",
+   "titan_name": "Корзина выдвижная 563х440х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x440x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010448",
+   "titan_name": "Корзина выдвижная 563х440х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x440x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010239",
+   "titan_name": "Корзина выдвижная 563х440х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 563x440x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 563x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 563x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 563x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 563x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010121",
+   "titan_name": "Корзина выдвижная 863х340х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010455",
+   "titan_name": "Корзина выдвижная 863х340х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010439",
+   "titan_name": "Корзина выдвижная 863х340х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x340x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010120",
+   "titan_name": "Корзина выдвижная 863х340х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x340x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010454",
+   "titan_name": "Корзина выдвижная 863х340х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x340x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010438",
+   "titan_name": "Корзина выдвижная 863х340х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x340x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 863x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 863x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 863x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010017",
+   "titan_name": "Корзина выдвижная 863х440х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010451",
+   "titan_name": "Корзина выдвижная 863х440х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010251",
+   "titan_name": "Корзина выдвижная 863х440х85",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x440x85",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010016",
+   "titan_name": "Корзина выдвижная 863х440х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x440x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010450",
+   "titan_name": "Корзина выдвижная 863х440х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x440x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010248",
+   "titan_name": "Корзина выдвижная 863х440х181",
+   "app_bom_name": "Корзина сетчатая выдвижная 863x440x185",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге высота 181, не 185"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 863x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 863x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "сетчатая 863x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина сетчатая выдвижная 863x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 563x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 563x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "мелкосетчатая 863x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина мелкосетчатая выдвижная 863x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 563x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 563x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x340x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x340x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x340x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x340x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x340x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x340x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x340x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x340x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x340x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x340x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x340x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x340x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x440x85",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x440x85",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x440x85",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x440x85",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x440x185",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x440x185",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x440x185",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x440x185",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x440x288",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x440x288",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "pull",
+   "size": "перфорированная 863x440x288",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Корзина перфорированная выдвижная 863x440x288",
+   "source": null,
+   "note": "нет в каталоге 2024: выдвижная крупная сетка только 85/181; мелкосетчатые — 395/535×410 (85/185/285) в выдвижной раме 463/603, перфорированных нет"
+  },
+  {
+   "key": "trouser",
+   "size": "463x440",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Брючница выдвижная 463x440x45",
+   "source": null,
+   "note": "брючницы 463 в каталоге 2024 нет"
+  },
+  {
+   "key": "trouser",
+   "size": "463x440",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Брючница выдвижная 463x440x45",
+   "source": null,
+   "note": "брючницы 463 в каталоге 2024 нет"
+  },
+  {
+   "key": "trouser",
+   "size": "463x440",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Брючница выдвижная 463x440x45",
+   "source": null,
+   "note": "брючницы 463 в каталоге 2024 нет"
+  },
+  {
+   "key": "trouser",
+   "size": "603x440",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010001",
+   "titan_name": "Брючница выдвижная 35х600х440",
+   "app_bom_name": "Брючница выдвижная 603x440x45",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге только 600×440×35"
+  },
+  {
+   "key": "trouser",
+   "size": "603x440",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010503",
+   "titan_name": "Брючница выдвижная 35х600х440",
+   "app_bom_name": "Брючница выдвижная 603x440x45",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге только 600×440×35"
+  },
+  {
+   "key": "trouser",
+   "size": "603x440",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010241",
+   "titan_name": "Брючница выдвижная 35х600х440",
+   "app_bom_name": "Брючница выдвижная 603x440x45",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге только 600×440×35"
+  },
+  {
+   "key": "shoe",
+   "size": "603x306",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка обувная сетчатая 603x306",
+   "source": null,
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "603x306",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка обувная сетчатая 603x306",
+   "source": null,
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "603x306",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка обувная сетчатая 603x306",
+   "source": null,
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "603x406",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010038",
+   "titan_name": "Полка для обуви 603х406х77",
+   "app_bom_name": "Полка обувная сетчатая 603x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "603x406",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010532",
+   "titan_name": "Полка для обуви 603х406х77",
+   "app_bom_name": "Полка обувная сетчатая 603x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "603x406",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010300",
+   "titan_name": "Полка для обуви 603х406х77",
+   "app_bom_name": "Полка обувная сетчатая 603x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "903x306",
+   "color": "white",
+   "ral": "9016",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка обувная сетчатая 903x306",
+   "source": null,
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "903x306",
+   "color": "silver",
+   "ral": "9006",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка обувная сетчатая 903x306",
+   "source": null,
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "903x306",
+   "color": "black",
+   "ral": "9005",
+   "article": null,
+   "titan_name": null,
+   "app_bom_name": "Полка обувная сетчатая 903x306",
+   "source": null,
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "903x406",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010039",
+   "titan_name": "Полка для обуви 903х406х77",
+   "app_bom_name": "Полка обувная сетчатая 903x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "903x406",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010592",
+   "titan_name": "Полка для обуви 903х406х77",
+   "app_bom_name": "Полка обувная сетчатая 903x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "shoe",
+   "size": "903x406",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010303",
+   "titan_name": "Полка для обуви 903х406х77",
+   "app_bom_name": "Полка обувная сетчатая 903x406",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "в каталоге 2024 только глубина 406"
+  },
+  {
+   "key": "rod",
+   "size": 520,
+   "color": "chrome",
+   "ral": null,
+   "article": "74010219",
+   "titan_name": "Перекладина для вешалок 25х520х25",
+   "app_bom_name": "Перекладина 520 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "только хром; в цвет системы артикулов нет"
+  },
+  {
+   "key": "rod",
+   "size": 640,
+   "color": "chrome",
+   "ral": null,
+   "article": "74010029",
+   "titan_name": "Перекладина для вешалок 25х640х25",
+   "app_bom_name": "Перекладина 640 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "только хром; в цвет системы артикулов нет"
+  },
+  {
+   "key": "rod",
+   "size": 940,
+   "color": "chrome",
+   "ral": null,
+   "article": "74010030",
+   "titan_name": "Перекладина для вешалок 25х940х25",
+   "app_bom_name": "Перекладина 940 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "только хром; в цвет системы артикулов нет"
+  },
+  {
+   "key": "rod",
+   "size": 1240,
+   "color": "chrome",
+   "ral": null,
+   "article": "74010031",
+   "titan_name": "Перекладина для вешалок 25х1240х25",
+   "app_bom_name": "Перекладина 1240 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "только хром; в цвет системы артикулов нет"
+  },
+  {
+   "key": "rod",
+   "size": 2000,
+   "color": "chrome",
+   "ral": null,
+   "article": "74010032",
+   "titan_name": "Перекладина для вешалок 25х2000х25",
+   "app_bom_name": "Перекладина 2000 мм",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "только хром; в цвет системы артикулов нет"
+  },
+  {
+   "key": "rod_holder",
+   "size": "30x30x100",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010024",
+   "titan_name": "Кронштейн для перекладины 30x30x100",
+   "app_bom_name": "Кронштейн для перекладины 30×30×100",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rod_holder",
+   "size": "30x30x100",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010534",
+   "titan_name": "Кронштейн для перекладины 30x30x100",
+   "app_bom_name": "Кронштейн для перекладины 30×30×100",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rod_holder",
+   "size": "30x30x100",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010272",
+   "titan_name": "Кронштейн для перекладины 30x30x100",
+   "app_bom_name": "Кронштейн для перекладины 30×30×100",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "rod_cap",
+   "size": "17x25.5x17",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010009",
+   "titan_name": "Комплект заглушек для перекладины 17 х 25,5 х 17",
+   "app_bom_name": "Заглушка перекладины 15×23×23",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "только черный, продаётся комплектом (пара) — в BOM 2 шт = 1 комплект"
+  },
+  {
+   "key": "rod_joint",
+   "size": "30x23x23",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010060",
+   "titan_name": "Соединитель для перекладины 30 х 23 х 23",
+   "app_bom_name": "Соединитель перекладины (в BOM не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": "только черный"
+  },
+  {
+   "key": "post_adapter",
+   "size": "112x12x12",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010033",
+   "titan_name": "Переходник для стойки 112х12х12",
+   "app_bom_name": "Переходник для стойки (в BOM не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post_adapter",
+   "size": "112x12x12",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010510",
+   "titan_name": "Переходник для стойки 112х12х12",
+   "app_bom_name": "Переходник для стойки (в BOM не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "post_adapter",
+   "size": "112x12x12",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010511",
+   "titan_name": "Переходник для стойки 112х12х12",
+   "app_bom_name": "Переходник для стойки (в BOM не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket_cover",
+   "size": "17x8x420",
+   "color": "white",
+   "ral": "9016",
+   "article": "74010426",
+   "titan_name": "Накладка для кронштейна 17х8х420",
+   "app_bom_name": "Накладка для кронштейна (в BOM не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket_cover",
+   "size": "17x8x420",
+   "color": "silver",
+   "ral": "9006",
+   "article": "74010649",
+   "titan_name": "Накладка для кронштейна 17х8х420",
+   "app_bom_name": "Накладка для кронштейна (в BOM не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  },
+  {
+   "key": "bracket_cover",
+   "size": "17x8x420",
+   "color": "black",
+   "ral": "9005",
+   "article": "74010650",
+   "titan_name": "Накладка для кронштейна 17х8х420",
+   "app_bom_name": "Накладка для кронштейна (в BOM не считается)",
+   "source": "https://www.titan-gs.by/files/Garderob_catalog_2024.pdf",
+   "note": null
+  }
+ ]
+}
