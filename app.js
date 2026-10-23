@@ -69,7 +69,7 @@ function setTemplate(t) {
   if (t === 'l23') { S.layout = 'L'; S.walls[0].sections = [A(), B()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[1].sections = [B(), D()]; }
   if (t === 'zero') { S.layout = 'straight'; S.walls[0].sections = [{ w: 90, items: [] }, { w: 90, items: [] }]; }
   cur = { w: 0, s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); // templates never move the camera (only Сброс / Ракурс)
-  if (['p2', 'p3', 'p6', 'zero', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? (S.layout === 'Lr' ? -1 : 1) * Math.PI / 4 : 0; orb.snapAz = false; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) { orb.R *= 1.12; orb.h = orb.T.y + (orb.h - orb.T.y) * 1.12; } applyCam(); } // straight templates: frontal view
+  if (['p2', 'p3', 'p6', 'zero', 'l23'].includes(t) && orb.on) { lastCam = 'nice'; window.__userCam = false; camTo('nice'); } // v11x: presets = the exact page-load camera
 }
 function cardPreset() {
   const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
@@ -887,7 +887,7 @@ function labelSprite(text, mode) {
   g.fillStyle = white ? '#ffffff' : '#1e1e1e'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, 32);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true, toneMapped: false, sizeAttenuation: false }));
-  /* about 17 css px tall at any zoom */ const h = 2 * Math.tan(camera.fov * Math.PI / 360) * ((view.clientHeight || 600) < 700 ? 14 : 16) / Math.max(300, view.clientHeight || 600); sp.scale.set(h * w / 60 * (camera.userData.ortho && !camera.userData.noOrtho ? camera.userData.oD : 1), h * (camera.userData.ortho && !camera.userData.noOrtho ? camera.userData.oD : 1), 1); sp.renderOrder = 10;
+  /* about 17 css px tall at any zoom */ const h = 2 * Math.tan(camera.fov * Math.PI / 360) * ((view.clientHeight || 600) < 700 ? 14 : 16) / Math.max(300, view.clientHeight || 600); sp.scale.set(h * w / 60 * 1, h * 1, 1); sp.renderOrder = 10;
   // h: above the line; vL / vR: vertical text left / right of a vertical line; tL / tR: tag anchored at its left / right bottom corner
   if (mode === 'vL') { sp.center.set(0.5, 0); sp.material.rotation = Math.PI / 2; } else if (mode === 'vR') { sp.center.set(0.5, 1); sp.material.rotation = Math.PI / 2; } else if (mode === 'tL') sp.center.set(0, 0); else if (mode === 'tR') sp.center.set(1, 0); else sp.center.set(0.5, 0);
   return sp;
@@ -1060,20 +1060,9 @@ function applyCam(cam = camera) {
   o.h = Math.max(0.15, Math.min(o.T.y + o.R * 0.75, Math.max(o.h, o.T.y - o.R * 0.6)));
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
-  if (window.FSLAB) window.FSLAB.visible = true; cam.userData.ortho = false;
+  if (window.FSLAB) window.FSLAB.visible = true;
   const yN = (o.T.y - o.h) / (o.R * Math.tan(cam.fov * Math.PI / 360));
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
-}
-function ortho(cam, x, y, z, T, D) {
-  cam.position.set(x, y, z); cam.up.set(0, 1, 0); cam.lookAt(T); cam.clearViewOffset(); cam.updateMatrixWorld();
-  if (window.FSLAB) window.FSLAB.visible = y > 0.01; const ud = cam.userData; ud.ortho = true; ud.oD = D; cam.updateProjectionMatrix();
-}
-{ const up0 = camera.updateProjectionMatrix.bind(camera);
-  camera.updateProjectionMatrix = function () { const ud = this.userData;
-    if (!ud.ortho || ud.noOrtho) { this.isPerspectiveCamera = true; this.isOrthographicCamera = false; return up0(); }
-    const hh = ud.oD * Math.tan(this.fov * Math.PI / 360) / (this.zoom || 1), hw = hh * this.aspect;
-    this.near = 0.05; this.far = ud.oD + 160; this.isPerspectiveCamera = false; this.isOrthographicCamera = true;
-    this.projectionMatrix.makeOrthographic(-hw, hw, hh, -hh, this.near, this.far); this.projectionMatrixInverse.copy(this.projectionMatrix).invert(); };
 }
 function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return Math.max(0.8, Math.min(1.6, Math.max(sz.x, sz.y) * 0.35)); } catch (e) { return 0.8; } }
 {
@@ -1277,7 +1266,7 @@ function makeCard() {
   const sv = { pos: camera.position.clone(), tg: controls.target.clone(), pr: renderer.getPixelRatio() };
   const dimsWas = dimsG.visible; if (!C.dims) setDims(false);
   renderer.setPixelRatio(2); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix();
-  const sfov = camera.fov; camera.userData.noOrtho = true; if (orb.on) applyCam();
+  const sfov = camera.fov; if (orb.on) applyCam();
   { // same viewing angle as on screen; only dolly back/shift (no rotation) so the set fits between texts
     const b = meshBox(), pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
     const fwd = V(0, 0, -1).applyQuaternion(camera.quaternion), up = V(0, 1, 0).applyQuaternion(camera.quaternion), rt = V(1, 0, 0).applyQuaternion(camera.quaternion);
@@ -1319,7 +1308,7 @@ function makeCard() {
     g.textAlign = 'left'; g.font = `500 ${Math.round(24 * k)}px ${serif}`; lines.forEach((t, i) => g.fillText(t, px + 32 * k, py + (112 + i * 40) * k));
   }
   // restore
-  renderer.setPixelRatio(sv.pr); resize(); camera.fov = sfov; camera.userData.noOrtho = false; camera.updateProjectionMatrix(); camera.position.copy(sv.pos); controls.target.copy(sv.tg); controls.update(); if (dimsWas) setDims(true);
+  renderer.setPixelRatio(sv.pr); resize(); camera.fov = sfov; camera.updateProjectionMatrix(); camera.position.copy(sv.pos); controls.target.copy(sv.tg); controls.update(); if (dimsWas) setDims(true);
   return out;
 }
 
@@ -1683,7 +1672,7 @@ const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textConte
 $('shareBtn').onclick = async () => { const u = location.origin + location.pathname + '?cfg=' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); try { await navigator.clipboard.writeText(u); msg('Ссылка скопирована'); } catch (e) { prompt('Ссылка на конфигурацию', u); } };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = migrate(v); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); renderDeco(); setBg(); camTo(lastCam); msg('Конфигурация загружена'); };
-$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname); return; S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
+$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname + '?v=v11x&r=' + Date.now()); return; /* v11x: keep cache-busting query, plain pathname could load a cached old build */ S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
 
 async function fontsFor(C) { const f = { montserrat: 'Montserrat', inter: 'Inter', playfair: 'Playfair Display' }[C.font] || 'Manrope'; await Promise.all([document.fonts.load(`700 60px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load('500 30px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load('800 48px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load(`800 48px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load(`500 30px "${f}"`, 'Наполнение КАРКАС 0123')]).catch(() => {}); }
 $('cardBtn').onclick = async () => { cardRead(); await fontsFor(S.card); const o = cleanShot(makeCard); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
