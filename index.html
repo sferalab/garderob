@@ -2,7 +2,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <link rel="icon" href="data:,"><title>Конструктор гардеробной ТИТАН GS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Manrope:wght@400;500;600;700;800&family=Montserrat:wght@400;500;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=v12b">
+<link rel="stylesheet" href="style.css?v=v12c">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head><body>
 <div id="topbar"><div class="seg" id="szV"></div><button id="mirrorBtn" title="Отзеркалить всю конструкцию">⇄<span class="mtx"> Зеркально</span></button><button id="fxBtn" class="snd" title="Эффект" aria-label="Эффект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="2.6"/></svg></button><button id="lensBtn" class="snd" title="Камера: Обычная" aria-label="Камера"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><circle class="l2" cx="12" cy="12" r="4"/><path class="l3" d="M12 4v3M12 17v3M4 12h3M17 12h3"/></svg></button><button id="sndBtn" class="snd" title="Звук" aria-label="Звук"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="w1" d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="w2" d="M18.2 6.8a7.4 7.4 0 0 1 0 10.4"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button><button id="moreBtn" title="Сохранить, загрузить, ссылка, шаблоны, снимки">⋯</button>
@@ -29,7 +29,7 @@
 <div class="szlab gapT">Поднять секции от пола (низ стоек): <b id="liftV"></b> см</div><span class="rng"><input type="range" id="lift" min="0" max="150" step="1"><i class="mark" style="left:calc(20 / 150 * (100% - 18px) + 9px)"></i></span><p class="foot"><i class="mark inl"></i> 20 см - стандарт: снизу помещается обувная полка</p>
 <div class="szlab">Высота стоек, см</div><div class="sz" id="szH"></div>
 <div class="own hide" id="ownH"><input type="range" id="rH" min="50" max="300" step="1"><input type="number" id="fH" min="50" max="300" step="1"></div>
-<div class="row2"><label class="chk hide"><input type="checkbox" id="ceilT"> Потолок</label><label>Высота потолка: <b id="ceilV"></b> см<input type="range" id="ceilH" min="220" max="400" step="1"></label></div>
+<div class="row2"><label class="chk"><input type="checkbox" id="ceilT"> Потолок</label><label>Высота потолка: <b id="ceilV"></b> см<input type="range" id="ceilH" min="220" max="400" step="1"></label></div>
 <div id="angBox1" class="angbox"></div>
 <div class="szlab">Глубина полок и корзин, см</div><div class="sz" id="szD"></div>
 <div class="hide"><input id="nSec" type="number"><select id="allW"><option value="">—</option></select><select id="setTpl"><option value=""></option></select><select id="postH"><option>512</option><option>1025</option><option>1156</option><option>1536</option><option>1920</option><option>2304</option><option value="custom">custom</option></select><input type="number" id="postHc"><input type="number" id="railTop"><select id="viewMode"><option value="all">Все</option><option value="frame">frame</option><option value="fill">fill</option></select><input type="number" id="fD"><input type="range" id="rD" min="30" max="50" step="10"><select id="bStyle"><option value="mesh">mesh</option><option value="plastic">plastic</option></select><select id="preset"><option value="warm">warm</option><option value="none">none</option></select><input type="checkbox" id="decor"><input type="checkbox" id="sunT"></div>
@@ -41,7 +41,7 @@
 <div id="angBox2" class="angbox"></div>
 <div id="posGap3" class="gaprow"></div>
 <div class="swrow"><div><div class="szlab">Цвет системы</div><div class="sws" id="metalSw"></div></div><div><div class="szlab">Цвет штанги</div><div class="sws" id="rodSw"></div></div></div>
-<div class="sub light"><h4>Свет и тени</h4><div class="szlab">Тень</div><div class="sz" id="shPBtns"></div><label>Свет из окна<select id="winL"><option value="off">Выкл</option><option value="wall">На стену</option><option value="floor">На пол</option><option value="both">Оба</option></select></label><div class="szlab">Блики на металле</div><div class="sz" id="glMBtns"></div></div>
+<div class="sub light"><h4>Свет и тени</h4><div class="szlab">Тень</div><div class="sz" id="shPBtns"></div><label>Длина тени (0 = вплотную к конструкции): <b id="shLenV"></b><input type="range" id="shLen" min="0" max="1" step="0.05"></label><label>Свет из окна<select id="winL"><option value="off">Выкл</option><option value="wall">На стену</option><option value="floor">На пол</option><option value="both">Оба</option></select></label><div class="szlab">Блики на металле</div><div class="sz" id="glMBtns"></div></div>
 <div class="row2 hide"><label>Цвет системы<select id="metal"><option value="white">Белый металлик (RAL 9016)</option><option value="silver">Серебристый (RAL 9006)</option><option value="black">Черный (RAL 9005)</option></select></label><label>Цвет штанги<select id="rodC"><option value="chrome">Хром металлик</option><option value="white">Белая</option></select></label></div>
 <div id="dRoom">
 <div class="szlab">Цвет стен</div><div id="wallPick"></div><input type="color" id="wall" class="hide">
@@ -101,5 +101,5 @@
 </div>
 <p class="foot">Размеры элементов взяты из каталога ТИТАН GS 2024. Визуализация ориентировочная.</p>
 </div></div>
-<script type="module" src="app.js?v=v12b"></script>
+<script type="module" src="app.js?v=v12c"></script>
 </body></html>
