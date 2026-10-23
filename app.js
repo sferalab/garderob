@@ -177,7 +177,7 @@ function carpetTex() {
 function floorMat() {
   const [n, mx, tint, , , my] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
   if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2, userData: { floor: true } }); }
-  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: S.floor === 'marble' ? 0.5 : S.floor === 'conc' ? 0.15 : 0.06, clearcoatRoughness: S.floor === 'marble' ? 0.2 : 0.5, envMapIntensity: S.floor === 'marble' ? 0.7 : 0.4, specularIntensity: S.floor === 'marble' ? 1 : 0.35 });
+  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: 0, envMapIntensity: 0.15, specularIntensity: 0.06 }); /* v13g: no floor glare */
 }
 let PAPER;
 function paperTex() {
@@ -327,7 +327,7 @@ function makeMats() {
   // Titan-GS powder coat: RAL 9016 snow white (slightly cool, glowing), RAL 9006 silver, RAL 9005 black
   const gm = { soft: 1, bright: 1, off: 0.3 }[S.room.glareM || 'soft'] || 1, bright = S.room.glareM === 'bright';
   const PB = {
-    white: { color: 0xffffff, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.55, clearcoatRoughness: bright ? 0.05 : 0.3, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0xc4c7cb), toneMapped: false, envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
+    white: { color: 0xffffff, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.55, clearcoatRoughness: bright ? 0.05 : 0.3, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0x9da1a7), toneMapped: false, envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
     silver: { color: 0xe4e7eb, metalness: 0.8, roughness: 0.3, clearcoat: bright ? 0.5 : 0.25, clearcoatRoughness: 0.25, specularIntensity: 0.9, envMapIntensity: 1.5 * gm }, /* v11t (90c4554): light satin silver like the Titan drawing */
     black: { color: METAL.black, metalness: 0.85, roughness: 0.45, clearcoat: bright ? 0.5 : 0.15, clearcoatRoughness: 0.35, specularIntensity: 0.9, sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
   }[S.metal] || {}; if (S.metal === 'silver') Object.assign(PB, { map: tex('rodmetal_diff', true, '4x4'), roughnessMap: tex('rodmetal_rough', false, '4x4') }); /* v13b: exact v11t brushed silver */ /* v13b: v11u silver ported */
@@ -964,6 +964,11 @@ function pushHist() { if (histLock) return; clearTimeout(histT); histT = setTime
 function restoreHist(j) { histLock = true; setTimeout(() => { renderDeco(); setBg(); }); selPost = null; $('postPop').classList.add('hide'); closeMenus(); cur.it = -1; S = migrate(JSON.parse(j)); fillGeneral(); rebuild(); renderSec(); cardUI(); histLock = false; }
 function undo() { clearTimeout(histT); if (HIST.length < 2) return; RED.push(HIST.pop()); restoreHist(HIST[HIST.length - 1]); }
 function redo() { if (!RED.length) return; const j = RED.pop(); HIST.push(j); restoreHist(j); }
+// v13g: snow-white system gets a thin light-grey contour on every frame part so it never melts into the white wall
+const EDGE_C = new Map(); let EDGE_M;
+function contours() { if (S.metal !== 'white') return; EDGE_M = EDGE_M || new THREE.LineBasicMaterial({ color: 0xaeb3ba, transparent: true, opacity: 0.85 }); const ms = [M.metal, M.post, M.postF, M.rail];
+  const add = []; scene.traverse(o => { if (o.isMesh && o.castShadow && o.geometry && o.geometry.type !== 'CylinderGeometry' && ms.includes(o.material) && !o.userData.edged && o.geometry) { let v = true; for (let q = o; q; q = q.parent) if (!q.visible) v = false; if (v) add.push(o); } });
+  add.forEach(o => { let eg = EDGE_C.get(o.geometry.uuid); if (!eg) { eg = new THREE.EdgesGeometry(o.geometry, 35); EDGE_C.set(o.geometry.uuid, eg); } const l = new THREE.LineSegments(eg, EDGE_M); l.raycast = () => {}; l.userData.noPick = true; o.userData.edged = true; o.add(l); }); }
 function rebuild() {
   // fresh start / reset: corner shifts sit on the red dot (no shelves crossing in the corner)
   if (S.__gapFix) { delete S.__gapFix; const ks = gapKeys(); if (ks.length && !ks.some(([k]) => gapGet(k) >= optGap(k))) S.__fresh = true; }
@@ -992,6 +997,7 @@ function rebuild() {
   catcher.visible = !!photo && !$('showRoom').checked;
   room.visible = !photo || $('showRoom').checked;
   summary(); fillDims(); localStorage.setItem('gs_auto', JSON.stringify(S));
+  try { contours(); } catch (er) {}
   try { linkUI(); } catch (er) {}
   $('delBtn').classList.toggle('hide', !window.__propSel && !(window.__plantSel >= 0) && !(cur.it >= 0 && S.walls[cur.w].sections[cur.s] && S.walls[cur.w].sections[cur.s].items[cur.it]));
 }
@@ -1142,7 +1148,7 @@ function camTo0(kind) {
 function resize() { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(view);
 let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
-function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
+function adapt() { return; /* v13g: fixed quality - no pixel-ratio / shadow-map switching that flickered on touch */ fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
 function aspectGuard() { const w = view.clientWidth, h = view.clientHeight; if (w && h && (Math.abs(camera.aspect - w / h) > 1e-3 || Math.abs(renderer.domElement.width - Math.round(w * renderer.getPixelRatio())) > 1)) { resize(); if (orb.on) applyCam(); } } // v13b (from v12e): canvas/camera aspect always match - no squeezed first frame
@@ -1197,7 +1203,7 @@ function applyLights() {
 const glow = new THREE.SpotLight(0xfff0dc, 0, 0, 0.9, 1, 0); scene.add(glow, glow.target);
 const rim = new THREE.DirectionalLight(0xdfe7ff, 0); scene.add(rim, rim.target); // edge light so black RAL 9005 reads in detail
 // shadow presets: sun direction (deg), blur radius, shadow strength on the walls
-const SHP = { sun: { az: -52, el: 27, r: 6, k: 0.3 }, soft: { az: 5, el: 13, r: 9, k: 0.38 }, left: { az: -13, el: 15, r: 7, k: 0.4 }, right: { az: 13, el: 15, r: 7, k: 0.4 }, top: { az: 0, el: 19, r: 7, k: 0.4 }, sharp: { az: 5, el: 13, r: 1.6, k: 0.42 }, none: { k: 0 } };
+const SHP = { sun: { az: -52, el: 27, r: 6, k: 0.3 }, soft: { az: 5, el: 42, r: 9, k: 0.38 }, left: { az: -13, el: 15, r: 7, k: 0.4 }, right: { az: 13, el: 15, r: 7, k: 0.4 }, top: { az: 0, el: 19, r: 7, k: 0.4 }, sharp: { az: 5, el: 42, r: 1.6, k: 0.42 }, none: { k: 0 } };
 const specL = new THREE.DirectionalLight(0xffffff, 0); scene.add(specL, specL.target);
 const _sc = new THREE.OrthographicCamera();
 // the highlight light rides with the camera (up and to the right), so edge highlights travel as the view turns
