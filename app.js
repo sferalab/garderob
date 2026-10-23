@@ -6,7 +6,7 @@ import { CATALOG, RULES } from './catalog.js';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
-const METAL = { white: 0xeef1f4, black: 0x111111, silver: 0xc3c6c8 };
+const METAL = { white: 0xf7f9fc, black: 0x111111, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
 const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_light', 3.0, 0xffffff, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
@@ -320,10 +320,10 @@ function makeMats() {
   // Titan-GS powder coat: RAL 9016 snow white (slightly cool, glowing), RAL 9006 silver, RAL 9005 black
   const gm = { soft: 1, bright: 1, off: 0.3 }[S.room.glareM || 'soft'] || 1, bright = S.room.glareM === 'bright';
   const PB = {
-    white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.6, clearcoatRoughness: bright ? 0.05 : 0.16, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xeef4ff), emissive: new THREE.Color(0x06080b), envMapIntensity: 0.8 * gm },
-    white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.55, clearcoatRoughness: bright ? 0.05 : 0.3, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0x50555f), envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
+    white: { color: 0xffffff, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.55, clearcoatRoughness: bright ? 0.05 : 0.3, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0xc4c7cb), toneMapped: false, envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
+    silver: { color: 0xe4e7eb, metalness: 0.8, roughness: 0.3, clearcoat: bright ? 0.5 : 0.25, clearcoatRoughness: 0.25, specularIntensity: 0.9, envMapIntensity: 1.5 * gm }, /* v11t (90c4554): light satin silver like the Titan drawing */
     black: { color: METAL.black, metalness: 0.85, roughness: 0.45, clearcoat: bright ? 0.5 : 0.15, clearcoatRoughness: 0.35, specularIntensity: 0.9, sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
-  }[S.metal] || {}; if (S.metal === 'silver') Object.assign(PB, { map: tex('rodsoft_diff', true, '1x1'), roughnessMap: tex('rodsoft_rough', false, '1x1'), envMap: window.ROD_ENV || chromeEnv(), userData: { chrome: true } }); /* v13b: v11u silver ported */
+  }[S.metal] || {}; if (S.metal === 'silver') Object.assign(PB, { map: tex('rodmetal_diff', true, '4x4'), roughnessMap: tex('rodmetal_rough', false, '4x4') }); /* v13b: exact v11t brushed silver */ /* v13b: v11u silver ported */
   const G = grainTex();
   M.metal = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 6, 6), normalScale: new THREE.Vector2(0.22, 0.22), roughnessMap: rep(G.rough, 6, 6) });
   M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: S.metal === 'black' ? 0.45 : 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
@@ -335,7 +335,8 @@ function makeMats() {
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
   M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.01, specularIntensity: 1, emissive: new THREE.Color(0x0c0d0f), envMap: chromeEnv(), envMapIntensity: 1.7, userData: { chrome: true } });
-  M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
+  M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.04, roughness: 0.3, clearcoat: 0.55, clearcoatRoughness: 0.3, specularIntensity: 0.5, sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0x50555f), envMapIntensity: 0.9 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) /* v13b: snow white rod */
+    : S.rod === 'black' ? new THREE.MeshPhysicalMaterial({ color: 0x111111, metalness: 0.85, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.35, specularIntensity: 0.9, envMapIntensity: 1 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
   M.ldsp = new THREE.MeshStandardMaterial({ color: dark ? 0x3b3836 : 0xf3f1ec, roughness: 0.6, metalness: 0 });
@@ -691,7 +692,7 @@ function buildRoom() {
   };
   const bo = ops.filter(o => o.wall === 'B').map(o => ({ ...o, c: o.x - cx }));
   bk.userData.occ = wallPlane(right - left, cx, 0, 0, bk, bo);
-  const skM = new THREE.MeshStandardMaterial({ color: S.room.skirtColor || '#f6f5f2', roughness: 1, metalness: 0, envMapIntensity: 0 });
+  const skM = new THREE.MeshBasicMaterial({ color: S.room.skirtColor || '#f6f5f2', toneMapped: false }); skM.userData.flat = true; /* v13b: unlit plinth - same colour at any rotation, no shading/shadow/AO */
   // skirting runs along u (local x of a wall frame), cut at doors
   const skirt = (parent, u0, u1, cuts, place) => { let segs = [[u0, u1]]; cuts.forEach(([a, b]) => { segs = segs.flatMap(([s, e]) => b <= s || a >= e ? [[s, e]] : [[s, a], [b, e]].filter(([p, q]) => q - p > 0.01)); });
     segs.forEach(([s, e]) => { const g = new THREE.Group(); place(g); [[0.016, 0.08, 0.04, 0.008], [0.022, 0.012, 0.074, 0.011]].forEach(([d, h, y, z]) => { const m = box(e - s, h, d, (s + e) / 2, y, z, skM); m.castShadow = false; m.receiveShadow = false; m.renderOrder = 2; g.add(m); }); parent.add(g); }); };
@@ -1130,7 +1131,8 @@ let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
 function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
-renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+function aspectGuard() { const w = view.clientWidth, h = view.clientHeight; if (w && h && (Math.abs(camera.aspect - w / h) > 1e-3 || Math.abs(renderer.domElement.width - Math.round(w * renderer.getPixelRatio())) > 1)) { resize(); if (orb.on) applyCam(); } } // v13b (from v12e): canvas/camera aspect always match - no squeezed first frame
+renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -1333,7 +1335,7 @@ function summary() {
   let total = 0; const row = ([k, v]) => { const p = +(S.prices[k] || 0); total += p * v; return `<tr><td>${k}</td><td>${v} шт</td><td><input type="number" min="0" step="1" data-price="${k}" value="${p || ''}" placeholder="цена"></td><td>${p ? (p * v).toLocaleString('ru-RU') + ' ₽' : ''}</td></tr>`; };
   const tb = o => `<table class="est">${Object.entries(o).map(row).join('')}</table>`;
   const fr = tb(d.frame), fi = tb(d.fill);
-  const MC = { white: 'белый RAL 9016', black: 'черный RAL 9005', silver: 'серебристый RAL 9006' }[S.metal], RC = { chrome: 'хром', white: 'белый' }[S.rod || 'chrome'];
+  const MC = { white: 'белый RAL 9016', black: 'черный RAL 9005', silver: 'серебристый RAL 9006' }[S.metal], RC = { chrome: 'хром', white: 'белый', black: 'черный' }[S.rod || 'chrome'];
   const parts = [...Object.entries(d.frame), ...Object.entries(d.fill)].map(([k, v]) => `<tr><td><span class="tbd">—</span></td><td>${k}</td><td>${/Перекладина|Штанга/.test(k) ? RC : MC}</td><td>${v} шт</td></tr>`).join('');
   const W = [];
   wallsBuilt().forEach(wi => S.walls[wi].sections.forEach((sc, si) => {
@@ -1353,12 +1355,14 @@ function summary() {
 // ---------- UI ----------
 function clampY(v) { const lo = Math.ceil(postBottom() / 10) + 3, hi = S.railTop - 4; return Math.max(lo, Math.min(hi, v)); }
 function fillGeneral() {
-  $('metal').value = S.metal; $('rodC').value = S.rod || 'chrome'; $('wall').value = S.wall; $('floor').value = S.floor; $('railTop').value = S.railTop;
+  $('metal').value = S.metal; $('rodC').value = S.rod || 'chrome'; window.__rcS && window.__rcS(); $('wall').value = S.wall; $('floor').value = S.floor; $('railTop').value = S.railTop;
   const pre = ['512', '1025', '1156', '1536', '1920', '2304'].includes(String(S.postH));
   $('postH').value = pre ? String(S.postH) : 'custom'; $('postHc').value = S.postH;
   $('layout').value = S.layout; $('viewMode').value = S.view || 'all'; $('decor').checked = !!S.decor; $('sunT').checked = !!S.sun; $('bStyle').value = S.basketStyle || 'mesh'; const R = S.room; $('ceilT').checked = !!R.ceiling; $('skirtT').checked = R.skirting !== false; $('lampT').checked = !!R.lamps; $('glare').value = R.glare; $('glareV').textContent = Math.round(R.glare * 100) + '%'; $('shadow').value = R.shadow; $('shadowV').textContent = Math.round(R.shadow * 100) + '%'; $('roomX').value = R.extra; $('roomV').textContent = R.extra; $('angR').value = R.angle; $('wallFin').value = S.wallFin || 'paint'; $('ceilH').value = R.ceilH; $('ceilV').textContent = R.ceilH; $('angV').textContent = R.angle + '°'; $('skirtC').value = R.skirtColor; $('glowS').value = R.glow; $('shOnT').checked = R.shOn !== false; $('shAng').value = R.shAng; $('shAngV').textContent = R.shAng + '°'; $('shBlur').value = R.shBlur; $('shBlurV').textContent = R.shBlur; $('shDist').value = R.shDist; $('shDistV').textContent = Math.round(R.shDist * 100) + '%'; $('preset').value = S.preset || 'none'; fillDims();
 }
-$('rodC').onchange = e => { S.rod = e.target.value; rebuild(); };
+$('rodC').onchange = e => { S.rod = e.target.value; rebuild(); rcS(); };
+function rcS() { document.querySelectorAll('#rodCC [data-rc]').forEach(b => b.classList.toggle('on', b.dataset.rc === (S.rod || 'chrome'))); }
+document.querySelectorAll('#rodCC [data-rc]').forEach(b => b.onclick = () => { $('rodC').value = b.dataset.rc; $('rodC').onchange({ target: $('rodC') }); }); rcS(); window.__rcS = rcS;
 { const sc = () => document.querySelectorAll('#sysC [data-sc]').forEach(b => b.classList.toggle('on', b.dataset.sc === S.metal)); document.querySelectorAll('#sysC [data-sc]').forEach(b => b.onclick = () => { $('metal').value = b.dataset.sc; $('metal').onchange({ target: $('metal') }); sc(); }); setTimeout(sc, 0); window.__sysC = sc; }
 $('metal').onchange = e => { window.__sysC && setTimeout(window.__sysC, 0); S.metal = e.target.value; if (S.wallCustom) { rebuild(); renderDeco(); return; } const c = new THREE.Color(S.wall), l = c.r * 0.3 + c.g * 0.59 + c.b * 0.11; if (S.metal === 'white' && l > 0.55) S.wall = '#a9a49c'; else if (S.metal === 'silver' && l > 0.2 && l < 0.5) S.wall = '#e4e0d9'; else if (S.metal === 'black' && l < 0.35) S.wall = '#e6e2dc'; $('wall').value = S.wall; rebuild(); renderDeco(); };
 $('postH').onchange = e => { if (e.target.value !== 'custom') { S.postH = +e.target.value; $('postHc').value = S.postH; fix(); } };
@@ -1670,7 +1674,7 @@ fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) 
 // iOS settles the canvas size late (toolbar, safe areas): refit once the final size is known
 { renderer.domElement.addEventListener('pointerdown', () => { window.__userCam = true; }, true); const late = () => { if (lastCam === 'card' || window.__userCam) return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late);
   if (window.visualViewport) { let vt = 0; visualViewport.addEventListener('resize', () => { clearTimeout(vt); vt = setTimeout(late, 150); }); } }
-const _x=0;window.__gs = { vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [0.05, 1.5]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+const _x=0;window.__gs = { stretch: () => { camera.updateMatrixWorld(); const T = orb.T, f = camera.position.clone().sub(T).normalize(), r = V(1, 0, 0).applyQuaternion(camera.quaternion), u = r.clone().cross(f).normalize(), e = 0.05, p = q => q.clone().project(camera), a = p(T), x = p(T.clone().addScaledVector(r, e)), y = p(T.clone().addScaledVector(u, e)), cw = renderer.domElement.clientWidth, ch = renderer.domElement.clientHeight; return Math.hypot((y.x - a.x) * cw, (y.y - a.y) * ch) / Math.hypot((x.x - a.x) * cw, (x.y - a.y) * ch); }, asp: () => [camera.aspect, view.clientWidth / view.clientHeight], vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [0.05, 1.5]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
 // ---------- v4 extra controls ----------
 $('rS').oninput = e => { $('fS').value = e.target.value; S.walls[cur.w].sections.forEach(x => x.w = +e.target.value); clearTimeout(dimT); dimT = setTimeout(rebuild, 40); };
@@ -1892,9 +1896,9 @@ $('winL').onchange = e => { S.room.winL = e.target.value; rebuild(); };
 { let t; $('winX').oninput = e => { S.room.winX = +e.target.value; $('winXV').textContent = S.room.winX; clearTimeout(t); t = setTimeout(rebuild, 40); }; }
 function renderSwatches() {
   $('metalSw').innerHTML = [['white', 'Белый', '#f7f9fc'], ['black', 'Черный', '#202124'], ['silver', 'Серебро', 'linear-gradient(135deg,#eceef0,#a7abaf 55%,#d9dcdf)']].map(([k, t, c]) => `<button data-msw="${k}" class="${S.metal === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
-  $('rodSw').innerHTML = [['white', 'Белый', '#f7f9fc'], ['chrome', 'Хром', 'linear-gradient(135deg,#ffffff,#9aa0a6 45%,#f4f6f8 62%,#7d838a)']].map(([k, t, c]) => `<button data-rsw="${k}" class="${(S.rod || 'chrome') === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
+  $('rodSw').innerHTML = [['white', 'Белый', '#f7f9fc'], ['black', 'Черный', '#111111'], ['chrome', 'Хром', 'linear-gradient(135deg,#ffffff,#9aa0a6 45%,#f4f6f8 62%,#7d838a)']].map(([k, t, c]) => `<button data-rsw="${k}" class="${(S.rod || 'chrome') === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
   $('metalSw').querySelectorAll('[data-msw]').forEach(b => b.onclick = () => { $('metal').value = b.dataset.msw; $('metal').onchange({ target: $('metal') }); });
-  $('rodSw').querySelectorAll('[data-rsw]').forEach(b => b.onclick = () => { S.rod = b.dataset.rsw; $('rodC').value = S.rod; rebuild(); renderSwatches(); });
+  $('rodSw').querySelectorAll('[data-rsw]').forEach(b => b.onclick = () => { S.rod = b.dataset.rsw; $('rodC').value = S.rod; rebuild(); rcS(); renderSwatches(); });
 }
 // «Раскрыть угол стен»: the same slider in Каркас and Оформление
 function renderAng() {
