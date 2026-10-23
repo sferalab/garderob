@@ -2,15 +2,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { Reflector } from 'three/addons/objects/Reflector.js';
 import { CATALOG, RULES } from './catalog.js';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
-const METAL = { white: 0xf4f8ff, black: 0x111111, silver: 0xdadde0 };
+const METAL = { white: 0xf7f9fc, black: 0x202124, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
-const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_light', 3.0, 0xffffff, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x9c8573, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
+const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_floor_02', 3.0, 0xfffaf3, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
   basket: 'Корзина стационарная', pull: 'Корзина выдвижная', rail: 'Штанга для вешалок', shoe: 'Полка для обуви', trouser: 'Брючница выдвижная'
@@ -18,16 +17,15 @@ const TYPES = {
 const DEPTHS = { mesh: [30, 40, 50], metal: [30, 40], ldsp: [30, 40], basket: [30, 40], pull: [30, 40], rail: [30], shoe: [30, 40], trouser: [40] };
 const REAL_DEPTH = { mesh: { 30: 306, 40: 406, 50: 506 }, metal: { 30: 327, 40: 427 }, ldsp: { 30: 330, 40: 430 }, basket: { 30: 340, 40: 440 }, pull: { 30: 340, 40: 440 }, rail: { 30: 300 }, shoe: { 30: 306, 40: 406 }, trouser: { 40: 440 } };
 // catalog lengths (mm) per element; the section width follows the chosen length
-const LENS = { mesh: [463, 603, 903, 1203], metal: [597], ldsp: [446, 587, 887], basket: [603, 903], pull: [563, 863], fine: [535], shoe: [603, 903], trouser: [463, 603], rail: [520, 640, 940, 1240] };
+const LENS = { mesh: [463, 603, 903, 1203], metal: [597], ldsp: [446, 587, 887], basket: [603, 903], pull: [563, 863], fine: [535], shoe: [604, 904], trouser: [463, 603], rail: [520, 640, 940, 1240] };
 const lensOf = o => o.t === 'pull' && o.v === 'fine' ? LENS.fine : LENS[o.t];
 const depthsOf = o => o.t === 'pull' && o.v === 'fine' ? [40] : DEPTHS[o.t];
 const secW = mm => nearest([45, 60, 90, 120], mm / 10);
 const LAYOUTS = { straight: 'Прямая (одна стена)', L: 'Угловая, угол слева', Lr: 'Угловая, угол справа', U: 'П-образная' };
-const KIT_TINT = 0xe8edf4; /* v11u: shared cool tint of chrome rod + silver system */
-const CATS = { shelf: 'Полка', rod: 'Штанга', combo: 'Полка со штангой', basket: 'Корзина', trouser: 'Брючница' };
+const CATS = { shelf: 'Полка', rod: 'Штанга', combo: 'Штанга с полкой', basket: 'Корзина', trouser: 'Брючница' };
 const rowCat = o => o.g ? 'combo' : catOf(o.t);
 const catOf = t => t === 'rail' ? 'rod' : t === 'basket' || t === 'pull' ? 'basket' : t === 'trouser' ? 'trouser' : 'shelf';
-const VARS = { shelf: [['mesh', 'Сетчатая'], ['metal', 'Металлическая'], ['ldsp', 'ЛДСП'], ['shoe', 'Для обуви']], rod: [['rail', 'Штанга на кронштейнах']], combo: [['mesh', 'Сетчатая полка + штанга'], ['metal', 'Металлическая полка + штанга'], ['ldsp', 'Полка ЛДСП + штанга']], basket: [['pull|mesh', 'Сетчатая выдвижная'], ['basket|mesh', 'Стационарная']], trouser: [['trouser', 'Выдвижная']] };
+const VARS = { shelf: [['mesh', 'Сетчатая'], ['metal', 'Металлическая'], ['ldsp', 'ЛДСП'], ['shoe', 'Для обуви']], rod: [['rail', 'Штанга на кронштейнах']], combo: [['mesh', 'Сетчатая полка + штанга'], ['metal', 'Металлическая полка + штанга'], ['ldsp', 'Полка ЛДСП + штанга']], basket: [['pull|mesh', 'Сетчатая выдвижная'], ['basket|mesh', 'Стационарная'], ['pull|fine', 'Мелкосетчатая'], ['pull|perf', 'Перфорированная'], ['basket|perf', 'Перфор. стационарная']], trouser: [['trouser', 'Выдвижная']] };
 const isBasket = t => t === 'basket' || t === 'pull';
 const perfOf = o => (o.v || (S.basketStyle === 'plastic' ? 'perf' : 'mesh')) === 'perf';
 const fineOf = o => o.v === 'fine';
@@ -37,7 +35,7 @@ function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
 function defaults() {
   return {
-    __fresh: true, v10: 1, v4: 1, v5: 1, v7: 1, v8: 1, layout: 'Lr', metal: 'black', wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', wallVar: { paint: 'matte', plaster: 'koroed', paper: 'linen', relief: 'brick' }, v11m: 1, floor: 'lam', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 213, plants: [], dims: false, dm: { o: false, s: false, h: false, g: false, sd: false }, dimC: 'auto', dimStyle: 'bold', studio: false, rug: null, room: { shOn: true, shP: 'soft', winL: 'off', glareM: 'soft', glare: 0.3, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true, extra: 250 },
+    __fresh: true, v10: 1, v4: 1, v5: 1, v7: 1, v8: 1, layout: 'L', metal: 'white', wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', wallVar: { paint: 'matte', plaster: 'koroed', paper: 'linen', relief: 'brick' }, floor: 'oak', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 213, plants: [], dims: false, dm: { o: false, s: false, h: false, g: false, sd: false }, dimC: 'auto', dimStyle: 'bold', studio: false, rug: null, room: { shOn: true, shP: 'soft', winL: 'off', glareM: 'soft', glare: 0.3, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true, extra: 250 },
     walls: [
       { gap: 0, gapR: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), Object.assign(it('pull', 40, 75, 181), { v: 'mesh' }), Object.assign(it('pull', 40, 52, 181), { v: 'mesh' })])] },
       { gap: 50, sections: [sec(60, [it('mesh', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)])] },
@@ -45,19 +43,14 @@ function defaults() {
     ]
   };
 }
-const ROOMDEF = { shP: 'soft', winL: 'off', glareM: 'soft', win: false, door: false, winX: 0, cornice: false, extra: 250, ceiling: true, ceilH: 275, skirting: true, lamps: false, glare: 0.3, shadow: 0.5, angle: 90, skirtColor: '#ffffff', lampType: 'spot', glow: 'none', shOn: true, shAng: 20, shBlur: 4, shDist: 0.12, shadow: 0.55 };
-function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v11m) { S.v11m = 1; Object.assign(S, { wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', floor: 'lam', metal: 'black' }); S.wallVar = Object.assign({}, S.wallVar, { relief: 'brick' }); } if (!S.v10) { S.v10 = 1; if (S.dimC === 'white') S.dimC = 'auto'; delete S.dims; } if (!Array.isArray(S.props)) S.props = []; if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.v7) { S.v7 = 1; const d = S.dm || {}; S.dm = { o: !!(d.t || d.v), s: !!d.s, h: false, g: !!d.c, sd: false }; S.room.shAng = Math.max(-35, Math.min(35, S.room.shAng ?? 20)); S.room.shBlur = Math.min(8, S.room.shBlur ?? 4); S.room.shadow = Math.max(0.2, Math.min(0.8, S.room.shadow ?? 0.55)); } if (S.metal === 'graphite') S.metal = 'black'; if (!METAL[S.metal]) S.metal = 'white'; if (S.rod === 'sys') S.rod = S.metal === 'black' ? 'black' : S.metal === 'silver' ? 'chrome' : 'white'; if (S.rod === 'metal') S.rod = 'chrome'; if (!['chrome', 'white', 'black'].includes(S.rod)) S.rod = 'chrome'; if (!S.dm || !('o' in S.dm)) S.dm = { o: false, s: false, h: false, g: false, sd: false }; S.dimC = S.dimC === 'black' ? 'black' : 'white'; S.dimStyle = S.dimStyle === 'thin' ? 'thin' : 'bold'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40;
+const ROOMDEF = { shP: 'soft', winL: 'off', glareM: 'soft', win: false, door: false, winX: 0, cornice: false, extra: 250, ceiling: false, ceilH: 275, skirting: true, lamps: false, glare: 0.3, shadow: 0.5, angle: 90, skirtColor: '#ffffff', lampType: 'spot', glow: 'none', shOn: true, shAng: 20, shBlur: 4, shDist: 0.12, shadow: 0.55 };
+function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v10) { S.v10 = 1; if (S.dimC === 'white') S.dimC = 'auto'; delete S.dims; } if (!Array.isArray(S.props)) S.props = []; if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.v7) { S.v7 = 1; const d = S.dm || {}; S.dm = { o: !!(d.t || d.v), s: !!d.s, h: false, g: !!d.c, sd: false }; S.room.shAng = Math.max(-35, Math.min(35, S.room.shAng ?? 20)); S.room.shBlur = Math.min(8, S.room.shBlur ?? 4); S.room.shadow = Math.max(0.2, Math.min(0.8, S.room.shadow ?? 0.55)); } if (S.metal === 'graphite') S.metal = 'black'; if (!METAL[S.metal]) S.metal = 'white'; if (S.rod && S.rod !== 'white') S.rod = 'chrome'; if (!S.dm || !('o' in S.dm)) S.dm = { o: false, s: false, h: false, g: false, sd: false }; S.dimC = S.dimC === 'black' ? 'black' : 'white'; S.dimStyle = S.dimStyle === 'thin' ? 'thin' : 'bold'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40;
   if (!S.v8) { S.v8 = 1; if (S.wall === '#b3b1ad') S.wall = '#a9a49c'; S.room.shP = S.room.shOn === false ? 'none' : 'soft'; S.room.extra = Math.max(250, S.room.extra || 0); S.room.glareM = 'soft'; if (S.rug === true) S.rug = { shape: 'rect', pile: 'flat' }; }
-  if (S.floor === 'tile') S.floor = 'marble'; if (S.rug && typeof S.rug !== 'object') S.rug = { shape: 'rect', pile: 'fluffy' }; if (!S.plants) S.plants = []; if (!S.wallVar) S.wallVar = { paint: 'matte', plaster: 'koroed', paper: 'linen' }; if (!['soft', 'left', 'right', 'top', 'sharp', 'sun', 'none'].includes(S.room.shP)) S.room.shP = 'soft'; if (!['off', 'wall', 'floor', 'both'].includes(S.room.winL)) S.room.winL = 'off'; if (!['soft', 'bright', 'off'].includes(S.room.glareM)) S.room.glareM = 'soft';
+  if (S.floor === 'tile') S.floor = 'marble'; if (S.rug && typeof S.rug !== 'object') S.rug = { shape: 'rect', pile: 'flat' }; if (!S.plants) S.plants = []; if (!S.wallVar) S.wallVar = { paint: 'matte', plaster: 'koroed', paper: 'linen' }; if (!['soft', 'left', 'right', 'top', 'sharp', 'sun', 'none'].includes(S.room.shP)) S.room.shP = 'soft'; if (!['off', 'wall', 'floor', 'both'].includes(S.room.winL)) S.room.winL = 'off'; if (!['soft', 'bright', 'off'].includes(S.room.glareM)) S.room.glareM = 'soft';
   // v9: ceiling always on (a bit higher), walls at full width, short attached shadows
   if (!S.v9) { S.v9 = 1; S.room.ceilH = Math.max(285, S.room.ceilH || 0); if (S.room.glareM === 'bright') S.room.glareM = 'soft'; }
   if (!S.v91) { S.v91 = 1; S.room.ceilH = Math.max(300, S.room.ceilH || 0); S.__gapFix = true; }
-  S.room.extra = 400; S.room.ceilH = Math.max(230, Math.min(400, S.room.ceilH || 300));
-  // v11p: keep projects; striped/flat rug -> fluffy, basket heights onto 85/185/288, rod always chrome
-  if (!S.v11p) { S.v11p = 1; if (S.rug && typeof S.rug === 'object' && S.rug.pile !== 'jute') S.rug.pile = 'fluffy'; if (S.room && S.room.skirting == null) S.room.skirting = true;
-    (S.walls || []).forEach(w => (w.sections || []).forEach(sc => (sc.items || []).forEach(o => { if (typeof isBasket === 'function' && isBasket(o.t) && o.h) o.h = [85, 181].reduce((a, b) => Math.abs(b - o.h) < Math.abs(a - o.h) ? b : a); }))); }
-  if (!S.v11u) { S.v11u = 1; S.room.ceiling = true; /* v11u: only Titan catalog baskets: wire mesh, stationary 85, pull-out 85/181 */ S.basketStyle = 'mesh'; if (!['pull|mesh', 'basket|mesh'].includes(S.bKind)) S.bKind = 'pull|mesh'; (S.walls || []).forEach(w => (w.sections || []).forEach(sc => (sc.items || []).forEach(o => { if (o && (o.t === 'basket' || o.t === 'pull')) { o.v = 'mesh'; if (o.t === 'basket') o.h = 85; else o.h = (o.h || 85) > 130 ? 181 : 85; if (![30, 40].includes(o.d)) o.d = 40; } }))); }
-  if (!S.v11t) { S.v11t = 1; /* v11t: Titan catalog basket heights 85/181 */ (S.walls || []).forEach(w => (w.sections || []).forEach(sc => (sc.items || []).forEach(o => { if (o && (o.t === 'basket' || o.t === 'pull') && o.h) o.h = o.h > 130 ? 181 : 85; }))); }
+  S.room.ceiling = true; S.room.extra = 400; S.room.ceilH = Math.max(230, Math.min(400, S.room.ceilH || 300));
   S.walls.forEach(w => { if (w.gap == null) w.gap = 0; }); if (S.walls[0].gapR == null) S.walls[0].gapR = 0; return S; }
 function setTemplate(t) {
   const m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y: y + 3 }), sh = y => ({ t: 'shoe', d: 40, y }), pu = (y, h) => ({ t: 'pull', d: 40, y, h });
@@ -68,12 +61,11 @@ function setTemplate(t) {
   if (t === 'p6') { S.layout = 'straight'; S.walls[0].sections = [A(), B(), C(), C(), B(), D()]; }
   if (t === 'l23') { S.layout = 'L'; S.walls[0].sections = [A(), B()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[1].sections = [B(), D()]; }
   if (t === 'zero') { S.layout = 'straight'; S.walls[0].sections = [{ w: 90, items: [] }, { w: 90, items: [] }]; }
-  cur = { w: 0, s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); // templates never move the camera (only Сброс / Ракурс)
-  if (['p2', 'p3', 'p6', 'zero', 'l23'].includes(t) && orb.on) { lastCam = 'nice'; window.__userCam = false; camTo('nice'); } // v11x: presets = the exact page-load camera
+  cur = { w: 0, s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); camTo('nice');
 }
 function cardPreset() {
   const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
-  Object.assign(S, { layout: 'L', view: 'fill', preset: 'warm', wall: '#ecdcc8', floor: 'lam', railTop: 205, postH: 1920, metal: 'white', rod: 'chrome', decor: true });
+  Object.assign(S, { layout: 'L', view: 'fill', preset: 'warm', wall: '#ecdcc8', floor: 'oak', railTop: 205, postH: 1920, metal: 'white', rod: 'chrome', decor: true });
   S.walls[0].gap = 0; S.walls[0].sections = [{ w: 90, items: [m(190), rl(178), m(42)] }, { w: 60, items: [m(190), rl(178), m(42)] }];
   S.walls[1].gap = 46; S.walls[1].sections = [{ w: 60, items: [m(190), m(140), m(90), m(42)] }];
   S.card = Object.assign(cardDefaults(), { size: '156 × 110 × 205 см' }); S._cam = 'card'; return S;
@@ -84,7 +76,7 @@ function validState(v) {
   const D = defaults(); if (!v || typeof v !== 'object' || !Array.isArray(v.walls) || !v.walls.length) return null;
   const ok = (k, set) => { if (!set.includes(v[k])) v[k] = D[k]; };
   ok('layout', ['L', 'Lr', 'U', 'straight']); ok('metal', Object.keys(METAL)); ok('view', ['all', 'frame', 'fill']);
-  if (!FLOORS[v.floor]) v.floor = D.floor; if (v.rod === 'sys') v.rod = v.metal === 'black' ? 'black' : v.metal === 'silver' ? 'chrome' : 'white'; if (v.rod === 'metal') v.rod = 'chrome'; if (!['chrome', 'white', 'black'].includes(v.rod)) v.rod = D.rod || 'chrome';
+  if (!FLOORS[v.floor]) v.floor = D.floor; if (v.rod !== 'white' && v.rod !== 'chrome') v.rod = D.rod || 'chrome';
   v.railTop = num(v.railTop, 120, 300, D.railTop); v.postH = num(v.postH, 500, 3000, D.postH);
   if (typeof v.wall !== 'string' || !/^#[0-9a-f]{6}$/i.test(v.wall)) v.wall = D.wall;
   let bad = 0;
@@ -118,9 +110,9 @@ function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v
 // ---------- renderer ----------
 const view = $('view');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: false });
-const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 2 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
+const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 3 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
 renderer.setPixelRatio(PR);
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; renderer.shadowMap.autoUpdate = false; // shadow map only re-rendered after changes
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = CAMEXP();
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 view.appendChild(renderer.domElement);
@@ -128,11 +120,10 @@ const scene = new THREE.Scene();
 const pm = new THREE.PMREMGenerator(renderer);
 scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 // indoor HDRI (Poly Haven studio_small_09, CC0) for metal/chrome reflections; background unchanged
-import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().setDataType(THREE.FloatType).load('tex/interior_1k.hdr', t => { { const d = t.image.data; for (let i = 0; i < d.length; i += 4) { const l0 = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2], l = 0.78 + 0.55 * l0 / (l0 + 0.5); /* v11v: bright, low-contrast in every direction - chrome never goes black */ d[i] = l * 0.97; d[i + 1] = l; d[i + 2] = l * 1.04; } t.needsUpdate = true; } /* v11u: neutral-cool, no warm cast on chrome */ t.mapping = THREE.EquirectangularReflectionMapping; window.ROD_ENV = pm.fromEquirectangular(t).texture; t.dispose(); /* v11t: real interior photo (Poly Haven lebombo, CC0) reflected only in chrome */ scene.traverse(o => { if (o.isMesh && o.material && o.material.userData && o.material.userData.chrome) { o.material.envMap = window.ROD_ENV; o.material.needsUpdate = true; } }); if (M.chrome) M.chrome.envMap = window.ROD_ENV; })).catch(() => {});
-import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; window.HDR_ENV = pm.fromEquirectangular(t).texture; t.dispose(); try { applyGlareShadow(); } catch (e) {} })).catch(() => {});
+import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; const old = scene.environment; scene.environment = pm.fromEquirectangular(t).texture; t.dispose(); old && old.dispose && old.dispose(); })).catch(() => {});
 // SSAO only for the 📷 snapshot (loaded in the background, never used in the live view)
 let POST = null; Promise.all(['postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/SAOPass.js', 'postprocessing/OutputPass.js'].map(f => import('three/addons/' + f))).then(m => { POST = Object.assign({}, ...m); }).catch(() => {});
-const camera = new THREE.PerspectiveCamera(35, 1, 0.08, 160);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.08, 40);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minPolarAngle = 0.05; controls.maxPolarAngle = Math.PI - 0.05; controls.minDistance = 0.5; controls.maxDistance = 30;
 const hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc2, 0.6); scene.add(hemi);
@@ -169,15 +160,15 @@ function canvasTex(w, h, draw, rep) { const c = document.createElement('canvas')
 let CARPET;
 function carpetTex() {
   if (!CARPET) { let sd = 3; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-    const col = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#b9ab98'; g.fillRect(0, 0, w, h); for (let i = 0; i < 60000; i++) { const l = 150 + rnd() * 50; g.fillStyle = `rgba(${l + 25},${l + 12},${l - 6},0.55)`; g.fillRect(rnd() * w, rnd() * h, 1.6, 1.6); } }, 24);
+    const col = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#b9ab98'; g.fillRect(0, 0, w, h); for (let i = 0; i < 60000; i++) { const l = 150 + rnd() * 50; g.fillStyle = `rgba(${l + 25},${l + 12},${l - 6},0.55)`; g.fillRect(rnd() * w, rnd() * h, 1.6, 1.6); } }, 6);
     col.colorSpace = THREE.SRGBColorSpace;
-    const nor = canvasTex(512, 512, (g, w, h) => { g.fillStyle = 'rgb(128,128,255)'; g.fillRect(0, 0, w, h); for (let i = 0; i < 40000; i++) { g.fillStyle = `rgb(${100 + rnd() * 56},${100 + rnd() * 56},255)`; g.fillRect(rnd() * w, rnd() * h, 2, 2); } }, 24);
+    const nor = canvasTex(512, 512, (g, w, h) => { g.fillStyle = 'rgb(128,128,255)'; g.fillRect(0, 0, w, h); for (let i = 0; i < 40000; i++) { g.fillStyle = `rgb(${100 + rnd() * 56},${100 + rnd() * 56},255)`; g.fillRect(rnd() * w, rnd() * h, 2, 2); } }, 6);
     CARPET = [col, nor]; }
   return CARPET;
 }
 function floorMat() {
-  const [n, mx, tint, , , my] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (240 / mx).toFixed(3) + 'x' + (240 / (my || mx)).toFixed(3);
-  if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2, userData: { floor: true } }); }
+  const [n, mx, tint, , , my] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
+  if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2 }); }
   return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: S.floor === 'marble' ? 0.5 : S.floor === 'conc' ? 0.15 : 0.06, clearcoatRoughness: S.floor === 'marble' ? 0.2 : 0.5, envMapIntensity: S.floor === 'marble' ? 0.7 : 0.4, specularIntensity: S.floor === 'marble' ? 1 : 0.35 });
 }
 let PAPER;
@@ -267,6 +258,11 @@ function normalTex(v, str) {
   g.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return NRM[v] = t;
 }
 // lit wall: emissive carries the chosen color (stable), a dim diffuse part picks up relief, corners and sunlight
+let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
+  // v11q: contrasty chrome - dark room with a bright softbox band above and a dark floor band; rod shows a bright center line, dark bands and darker edges on any wall
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#eef0f2'); gr.addColorStop(0.24, '#f6f7f8'); gr.addColorStop(0.28, '#ffffff'); gr.addColorStop(0.33, '#ffffff'); gr.addColorStop(0.37, '#e2e5e8'); gr.addColorStop(0.6, '#e8eaec'); gr.addColorStop(0.76, '#c8cbcf'); gr.addColorStop(0.84, '#5e6166'); gr.addColorStop(1, '#3a3d41'); /* v11s: photo chrome - light overall, crisp highlight line, dark underside band */ /* v11r: bright chrome, soft dark bands */ g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
+  g.fillStyle = '#ffffff'; [[30, 40], [250, 56], [470, 18]].forEach(([x, w]) => g.fillRect(x, 60, w, 50)); g.fillStyle = 'rgba(60,63,67,0.18)'; [[100, 14], [215, 10], [330, 16], [440, 10]].forEach(([x, w]) => g.fillRect(x, 0, w, 256));
+  const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; _CHE = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; return _CHE; }
 function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).multiplyScalar(m.userData.kd); m.emissive.copy(col).multiplyScalar(m.userData.ke); }
 const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
 const PHW = { brick: ['brick_ref', '1.3333x1.6667', 1.6], beige: ['beige_wall_001', 2.4, 1, 1.1], lime: ['white_plaster_02', 2.2, 1] };
@@ -289,20 +285,10 @@ function aoGrad(k) { // soft quadratic falloff, alpha along u (u=0 darkest)
 function aoStrip(parent, len, w, k, place) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, len), aoGrad(k)); place(m); parent.add(m); return m; }
 let CONTACT;
 const CONTACTS = {};
-// soft wall shadow as a vertex-alpha gradient (dark at the top under the shelf, fading down and at the sides)
-function contactQuad(w, h, f, op) { // stacked bands with plain opacity (per-pixel alpha from maps/vertex colors rendered invisible here)
-  const G = new THREE.Group(), N = 6; for (let k = 0; k < N; k++) { const t = (k + 0.5) / N, a = Math.min(0.6, op * 1.1 * Math.pow(1 - t, 1.3));
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(0.01, w - (1 - Math.pow(1 - t, 0.5)) * 0.03), h / N), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: a * 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, toneMapped: false, fog: false }));
-    m.position.y = h / 2 - h * (k / N) - h / (2 * N); m.position.z = 0.004 + k * 0.0004; m.renderOrder = 20; m.userData.contact = true; G.add(m); }
-  return G; }
 function contactMat(f = 18, op = 0.6) {
   CONTACT = CONTACTS[f]; if (!CONTACT) { const c = document.createElement('canvas'); c.width = 128; c.height = 64; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(0,0,0,0.62)'); gr.addColorStop(0.3, 'rgba(0,0,0,0.42)'); gr.addColorStop(0.65, 'rgba(0,0,0,0.14)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 64);
-    const m = g.getImageData(0, 0, 128, 64); for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const k = Math.min(1, Math.min(x, 127 - x) / f); m.data[(y * 128 + x) * 4 + 3] *= k; } g.putImageData(m, 0, 0); CONTACT = CONTACTS[f] = c; }
-  // fresh texture per material from the cached canvas: a shared texture got disposed by rebuild and the shadow vanished
-  const id = CONTACTS[f].getContext('2d').getImageData(0, 0, 128, 64), dd = new Uint8Array(128 * 64 * 4);
-  for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const i = (y * 128 + x) * 4, a = Math.round(255 * Math.max(0, 0.62 - 0.62 * y / 63) * Math.min(1, Math.min(x, 127 - x) / f)); dd[i] = dd[i + 1] = dd[i + 2] = 0; dd[i + 3] = a; }
-  const tx = new THREE.DataTexture(dd, 128, 64); tx.flipY = true; tx.needsUpdate = true;
-  return new THREE.MeshBasicMaterial({ map: tx, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -16 });
+    const m = g.getImageData(0, 0, 128, 64); for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) { const k = Math.min(1, Math.min(x, 127 - x) / f); m.data[(y * 128 + x) * 4 + 3] *= k; } g.putImageData(m, 0, 0); CONTACT = CONTACTS[f] = new THREE.CanvasTexture(c); }
+  return new THREE.MeshBasicMaterial({ map: CONTACT, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -16 });
 }
 
 // ---------- materials ----------
@@ -329,24 +315,20 @@ function makeMats() {
   const gm = { soft: 1, bright: 1, off: 0.3 }[S.room.glareM || 'soft'] || 1, bright = S.room.glareM === 'bright';
   const PB = {
     white: { color: 0xffffff, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.55, clearcoatRoughness: bright ? 0.05 : 0.3, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0xc4c7cb), toneMapped: false, envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
-    silver: { metalness: 0.8, roughness: 0.32, clearcoat: 0.5, clearcoatRoughness: 0.3, specularIntensity: 0.9, color: 0xc9cfd8, emissive: new THREE.Color(0x24272c), envMapIntensity: 1.7 * gm }, /* v11t: light satin silver like the Titan drawing */
-    black: { color: METAL.black, metalness: 0.3, roughness: 0.45, clearcoat: bright ? 0.5 : 0.35, clearcoatRoughness: 0.32, specularIntensity: 0.7, /* v11s: satin black powder coat as in the photo */ sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x4a4d53), envMapIntensity: 0.9 * gm }
-  }[S.metal] || {}; if (S.metal !== 'silver' && S.room.glareM !== 'off') Object.assign(PB, { envMap: window.ROD_ENV || chromeEnv(), userData: { chrome: true } }); /* v11u: soft moving satin sheen from the same neutral interior env */ if (S.metal === 'silver') Object.assign(PB, { map: tex('rodsoft_diff', true, '1x1'), roughnessMap: tex('rodsoft_rough', false, '1x1'), envMap: window.ROD_ENV || chromeEnv(), userData: { chrome: true } }); /* v11u: one kit with the chrome rod: same tint, same env */
+    silver: { color: METAL.silver, metalness: 0.62, roughness: 0.4, clearcoat: bright ? 0.6 : 0.25, clearcoatRoughness: bright ? 0.12 : 0.4, specularIntensity: 0.75, envMapIntensity: 1.35 * gm },
+    black: { color: METAL.black, metalness: 0.25, roughness: 0.48, clearcoat: bright ? 1 : 0.45, clearcoatRoughness: bright ? 0.1 : 0.32, specularIntensity: 0.9, sheen: 0.5, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
+  }[S.metal] || {};
   const G = grainTex();
   M.metal = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 6, 6), normalScale: new THREE.Vector2(0.22, 0.22), roughnessMap: rep(G.rough, 6, 6) });
-  M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: S.metal === 'black' ? 0.45 : 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
+  M.wire = new THREE.MeshPhysicalMaterial({ ...PB, roughness: 0.55, clearcoat: 0, sheen: 0, specularIntensity: 0.25, envMapIntensity: Math.min(0.6, PB.envMapIntensity || 0.6) });
   const dark = S.metal === 'black', pt = slotTex(false, dark).clone(); pt.needsUpdate = true; pt.repeat.set(1, S.postH / 32);
   // uprights: crisp perforation as color + bump relief, powder grain in the roughness
-  M.postF = new THREE.MeshPhysicalMaterial({ ...PB, map: pt, bumpMap: pt, bumpScale: 2.2, roughnessMap: rep(G.rough, 1, S.postH / 60), polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  M.post = new THREE.MeshPhysicalMaterial({ ...PB, roughnessMap: rep(G.rough, 1, S.postH / 60) }); // solid sides; slots only on the front face
+  M.post = new THREE.MeshPhysicalMaterial({ ...PB, map: pt, bumpMap: pt, bumpScale: 2.2, roughnessMap: rep(G.rough, 1, S.postH / 60) });
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: KIT_TINT, metalness: 1, roughness: 0.07, clearcoat: 0.6, clearcoatRoughness: 0.04, specularIntensity: 1, emissive: new THREE.Color(0x000000), map: tex('rodsoft_diff', true, '1x1'), roughnessMap: tex('rodsoft_rough', false, '1x1'), envMap: window.ROD_ENV || chromeEnv(), envMapIntensity: 1.6, /* v11t: CC0 brushed sheet (ambientCG Metal001) as base */ userData: { chrome: true } });
-  M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.1, specularIntensity: 0.6, envMapIntensity: 0.7 })
-    : S.rod === 'black' ? new THREE.MeshPhysicalMaterial({ color: 0x141414, metalness: 0.3, roughness: 0.35, clearcoat: 0.7, clearcoatRoughness: 0.15, specularIntensity: 0.8, envMapIntensity: 1.0 })
-    : S.rod === 'metal' ? new THREE.MeshPhysicalMaterial({ color: 0xd4d7db, metalness: 0.9, roughness: 0.32, clearcoat: 0.3, clearcoatRoughness: 0.3, envMap: chromeEnv(), envMapIntensity: 1.3, userData: { chrome: true } }) : M.chrome; /* v11r: four rod colors */
-  M.brk = new THREE.MeshPhysicalMaterial({ ...PB }); // v11q: brackets and rod holders - same clean powder coat as the uprights, no grain
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xf2f5f8, metalness: 1, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.03, specularIntensity: 1, emissive: new THREE.Color(0x3c4046), envMap: chromeEnv(), envMapIntensity: 2.2, userData: { chrome: true } }); /* v12b: polished chrome - own studio env with bright softbox streak, never black at distance */
+  M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
   M.ldsp = new THREE.MeshStandardMaterial({ color: dark ? 0x3b3836 : 0xf3f1ec, roughness: 0.6, metalness: 0 });
@@ -370,7 +352,6 @@ function rods(list, mat) {
 }
 function box(w, h, d, x, y, z, mat) { const b = new THREE.Mesh(BOX, mat); b.scale.set(w, h, d); b.position.set(x, y, z); b.castShadow = b.receiveShadow = true; return b; }
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
-const SHOE_DROP = 0.07;
 
 // ---------- build ----------
 function postLen(wi, i) { const L = S.walls[wi].postL; return (L && L[i]) || S.postH; }
@@ -408,14 +389,14 @@ function buildWall(wi) {
   const pt = (S.railTop * 10 - 10) * MM;
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   // uprights (catalog 32 x 34 mm, drawn about 1.5x heavier so they read in photos) with hook head and end cap
-  xs.forEach((x, pi) => { const pb = pt - postLen(wi, pi) * MM, sel = selPost && selPost.wi === wi && selPost.i === pi, pm = new THREE.Mesh(new RoundedBoxGeometry(0.046, pt - pb, 0.042, 3, 0.0065), sel ? M.post.clone() : M.post); if (sel) { pm.material.emissive.set(0x2f7bff); pm.material.emissiveIntensity = 0.6; } pm.userData.post = { wi, i: pi }; pm.position.set(x, (pt + pb) / 2, 0.0225); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm); { const ff = new THREE.Mesh(new THREE.PlaneGeometry(0.034, pt - pb), M.postF); ff.position.set(x, (pt + pb) / 2, 0.0436); ff.userData.post = { wi, i: pi }; ff.userData.frame = true; ff.receiveShadow = true; g.add(ff); }
+  xs.forEach((x, pi) => { const pb = pt - postLen(wi, pi) * MM, sel = selPost && selPost.wi === wi && selPost.i === pi, pm = new THREE.Mesh(new RoundedBoxGeometry(0.046, pt - pb, 0.042, 3, 0.0065), sel ? M.post.clone() : M.post); if (sel) { pm.material.emissive.set(0x2f7bff); pm.material.emissiveIntensity = 0.6; } pm.userData.post = { wi, i: pi }; pm.position.set(x, (pt + pb) / 2, 0.0225); pm.castShadow = pm.receiveShadow = true; pm.userData.frame = true; g.add(pm);
     const hk = new THREE.Mesh(new RoundedBoxGeometry(0.05, 0.034, 0.03, 2, 0.004), M.metal); hk.position.set(x, pt - 0.012, 0.0165); hk.castShadow = true; hk.userData.frame = true; g.add(hk);
     const cap = new THREE.Mesh(new RoundedBoxGeometry(0.048, 0.014, 0.044, 2, 0.004), M.plastic); cap.position.set(x, pb + 0.007, 0.0225); cap.userData.frame = true; g.add(cap);
     // painted contact darkening on the wall where the upright meets it (both sides), no SSAO pass needed
     if (!S.studio) [1, -1].forEach(sd => aoStrip(g, pt - pb, 0.04, 0.2, m => { m.position.set(x + sd * (0.023 + 0.02), (pt + pb) / 2, 0.0012); if (sd < 0) m.scale.x = -1; m.userData.contact = m.userData.frame = true; m.renderOrder = 1; })); });
   W.sections.forEach((s, si) => s.items.forEach((item, ii) => { const ig = new THREE.Group(); ig.userData.ref = { wi, si, ii }; g.add(ig); buildItem(ig, item, xs[si] + XIN, xs[si + 1] - XIN, s); buildProps(ig, item, xs[si] + XIN, xs[si + 1] - XIN, { wi, si, ii });
     // baked shadow tight on the wall under/behind the item: 5-15 cm, soft edge; presets only tilt it a little; never leaves the item's own wall
-    const B = SHB[S.room.shP] || SHB.soft; if (B.o > 0 && item.t !== 'rail') { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = contactQuad(xs[si + 1] - xs[si] - 0.01, ch, B.f, B.o * (rl ? 0.6 : 1)); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) + 0.003) - ch / 2, 0.0026); cs.renderOrder = 2; cs.userData.contact = true; ig.add(cs); } }));
+    const B = SHB[S.room.shP] || SHB.soft; if (B.o > 0 && item.t !== 'rail') { const rl = item.t === 'rail', ch = rl ? B.len * 0.55 : isBasket(item.t) ? (item.h || 85) * MM + B.len * 0.6 : B.len, cs = new THREE.Mesh(new THREE.PlaneGeometry(xs[si + 1] - xs[si] - 0.01, ch), contactMat(B.f, B.o * (rl ? 0.6 : 1))); cs.position.set((xs[si] + xs[si + 1]) / 2 + B.dx, (rl ? item.y * 10 * MM - 0.02 : itemTop(item) + 0.003) - ch / 2, 0.0026); cs.renderOrder = 2; cs.userData.contact = true; ig.add(cs); } }));
   // soft contact shade on the floor under and just in front of the wall (the only shadow in Студия)
   if (false) { const fs = new THREE.Mesh(new THREE.PlaneGeometry(0.75, total * MM + 0.14), aoGrad(S.studio ? 0.36 : 0.12)); fs.rotation.x = -Math.PI / 2; fs.rotation.z = Math.PI / 2; fs.scale.x = -1; fs.position.set(total * MM / 2, 0.0025, 0.375); fs.userData.contact = fs.userData.keep = true; g.add(fs); }
   return g;
@@ -426,37 +407,18 @@ function bracket(g, x, y, L) {
   const k = L.toFixed(3);
   if (!BRG[k]) { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(L, 0); sh.lineTo(L, -0.016); sh.lineTo(0.06, -0.082); sh.lineTo(0, -0.088); sh.lineTo(0, 0);
     const ge = new THREE.ExtrudeGeometry(sh, { depth: 0.0065, bevelEnabled: true, bevelThickness: 0.0013, bevelSize: 0.0012, bevelSegments: 2 }); ge.rotateY(-Math.PI / 2); ge.translate(0.00325, 0, 0); BRG[k] = ge; }
-  const m = new THREE.Mesh(BRG[k], M.brk); m.position.set(x, y - 0.0012, ZB); m.castShadow = m.receiveShadow = true; g.add(m); [-0.012, -0.052].forEach(dy => g.add(box(0.0065, 0.016, 0.012, x, y + dy, 0.0405, M.brk))); /* hook tabs into the upright slot */
-  g.add(box(0.03, 0.005, L - 0.044, x, y - 0.0025, 0.0435 + (L - 0.044) / 2, M.brk));
-  g.add(box(0.016, 0.02, 0.01, x, y - 0.01, ZB + L - 0.005, M.brk));
+  const m = new THREE.Mesh(BRG[k], M.metal); m.position.set(x, y - 0.0012, ZB); m.castShadow = m.receiveShadow = true; g.add(m);
+  g.add(box(0.03, 0.005, L, x, y - 0.0025, ZB + L / 2, M.metal));
+  g.add(box(0.016, 0.02, 0.01, x, y - 0.01, ZB + L - 0.005, M.metal));
 }
-const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0175, 0.0042, 12, 32, Math.PI * 1.7), RIV_G = new THREE.CylinderGeometry(0.0035, 0.0035, 0.007, 12);
-let _GRM = null, _GRK = null; function gridMat() { if (_GRM && _GRK === M.metal) return _GRM; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 9); g.fillRect(0, 0, 9, 64);
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(34, 15); t.anisotropy = 4; _GRK = M.metal; _GRM = M.metal.clone(); _GRM.alphaMap = t; _GRM.alphaTest = 0.5; _GRM.side = THREE.DoubleSide; _GRM.normalMap = null; return _GRM; }
-let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
-  // v11q: contrasty chrome - dark room with a bright softbox band above and a dark floor band; rod shows a bright center line, dark bands and darker edges on any wall
-  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#eef0f2'); gr.addColorStop(0.24, '#f6f7f8'); gr.addColorStop(0.28, '#ffffff'); gr.addColorStop(0.33, '#ffffff'); gr.addColorStop(0.37, '#e2e5e8'); gr.addColorStop(0.6, '#e8eaec'); gr.addColorStop(0.76, '#c8cbcf'); gr.addColorStop(0.84, '#5e6166'); gr.addColorStop(1, '#3a3d41'); /* v11s: photo chrome - light overall, crisp highlight line, dark underside band */ /* v11r: bright chrome, soft dark bands */ g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
-  g.fillStyle = '#ffffff'; [[30, 40], [250, 56], [470, 18]].forEach(([x, w]) => g.fillRect(x, 60, w, 50)); g.fillStyle = 'rgba(60,63,67,0.18)'; [[100, 14], [215, 10], [330, 16], [440, 10]].forEach(([x, w]) => g.fillRect(x, 0, w, 256));
-  const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; _CHE = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; return _CHE; }
-function rodHolder(g, x, by, ry, zr, side) {
-  // v11t: Titan-GS «кронштейн для перекладины» - one flat bent steel strip 30 x 2 mm (system color):
-  // slotted tab hooked on the shelf bracket, straight drop, dog-leg toward the rod, open U cradle the 25 mm rod lies in
-  const RR = 0.0155, T = 0.002, W = 0.03, zb = zr - 0.03, r = RR + 0.0008, yTop = by - 0.002, yLeg = ry + 0.035, pts = [];
-  pts.push([yTop, zb], [yLeg + 0.012, zb]);
-  for (let k = 1; k <= 6; k++) { const t = k / 6, e = t * t * (3 - 2 * t); pts.push([yLeg + 0.012 - 0.03 * t, zb + (zr - r - zb) * e]); }
-  pts.push([ry, zr - r]);
-  for (let k = 1; k <= 20; k++) { const f = Math.PI * 0.85 * k / 20; pts.push([ry - r * Math.sin(f), zr - r * Math.cos(f)]); }
-  // profile as a thick polyline in (z, y)
-  const L = [], Rr = [];
-  pts.forEach((p, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dy = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dy, dz) || 1, ny = -dz / l, nz = dy / l;
-    L.push([p[1] + nz * T / 2, p[0] + ny * T / 2]); Rr.push([p[1] - nz * T / 2, p[0] - ny * T / 2]); });
-  const sh = new THREE.Shape(); sh.moveTo(L[0][0], L[0][1]); L.slice(1).forEach(q => sh.lineTo(q[0], q[1])); Rr.reverse().forEach(q => sh.lineTo(q[0], q[1])); sh.closePath();
-  const geo = new THREE.ExtrudeGeometry(sh, { depth: W, bevelEnabled: true, bevelThickness: 0.0004, bevelSize: 0.0004, bevelSegments: 1, curveSegments: 4 });
-  const m = new THREE.Mesh(geo, M.brk); m.rotation.y = -Math.PI / 2; m.position.set(x + W / 2, 0, 0); m.castShadow = true; g.add(m);
-  // slot in the tab: dark notch where it hooks over the bracket edge
-  const nt = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.022, T * 1.6), M.rubber); nt.position.set(x, yTop - 0.011, zb); g.add(nt);
+const ROD_G = new THREE.CylinderGeometry(1, 1, 1, 32, 1).translate(0, 0.5, 0), HOOK_G = new THREE.TorusGeometry(0.0195, 0.0032, 10, 28, Math.PI * 1.25), RIV_G = new THREE.CylinderGeometry(0.0035, 0.0035, 0.007, 12);
+function rodHolder(g, x, by, ry, zr) {
+  // Titan-GS: pressed-steel strap riveted to the underside of the shelf bracket, ~100 mm drop, ending in a round cup that holds the chrome rod (system color)
+  const top = by - 0.014, bot = ry + 0.012, len = Math.max(0.02, top - bot);
+  const st = new THREE.Mesh(new RoundedBoxGeometry(0.004, len + 0.012, 0.024, 2, 0.0015), M.metal); st.position.set(x, bot + len / 2 + 0.004, zr); st.castShadow = true; g.add(st);
+  [top - 0.004, top - 0.022].forEach(yy => { const r = new THREE.Mesh(RIV_G, M.metal); r.rotation.z = Math.PI / 2; r.position.set(x, yy, zr); g.add(r); });
+  const cup = new THREE.Mesh(HOOK_G, M.metal); cup.rotation.y = Math.PI / 2; cup.rotation.x = Math.PI * 0.375 + Math.PI; cup.scale.set(1, 1, 5.5); cup.position.set(x, ry, zr); cup.castShadow = true; g.add(cup);
 }
-let CUP_G = null, CAP_M = null;
 function buildItem(g, item, x0, x1, sec) {
   const y = item.y * 10 * MM, dep = (REAL_DEPTH[item.t][item.d] || 400) * MM, z0 = ZI, zf = z0 + dep;
   const a = x0 + 0.014, b = x1 - 0.014, L = b - a, mid = (x0 + x1) / 2;
@@ -473,7 +435,7 @@ function buildItem(g, item, x0, x1, sec) {
     const lip = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0 - 0.002, 0.042, 0.008, 2, 0.0028), M.metal); lip.position.set(mid, y - 0.01, zf + 0.004); lip.castShadow = lip.receiveShadow = true; g.add(lip);
     const rim = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0 - 0.002, 0.009, 0.02, 2, 0.0035), M.metal); rim.position.set(mid, y + 0.0075, zf - 0.006); rim.castShadow = true; g.add(rim);
   } else if (item.t === 'metal') {
-    g.add(box(x1 - x0, 0.0045, dep, mid, y + 0.00225, z0 + dep / 2, S.roomPre === 'loft' ? gridMat() : M.metal));
+    g.add(box(x1 - x0, 0.0045, dep, mid, y + 0.00225, z0 + dep / 2, M.metal));
     const f = new THREE.Mesh(new RoundedBoxGeometry(x1 - x0, 0.038, 0.007, 2, 0.0025), M.metal); f.position.set(mid, y - 0.015, zf); f.castShadow = true; g.add(f);
     g.add(box(x1 - x0, 0.024, 0.006, mid, y + 0.012, z0, M.metal));
   } else if (item.t === 'ldsp') {
@@ -501,7 +463,7 @@ function buildItem(g, item, x0, x1, sec) {
   } else if (item.t === 'trouser') {
     // Titan-GS pull-out trouser rack 463 / 603 x 440 x 45: flat frame on roller runners under the brackets,
     // the bars run from the wall to the front (trousers hang over them), rubber rings stop slipping
-    const h = 0.045, aa = a + 0.006, bb = b - 0.006, n = L < 0.53 ? 6 : L < 0.75 ? 8 : Math.round(L / 0.075), yb = y - h + 0.009;
+    const h = 0.045, aa = a + 0.006, bb = b - 0.006, n = Math.max(4, Math.round(L / 0.072)), yb = y - h + 0.009;
     [[x0 + 0.003, aa], [x1 - 0.003, bb]].forEach(([xa, xb]) => g.add(box(Math.abs(xb - xa) + 0.006, 0.022, dep, (xa + xb) / 2, y - 0.011, z0 + dep / 2, M.metal)));
     [aa, bb].forEach(x => g.add(box(0.012, 0.024, dep - 0.02, x, y - 0.02, z0 + dep / 2, M.metal)));
     g.add(box(bb - aa + 0.012, 0.03, 0.012, (aa + bb) / 2, y - 0.022, z0 + 0.012, M.metal));
@@ -510,27 +472,24 @@ function buildItem(g, item, x0, x1, sec) {
     for (let k = 0; k < n; k++) { const x = aa + 0.03 + (bb - aa - 0.06) * k / (n - 1); r.push([V(x, yb, z0 + 0.018), V(x, yb, zf - 0.016), 0.0055]); for (let zz = z0 + 0.05; zz < zf - 0.05; zz += 0.05) rings.push([V(x, yb, zz), V(x, yb, zz + 0.008), 0.0078]); }
     g.add(rods(r, M.metal)); g.add(rods(rings, M.rubber));
   } else if (item.t === 'shoe') {
-    // v11p Titan-style shoe shelf: level brackets (added above), the mesh tilts inside them (back high, front ~7 cm lower),
-    // heel trough at the front, straight level stop bar and a zigzag support wire under it
-    const drop = SHOE_DROP, r = [], n = Math.max(2, Math.round(L / 0.03)), zF = z0 + dep - 0.03;
-    const P = t => V(0, y - 0.004 - drop * t, z0 + 0.01 + (zF - z0 - 0.01) * t);
-    const p0 = P(0), p1 = P(1), tb = V(0, p1.y - 0.012, p1.z + 0.014), tl = V(0, p1.y + 0.012, p1.z + 0.028);
-    for (let i = 0; i <= n; i++) { const x = a + L * i / n; r.push([V(x, p0.y, p0.z), V(x, p1.y, p1.z), 0.0032]); r.push([V(x, p1.y, p1.z), V(x, tb.y, tb.z), 0.0032]); r.push([V(x, tb.y, tb.z), V(x, tl.y, tl.z), 0.0032]); }
-    [0, 0.33, 0.66, 1].forEach(t => { const p = P(t); r.push([V(a, p.y, p.z), V(b, p.y, p.z), 0.0045]); });
-    r.push([V(a, tb.y, tb.z), V(b, tb.y, tb.z), 0.0045]); r.push([V(a, tl.y, tl.z), V(b, tl.y, tl.z), 0.005]);
-    // side frames along the level brackets carry the tilted mesh
-    [a, b].forEach(x => { r.push([V(x, y - 0.004, z0 + 0.01), V(x, y - 0.004, zf - 0.006), 0.005]); r.push([V(x, y - 0.004, zf - 0.006), V(x, tl.y, tl.z), 0.004]); });
-    const zs = zf - 0.006; r.push([V(x0 + 0.004, y - 0.004, zs), V(x1 - 0.004, y - 0.004, zs), 0.0058]); // straight front stop bar
-    const nz = Math.max(4, Math.round(L / 0.05)); for (let k = 0; k < nz; k++) { const xa = a + L * k / nz, xb = a + L * (k + 1) / nz, up = k % 2 === 0; r.push([V(xa, up ? tl.y : y - 0.006, up ? tl.z : zs), V(xb, up ? y - 0.006 : tl.y, up ? zs : tl.z), 0.0028]); }
+    const drop = 0.11, r = [], n = Math.max(2, Math.round(L / 0.03));
+    const P = t => V(0, y + 0.004 - drop * t, z0 + dep * t);
+    for (let i = 0; i <= n; i++) { const x = a + L * i / n, p0 = P(0), p1 = P(1); r.push([V(x, p0.y, p0.z), V(x, p1.y, p1.z), 0.0034]); r.push([V(x, p1.y, p1.z), V(x, p1.y + 0.04, p1.z + 0.003), 0.0034]); }
+    [0, 0.33, 0.66, 1].forEach(t => { const p = P(t); r.push([V(x0, p.y, p.z), V(x1, p.y, p.z), 0.005]); });
+    const p1 = P(1); r.push([V(a, p1.y + 0.04, p1.z + 0.003), V(b, p1.y + 0.04, p1.z + 0.003), 0.0055]);
     g.add(rods(r, M.metal));
+    // angled shoe brackets: the same slope as the mesh, hooked into the uprights at the back
+    const ang = Math.atan2(drop, dep), Lb = Math.hypot(dep, drop);
+    [x0, x1].forEach(x => { const br = box(0.006, 0.026, Lb, x, y + 0.004 - drop / 2 - 0.016, z0 + dep / 2, M.metal); br.rotation.x = ang; br.castShadow = true; g.add(br);
+      g.add(box(0.006, 0.07, 0.012, x, y - 0.025, z0 + 0.006, M.metal)); });
   } else if (item.t === 'rail') {
     // Titan-GS rod holder: sheet-steel hook 101 x 31 x 30 mm hung on the shelf bracket (before the shelf), seat for the d25 rod
     const sh = sec && sec.items.filter(o => o !== item && o.t !== 'rail' && o.t !== 'shoe' && o.y > item.y && o.y - item.y <= 25).sort((p, q) => p.y - q.y)[0];
     const by = sh ? sh.y * 10 * MM : y + 0.09, zr = Math.min(ZI + (sh ? (REAL_DEPTH[sh.t][sh.d] || 400) * MM : 0.4) - 0.07, 0.36);
     if (!sh) { bracket(g, x0, by, 0.355); bracket(g, x1, by, 0.355); }
-    const ca = x0 - 0.026, cb = x1 + 0.026; g.userData.rodZ = zr; /* v11v: rod lies through both U cradles and sticks out ~11 mm past each holder, capped */
+    const ca = x0 + 0.004, cb = x1 - 0.004; g.userData.rodZ = zr;
     [x0, x1].forEach(x => rodHolder(g, x, by, y, zr));
-    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.0155]], M.rod); rr.geometry = ROD_G; g.add(rr); [ca, cb].forEach(xc => { const cp = new THREE.Mesh(new THREE.CylinderGeometry(0.0163, 0.0163, 0.005, 24), CAP_M || (CAP_M = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.45 }))); cp.rotation.z = Math.PI / 2; cp.position.set(xc + (xc < x0 ? -0.0025 : 0.0025), y, zr); g.add(cp); }); /* end caps */
+    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.017]], M.rod); rr.geometry = ROD_G; g.add(rr);
   }
 }
 
@@ -595,7 +554,7 @@ function buildProps(ig, item, x0, x1, ref) {
   item.pr.forEach((p, pi) => { if (!PROPK[p.k] || !propFits(p.k, item.t)) return; const g = propModel(p.k, pi, item), hw = PROPK[p.k][2] / 2;
     const xa = x0 + 0.02 + hw, xb = x1 - 0.02 - hw, x = xb > xa ? xa + (xb - xa) * Math.max(0, Math.min(1, p.u ?? 0.5)) : (x0 + x1) / 2;
     if (item.t === 'rail') { const zr = ig.userData.rodZ ?? 0.3; g.position.set(x, y, zr); }
-    else if (item.t === 'shoe') { const drop = SHOE_DROP, sd = dep - 0.04, ang = Math.atan2(drop, sd), t = 0.22; g.rotation.x = ang; g.position.set(x, y + 0.002 - drop * t, z0 + 0.01 + sd * t); }
+    else if (item.t === 'shoe') { const drop = 0.11, ang = Math.atan2(drop, dep), t = 0.18; g.rotation.x = ang; g.position.set(x, y + 0.008 - drop * t, z0 + dep * t); }
     else { const top = y + (item.t === 'ldsp' ? 0.018 : item.t === 'metal' ? 0.0045 : 0.0125), d0 = p.k === 'box' ? 0.36 : 0.27; g.position.set(x, top, z0 + Math.max(d0 / 2 + 0.01, dep - d0 / 2 - 0.03)); }
     g.userData.prop = { ...ref, pi, x0, x1, hw }; g.traverse(o => { o.userData.prop = g.userData.prop; }); ig.add(g); });
 }
@@ -688,28 +647,27 @@ function buildRoom() {
   const cl = F.xL != null, cr = F.xR != null, left = cl ? F.xL : F.x0 - Mg, right = cr ? F.xR : F.x0 + backW + Mg, cx = (left + right) / 2;
   ROOMB = { l: cl && !photo ? left : -1e9, r: cr && !photo ? right : 1e9, ch: 1e9, CH };
   const act = wallsActive(), sideLen = Math.max(5, ...[1, 2].filter(w => act.includes(w)).map(w => effGap(w) / 100 + wallWidth(w) * MM + Mg));
-  const floorM = ST ? new THREE.ShadowMaterial({ opacity: 0 }) : (fm0 => fm0.isMeshStandardMaterial ? new THREE.MeshLambertMaterial({ color: fm0.color, map: fm0.map, normalMap: fm0.normalMap, normalScale: fm0.normalScale, userData: { floor: true } }) : fm0)(floorMat()); // matte floor: no glare
+  const floorM = ST ? new THREE.ShadowMaterial({ opacity: 0 }) : floorMat();
   // floor laid from the corner: tiles and parquet at 45 deg, laminate along the main wall (real scale, see FLOORS)
   const fc = cl ? left : cr ? right : F.x0, FD = FLOORS[S.floor] || FLOORS.oak, fRot = FD[4] ? Math.PI / 4 : 0;
-  const fl = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), floorM); fl.rotation.set(-Math.PI / 2, 0, fRot); fl.position.set(fc, 0, 0); fl.receiveShadow = !ST; fl.userData.floorM = true; room.add(fl);
-  if (!ST) { /* v11v: floor-coloured slab under the floor - in ortho low views no white band under the walls */ const sl = new THREE.Mesh(new THREE.BoxGeometry(240, 40, 240), new THREE.MeshBasicMaterial({ color: (floorM.color || new THREE.Color(0xcfc6b8)).clone().multiplyScalar(0.9) })); sl.position.set(fc, -20.004, 0); sl.userData.slab = true; window.FSLAB = sl; room.add(sl); } else window.FSLAB = null;
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorM); fl.rotation.set(-Math.PI / 2, 0, fRot); fl.position.set(fc, 0, 0); fl.receiveShadow = !ST; room.add(fl);
   const FJ = FLOORS[S.floor] && FLOORS[S.floor][3];
-  if (!ST && FJ) { const jt = jointTex(S.floor).clone(); jt.needsUpdate = true; jt.repeat.set(240 / FJ[0], 240 / FJ[1]); const j = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshBasicMaterial({ map: jt, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); j.rotation.set(-Math.PI / 2, 0, fRot); j.position.set(fc, 0.0005, 0); room.add(j); }
+  if (!ST && FJ) { const jt = jointTex(S.floor).clone(); jt.needsUpdate = true; jt.repeat.set(60 / FJ[0], 60 / FJ[1]); const j = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshBasicMaterial({ map: jt, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); j.rotation.set(-Math.PI / 2, 0, fRot); j.position.set(fc, 0.0005, 0); room.add(j); }
   const ops = ST ? [] : openingsList(F, CH), WH = CH + 0.03, bk = new THREE.Group(); room.add(bk);
   const wallPlane = (w, x, z, ry, parent, holes) => {
     const sh = new THREE.Shape(); sh.moveTo(-w / 2, -WH / 2); sh.lineTo(w / 2, -WH / 2); sh.lineTo(w / 2, WH / 2); sh.lineTo(-w / 2, WH / 2); sh.lineTo(-w / 2, -WH / 2);
     holes.forEach(o => { const x0 = o.c - o.w / 2, y0 = Math.max(o.b, 0.002) - WH / 2, p = new THREE.Path(); p.moveTo(x0, y0); p.lineTo(x0 + o.w, y0); p.lineTo(x0 + o.w, o.b + o.h - WH / 2); p.lineTo(x0, o.b + o.h - WH / 2); p.lineTo(x0, y0); sh.holes.push(p); });
-    const geo = new THREE.ShapeGeometry(sh); { const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) + WH / 2 + 0.0313); } /* v11v: uv v = floor height + 31 mm, so the 80 mm plinth top falls mid brick course */ const grp = new THREE.Group(); grp.position.set(x, WH / 2, z); grp.rotation.y = ry; parent.add(grp);
-    if (!ST) { const wm = new THREE.Mesh(geo, wallMat()); wm.material.side = THREE.DoubleSide; /* v11s: no white void from behind/above */ wm.receiveShadow = S.room.shP === 'sun'; grp.add(wm); }
+    const geo = new THREE.ShapeGeometry(sh); { const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) + WH / 2 + 0.0313); } /* v11v: brick courses from floor */ const grp = new THREE.Group(); grp.position.set(x, WH / 2, z); grp.rotation.y = ry; parent.add(grp);
+    if (!ST) { const wm = new THREE.Mesh(geo, wallMat()); wm.receiveShadow = true; grp.add(wm); }
     const q = new THREE.Mesh(geo, wallShadowMat()); q.receiveShadow = true; grp.add(q);
     holes.forEach(o => buildOpening(grp, o, WH)); grp.userData.wallG = true; return grp;
   };
   const bo = ops.filter(o => o.wall === 'B').map(o => ({ ...o, c: o.x - cx }));
   bk.userData.occ = wallPlane(right - left, cx, 0, 0, bk, bo);
-  const skC = new THREE.Color(S.room.skirtColor || '#f6f5f2'), skM = new THREE.MeshBasicMaterial({ color: skC.clone().multiplyScalar(0.94) }); /* v11u: plinth unlit - no jumping grey shadow patch */ // v11p: mostly self-lit, no gray shading while orbiting
+  const skM = new THREE.MeshStandardMaterial({ color: S.room.skirtColor || '#ffffff', roughness: 0.6 });
   // skirting runs along u (local x of a wall frame), cut at doors
-  const skirt = (parent, u0, u1, cuts, place) => { if (S.room.skirting === false) return; let segs = [[u0, u1]]; cuts.forEach(([a, b]) => { segs = segs.flatMap(([s, e]) => b <= s || a >= e ? [[s, e]] : [[s, a], [b, e]].filter(([p, q]) => q - p > 0.01)); });
-    segs.forEach(([s, e]) => { const g = new THREE.Group(); place(g); [[0.016, 0.08, 0.04, 0.008], [0.022, 0.012, 0.074, 0.011]].forEach(([d, h, y, z]) => { const m = box(e - s, h, d, (s + e) / 2, y, z, skM); m.castShadow = m.receiveShadow = false; g.add(m); }); parent.add(g); }); };
+  const skirt = (parent, u0, u1, cuts, place) => { let segs = [[u0, u1]]; cuts.forEach(([a, b]) => { segs = segs.flatMap(([s, e]) => b <= s || a >= e ? [[s, e]] : [[s, a], [b, e]].filter(([p, q]) => q - p > 0.01)); });
+    segs.forEach(([s, e]) => { const g = new THREE.Group(); place(g); [[0.016, 0.08, 0.04, 0.008], [0.022, 0.012, 0.074, 0.011]].forEach(([d, h, y, z]) => { const m = box(e - s, h, d, (s + e) / 2, y, z, skM); m.castShadow = false; g.add(m); }); parent.add(g); }); };
   const doorCuts = (list, key) => list.filter(o => o.kind === 'door').map(o => [o[key] - o.w / 2 - 0.08, o[key] + o.w / 2 + 0.08]);
   const cmM = new THREE.MeshStandardMaterial({ color: S.room.cornColor || '#fbfaf6', roughness: 0.7 });
   const cornice = (len, place, parent) => { const g = new THREE.Group(); place(g); [[0.012, 0.09, 0.006], [0.03, 0.05, 0.02], [0.05, 0.022, 0.04]].forEach(([d, hh, zz]) => { const m = box(len, hh, d, 0, CH - hh / 2, zz - d / 2 + 0.006, cmM); m.castShadow = false; g.add(m); }); parent.add(g); };
@@ -720,7 +678,7 @@ function buildRoom() {
     pv.userData.occ = wallPlane(sideLen, 0, sideLen / 2, L ? Math.PI / 2 : -Math.PI / 2, pv, so);
     if (ST) return;
     const fr = new THREE.Group(); fr.rotation.y = L ? Math.PI / 2 : -Math.PI / 2; if (L) fr.scale.x = -1; pv.add(fr); // local x = u (z in room), local z into the room
-    if (!ST) skirt(fr, 0, sideLen, doorCuts(ops.filter(o => o.wall === (L ? 'L' : 'R')), 'z'), () => {});
+    if (S.room.skirting !== false) skirt(fr, 0, sideLen, doorCuts(ops.filter(o => o.wall === (L ? 'L' : 'R')), 'z'), () => {});
     if (S.room.cornice) cornice(sideLen, g => g.position.x = sideLen / 2, fr);
     aoStrip(fr, CH, 0.5, k, m => { m.position.set(0.25, CH / 2, 0.002); });
     aoStrip(fr, sideLen, 0.35, k, m => { m.rotation.z = Math.PI / 2; m.position.set(sideLen / 2, 0.175, 0.002); });
@@ -732,10 +690,10 @@ function buildRoom() {
     aoStrip(bk, W, 0.35, k, m => { m.position.set(cx, 0.175, 0.002); m.rotation.z = Math.PI / 2; });
     if (false) { aoStrip(room, W, 0.3, k * 0.7, m => { m.rotation.z = -Math.PI / 2; m.position.set(cx, CH - 0.15, 0.002); }); aoStrip(room, W, 0.4, k * 0.55, m => { m.rotation.x = Math.PI / 2; m.rotation.z = Math.PI / 2; m.scale.x = -1; m.position.set(cx, CH - 0.002, 0.2); }); } }
   if (ST) return;
-  if (!ST) skirt(bk, left, right, doorCuts(bo.map(o => ({ ...o, x: o.c + cx })), 'x'), () => {});
+  if (S.room.skirting !== false) skirt(bk, left, right, doorCuts(bo.map(o => ({ ...o, x: o.c + cx })), 'x'), () => {});
   // ceiling: one solid plane over the whole room, seen only from below
   const cg = new THREE.Group(); cg.userData.occC = CH; room.add(cg);
-  if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xfbfbf9, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
+  { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xfbfbf9, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
     if (S.room.cornice) cornice(right - left, g => g.position.x = cx, bk); }
   if (S.room.lamps) { const n = Math.max(2, Math.round((right - left) / 1.2)); for (let i = 0; i < n; i++) { const x = left + (right - left) * (i + 0.5) / n; const d = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.006, 24), new THREE.MeshBasicMaterial({ color: 0xfff6e6, toneMapped: false })); d.position.set(x, CH - 0.007, 0.9); cg.add(d); const rg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.012, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d1e20, roughness: 0.35, metalness: 0.4, side: THREE.DoubleSide })); rg.position.set(x, CH - 0.006, 0.9); cg.add(rg); const rd = new THREE.Mesh(new THREE.RingGeometry(0.035, 0.05, 32), new THREE.MeshStandardMaterial({ color: 0x1d1e20, roughness: 0.35, metalness: 0.4 })); rd.rotation.x = Math.PI / 2; rd.position.set(x, CH - 0.0121, 0.9); cg.add(rd); const pl = new THREE.PointLight(0xffe9cc, 1.0, 0, 2); pl.position.set(x, CH - 0.12, 0.9); cg.add(pl); } }
 }
@@ -750,7 +708,7 @@ function rugTex(fluffy) {
   const n = document.createElement('canvas'); n.width = n.height = 512; const q = n.getContext('2d'); q.fillStyle = 'rgb(128,128,255)'; q.fillRect(0, 0, 512, 512);
   if (fluffy) { g.fillStyle = '#b3a285'; g.fillRect(0, 0, 512, 512); for (let i = 0; i < 70000; i++) { const x = rnd() * 512, y = rnd() * 512, a = rnd() * 6.3, L = 3 + rnd() * 7, l = 170 + rnd() * 55; g.strokeStyle = `rgba(${l},${l - 8},${l - 22},0.55)`; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * L, y + Math.sin(a) * L); g.stroke(); q.strokeStyle = `rgb(${128 + Math.cos(a) * 70},${128 + Math.sin(a) * 70},230)`; q.lineWidth = 1.5; q.beginPath(); q.moveTo(x, y); q.lineTo(x + Math.cos(a) * L, y + Math.sin(a) * L); q.stroke(); } }
   else { g.fillStyle = '#b9ab94'; g.fillRect(0, 0, 512, 512); for (let y = 0; y < 512; y += 6) for (let x = 0; x < 512; x += 6) { const l = 140 + rnd() * 45, o = ((x + y) / 6) % 2; g.fillStyle = `rgba(${l + 30},${l + 20},${l},0.95)`; if (o) g.fillRect(x, y, 6, 4); else g.fillRect(x, y, 4, 6); q.fillStyle = o ? 'rgb(128,150,255)' : 'rgb(150,128,255)'; if (o) q.fillRect(x, y, 6, 2); else q.fillRect(x, y, 2, 6); }
-  }
+    g.fillStyle = 'rgba(80,72,62,0.55)'; for (let k2 = 0; k2 < 3; k2++) { g.fillRect(0, 60 + k2 * 10, 512, 4); g.fillRect(0, 448 - k2 * 10, 512, 4); } }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
   const tn = new THREE.CanvasTexture(n); tn.wrapS = tn.wrapT = THREE.RepeatWrapping;
   RUGT[k] = [t, tn]; return RUGT[k];
@@ -772,14 +730,13 @@ let BLOBT = null;
 function blobMat(op) { if (!BLOBT) { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, 'rgba(30,24,20,1)'); gr.addColorStop(0.55, 'rgba(30,24,20,0.55)'); gr.addColorStop(1, 'rgba(30,24,20,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); BLOBT = new THREE.CanvasTexture(c); }
   return new THREE.MeshBasicMaterial({ map: BLOBT, transparent: true, opacity: op, depthWrite: false, toneMapped: false }); }
 // tall floor mirror in a slim black frame, leaning on the wall; the glass reflects the room environment
-const REFL = []; let REFLi = 0; // reused Reflectors (no render-target leak on rebuild)
 function mirrorModel() { const g = new THREE.Group(), W = 0.62, H = 1.72, f = 0.035, lean = 0.075, tilt = Math.atan2(lean, H);
   const fm = new THREE.MeshPhysicalMaterial({ color: 0x18181a, roughness: 0.42, metalness: 0.3, clearcoat: 0.3, clearcoatRoughness: 0.4 });
   const gm = new THREE.MeshStandardMaterial({ color: 0xe9eeee, metalness: 1, roughness: 0.06, envMapIntensity: 2.6, emissive: new THREE.Color(0x8d9494) });
   const in_ = new THREE.Group(); in_.rotation.x = -tilt; in_.position.z = -lean; g.add(in_);
   const add = (w, h, d, x, y, z, m) => { const o = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, 0.006), m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; in_.add(o); return o; };
   add(f, H, 0.03, -W / 2 + f / 2, H / 2, 0, fm); add(f, H, 0.03, W / 2 - f / 2, H / 2, 0, fm); add(W, f, 0.03, 0, H - f / 2, 0, fm); add(W, f, 0.03, 0, f / 2, 0, fm);
-  const gG = new THREE.PlaneGeometry(W - 2 * f + 0.004, H - 2 * f + 0.004); let gl; try { gl = REFL[REFLi]; if (!gl) gl = REFL[REFLi] = new Reflector(gG, { textureWidth: 512, textureHeight: 1024, color: 0xcfd6d6, clipBias: 0.003 }); REFLi++; gl.rotation.set(0, 0, 0); } catch (e) { gl = new THREE.Mesh(gG, gm); } gl.position.set(0, H / 2, 0.004); in_.add(gl); // v11p: real reflection
+  const gl = new THREE.Mesh(new THREE.PlaneGeometry(W - 2 * f + 0.004, H - 2 * f + 0.004), gm); gl.position.set(0, H / 2, 0.004); in_.add(gl);
   const back = new THREE.Mesh(new THREE.PlaneGeometry(W, H), fm); back.rotation.y = Math.PI; back.position.set(0, H / 2, -0.012); in_.add(back);
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.24, 0.36), blobMat(0.35)); sh.rotation.x = -Math.PI / 2; sh.position.set(0, 0.0025, 0.02); g.add(sh);
   g.position.z = 0; return g; }
@@ -809,14 +766,12 @@ function bladeGeo(len, wid, f, droop, cup, segU = 10, segV = 6) {
   for (let i = 0; i < segU; i++) for (let j = 0; j < segV; j++) { const a = i * (segV + 1) + j, b = a + segV + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
 }
-const MONG = {};
-function monsteraGeo(sz) { const kk = sz.toFixed(2); return MONG[kk] || (MONG[kk] = monsteraGeo0(sz)); }
-function monsteraGeo0(sz) {
-  const sh = new THREE.Shape(), N = 60, slits = [0.5, 0.85, 1.2, 1.55, 1.95, 2.35], pts = [];
+function monsteraGeo(sz) {
+  const sh = new THREE.Shape(), N = 90, slits = [0.5, 0.85, 1.2, 1.55, 1.95, 2.35], pts = [];
   for (let i = 0; i <= N; i++) { const t = i / N * Math.PI * 2, x = 16 * Math.pow(Math.sin(t), 3), y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); pts.push([x, y + 5, t]); }
   const out = []; pts.forEach(([x, y, t], i) => { const tt = t > Math.PI ? 2 * Math.PI - t : t; out.push([x, y]); slits.forEach(s => { if (Math.abs(tt - s) < Math.PI / N) { const ix = x * 0.38, iy = y * 0.85 + 2; out.push([ix, iy], [x * 1.0 + (t > Math.PI ? 0.6 : -0.6), y + 0.6]); } }); });
   out.forEach(([x, y], i) => i ? sh.lineTo(x, y) : sh.moveTo(x, y));
-  const g = new THREE.ShapeGeometry(sh, 1), p = g.attributes.position, k = sz / 22;
+  const g = new THREE.ShapeGeometry(sh, 2), p = g.attributes.position, k = sz / 22;
   for (let i = 0; i < p.count; i++) { const x = p.getX(i) * k, y = p.getY(i) * k; p.setXYZ(i, x, -0.35 * y * y / sz + 0.12 * x * x / sz, y); }
   g.computeVertexNormals(); return g;
 }
@@ -855,7 +810,7 @@ function plantModel(k) {
 const PLC = {};
 function plantSpot(i) { const F = frame(), cl = F.xL != null, cr = F.xR != null; const spots = []; if (S.layout === 'Lr' || S.layout === 'straight') spots.push([F.x0 - 0.45, 0.4]); if (!cr) spots.push([F.x0 + F.backW + 0.45, 0.4]); else spots.push([F.xR - 0.4, 2.2]); if (cl) spots.push([F.xL + 0.4, 2.4]); spots.push([F.x0 + F.backW / 2 + 0.9, 1.6]); return spots[i % spots.length]; }
 function buildPlants() {
-  (S.plants || []).forEach((p, i) => { if (!PLC[p.k] && p.k !== 'mirror') PLC[p.k] = plantModel(p.k); const g = p.k === 'mirror' ? plantModel(p.k) : PLC[p.k].clone(); /* mirror: own pooled Reflector (a clone would sample a never-rendered target) */ g.position.set(p.x, 0, p.z); g.rotation.y = p.r || 0; g.scale.setScalar(p.s || 1); g.userData.plant = i; g.traverse(o => { o.userData.plant = i; }); decor.add(g); });
+  (S.plants || []).forEach((p, i) => { if (!PLC[p.k]) PLC[p.k] = plantModel(p.k); const g = PLC[p.k].clone(); g.position.set(p.x, 0, p.z); g.rotation.y = p.r || 0; g.scale.setScalar(p.s || 1); g.userData.plant = i; g.traverse(o => { o.userData.plant = i; }); decor.add(g); });
 }
 // window light: soft window-shaped patch with mullions on the wall and / or floor (additive, works on the unlit walls)
 let WLT = null;
@@ -877,7 +832,7 @@ function buildDecor(c) {
 // ---------- dimensions ----------
 // «Авто» (default): dark lines on a light background (Студия, white brick), white otherwise, so dimensions never vanish
 function dimBlack() { if (S.dimC === 'black') return true; if (S.dimC === 'white') return false; if (photo && !$('showRoom').checked) return false;
-  const c = new THREE.Color(S.studio ? (S.wall || S.bg || '#e2ded7') : (S.wall || '#a9a49c')); return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b > 0.62; }
+  const c = new THREE.Color(S.studio ? (S.bg || '#e2ded7') : (S.wall || '#a9a49c')); return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b > 0.62; }
 const dimCol = () => dimBlack() ? '#1e1e1e' : '#ffffff';
 function labelSprite(text, mode) {
   const bold = S.dimStyle !== 'thin', white = !dimBlack();
@@ -887,7 +842,7 @@ function labelSprite(text, mode) {
   g.fillStyle = white ? '#ffffff' : '#1e1e1e'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, 32);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true, toneMapped: false, sizeAttenuation: false }));
-  /* about 17 css px tall at any zoom */ const h = 2 * Math.tan(camera.fov * Math.PI / 360) * ((view.clientHeight || 600) < 700 ? 14 : 16) / Math.max(300, view.clientHeight || 600); sp.scale.set(h * w / 60 * 1, h * 1, 1); sp.renderOrder = 10;
+  /* about 17 css px tall at any zoom */ const h = 2 * Math.tan(camera.fov * Math.PI / 360) * ((view.clientHeight || 600) < 700 ? 14 : 16) / Math.max(300, view.clientHeight || 600); sp.scale.set(h * w / 60, h, 1); sp.renderOrder = 10;
   // h: above the line; vL / vR: vertical text left / right of a vertical line; tL / tR: tag anchored at its left / right bottom corner
   if (mode === 'vL') { sp.center.set(0.5, 0); sp.material.rotation = Math.PI / 2; } else if (mode === 'vR') { sp.center.set(0.5, 1); sp.material.rotation = Math.PI / 2; } else if (mode === 'tL') sp.center.set(0, 0); else if (mode === 'tR') sp.center.set(1, 0); else sp.center.set(0.5, 0);
   return sp;
@@ -912,13 +867,13 @@ function dimV(g, labels, x, ya, yb, z, text, xPart, side) {
 }
 const cm = mm => String(Math.round(mm / 10 * 10) / 10).replace('.', ',');
 function itemTop(o) { return o.y * 10 * MM + (o.t === 'rail' ? 0.017 : 0); }
-function itemBot(o) { const y = o.y * 10 * MM; return o.t === 'basket' || o.t === 'pull' ? y - (o.h || 85) * MM : o.t === 'trouser' ? y - 0.045 : o.t === 'shoe' ? y - 0.09 : o.t === 'rail' ? y - 0.017 : y - 0.042; }
+function itemBot(o) { const y = o.y * 10 * MM; return o.t === 'basket' || o.t === 'pull' ? y - (o.h || 85) * MM : o.t === 'trouser' ? y - 0.045 : o.t === 'shoe' ? y - 0.11 : o.t === 'rail' ? y - 0.017 : y - 0.042; }
 function buildDims(g, wi) {
   const labels = [], W = S.walls[wi], z = 0.006, railY = S.railTop * 10 * MM, D = S.dm || {};
   let xs = [0]; W.sections.forEach(s => xs.push(xs[xs.length - 1] + s.w * 10 * MM));
   const tot = xs[xs.length - 1];
-  if (D.s) W.sections.forEach((s, i) => dimH(g, labels, xs[i], xs[i + 1], railY + 0.14, z, cm(s.w * 10), railY));
-  if (D.o) dimH(g, labels, -0.0125, tot + 0.0125, railY + (D.s ? 0.28 : 0.14), z, cm(tot / MM + 25), railY);
+  if (D.s) W.sections.forEach((s, i) => dimH(g, labels, xs[i], xs[i + 1], railY + 0.08, z, cm(s.w * 10), railY));
+  if (D.o) dimH(g, labels, -0.0125, tot + 0.0125, railY + (D.s ? 0.19 : 0.08), z, cm(tot / MM + 25), railY);
   if (D.s) { const eg = effGap(wi), lr = wi === 0 && S.layout === 'Lr', gr = wi === 0 && S.layout === 'U' ? effGapR() : 0;
     if (eg > 0 && S.layout !== 'straight') { if (lr) dimH(g, labels, tot + 0.0125, tot + eg / 100 + 0.02, railY + 0.08, z, cm(eg * 10 - 12.5), railY); else dimH(g, labels, -eg / 100 - (wi === 0 ? 0.02 : 0), -0.0125, railY + 0.08, z, cm(eg * 10 - 12.5), railY); }
     if (gr > 0) dimH(g, labels, tot + 0.0125, tot + gr / 100 + 0.02, railY + 0.08, z, cm(gr * 10 - 12.5), railY); }
@@ -972,7 +927,6 @@ function restoreHist(j) { histLock = true; setTimeout(() => { renderDeco(); setB
 function undo() { clearTimeout(histT); if (HIST.length < 2) return; RED.push(HIST.pop()); restoreHist(HIST[HIST.length - 1]); }
 function redo() { if (!RED.length) return; const j = RED.pop(); HIST.push(j); restoreHist(j); }
 function rebuild() {
-  REFLi = 0;
   // fresh start / reset: corner shifts sit on the red dot (no shelves crossing in the corner)
   if (S.__gapFix) { delete S.__gapFix; const ks = gapKeys(); if (ks.length && !ks.some(([k]) => gapGet(k) >= optGap(k))) S.__fresh = true; }
   if (S.__fresh) { delete S.__fresh; if (S.layout !== 'straight') gapKeys().forEach(([k]) => gapSet(k, Math.min(300, optGap(k)))); }
@@ -992,7 +946,7 @@ function rebuild() {
   bbox = new THREE.Box3();
   model.children.forEach(c => { if (c !== catcher) bbox.expandByObject(c); }); if (bbox.isEmpty()) bbox.set(V(F.x0, 0, 0), V(F.x0 + Math.max(0.6, F.backW), S.railTop / 100, 0.45)); { const cc = bbox.getCenter(new THREE.Vector3()); bbox.expandByPoint(V(cc.x, 0, Math.max(bbox.max.z, 0.5))); }
   buildDecor(bbox.getCenter(new THREE.Vector3()));
-  { const sz = bbox.getSize(new THREE.Vector3()), k = S.layout.replace('Lr', 'L') + ':' + sz.x.toFixed(2) + ':' + sz.z.toFixed(2); /* no auto-fit on edits: only Сброс/Ракурс move the camera */ window.__fitK = k; } // width / type changed: refit
+  { const sz = bbox.getSize(new THREE.Vector3()), k = S.layout.replace('Lr', 'L') + ':' + sz.x.toFixed(2) + ':' + sz.z.toFixed(2); if (window.__fitK && window.__fitK !== k && orb.on && !histLock) setTimeout(fitView, 0); window.__fitK = k; } // width / type changed: refit
   rebuildDims();
   if (cur.it >= 0) model.traverse(o => { const r = o.userData.ref; if (r && r.wi === cur.w && r.si === cur.s && r.ii === cur.it) hlOn(o); });
   const c = bbox.getCenter(new THREE.Vector3());
@@ -1000,7 +954,6 @@ function rebuild() {
   catcher.visible = !!photo && !$('showRoom').checked;
   room.visible = !photo || $('showRoom').checked;
   summary(); fillDims(); localStorage.setItem('gs_auto', JSON.stringify(S));
-  try { linkUI(); } catch (er) {}
   $('delBtn').classList.toggle('hide', !window.__propSel && !(window.__plantSel >= 0) && !(cur.it >= 0 && S.walls[cur.w].sections[cur.s] && S.walls[cur.w].sections[cur.s].items[cur.it]));
 }
 function setDims(on) { dimsG.visible = !!on && dimsOn(); }
@@ -1048,29 +1001,22 @@ function levelCam(cam, tg, k) {
 // ---- level orbit: pitch always 0, height + lens shift ----
 const orb = { on: false, T: V(0, 1, 0), az: 0, R: 4, h: 1.5 };
 function syncFromCam(kind) {
-  orb.on = true; orb.free = false; controls.enabled = !orb.on;
+  orb.on = kind !== 'top'; controls.enabled = !orb.on;
   if (!orb.on) { camera.clearViewOffset(); return; }
   const T = controls.target.clone(), p = camera.position;
   orb.T.copy(T); orb.az = Math.atan2(p.x - T.x, p.z - T.z); orb.R = Math.max(0.5, Math.hypot(p.x - T.x, p.z - T.z)); orb.h = p.y; applyCam();
 }
 function applyCam(cam = camera) {
-  // v12a: level camera (pitch always 0, up = world Y) + vertical lens shift; elevation = camera height. Verticals exactly vertical.
-  const o = orb, D2R = Math.PI / 180; o.free = false;
-  if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  let D = Math.max(0.5, Math.hypot(o.R, o.h - o.T.y)), el = Math.atan2(o.h - o.T.y, o.R);
-  el = Math.max(-8 * D2R, Math.min(50 * D2R, el));
-  const elMin = Math.asin(Math.max(-1, Math.min(1, (0.35 - o.T.y) / D))); if (el < elMin) el = elMin; // camera stays >=35 cm above floor
-  o.R = D * Math.cos(el); o.h = o.T.y + D * Math.sin(el);
-  if (cam.fov !== 32) cam.fov = 32;
-  const nr = 0.05, fr = D * 3 + 60; cam.near = nr; cam.far = fr;
+  const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
+  o.h = Math.max(0.08, o.T.y - o.R * 20, Math.min(o.T.y + o.R * 20, o.h)); // camera never dips under the floor (floor stays visible) // up to ~87 deg above/below: straight-down view possible
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
-  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h, o.T.z); cam.updateMatrixWorld();
-  const t = Math.tan(cam.fov * D2R / 2), yN = (o.T.y - o.h) / (o.R * t);
-  const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); cam.updateProjectionMatrix();
-  if (window.FSLAB) window.FSLAB.visible = true;
+  // plain perspective: true tilt at every angle, no lens shift, free orbit all around (walls facing the camera hide via tickOcc) // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
+  // two-point perspective: level camera + vertical lens shift keeps verticals straight at normal angles;
+  // the shift is capped (30°) so the image never stretches, and from 40° to 65° it hands over smoothly to a real tilt
+  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, bt = Math.max(0, Math.min(1, (ea - 40 * D2R) / (25 * D2R))), sh = Math.min(ea, 30 * D2R) * (1 - bt * bt * (3 - 2 * bt)), p = Math.sign(a) * (ea - sh);
+  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  if (sh > 1e-4) { const yN = -Math.tan(Math.sign(a) * sh) / Math.tan(cam.fov * Math.PI / 360), H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); }
 }
-function orbZoom(k) { const o = orb; o.R = o.R * k; o.h = o.T.y + (o.h - o.T.y) * k; const D = Math.hypot(o.R, o.h - o.T.y); if (D < 2) { o.R *= 2 / D; o.h = o.T.y + (o.h - o.T.y) * 2 / D; } if (D > 120) { o.R *= 120 / D; o.h = o.T.y + (o.h - o.T.y) * 120 / D; } }
-function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return Math.max(0.8, Math.min(1.6, Math.max(sz.x, sz.y) * 0.35)); } catch (e) { return 0.8; } }
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
   el.addEventListener('contextmenu', e => e.preventDefault());
@@ -1083,20 +1029,20 @@ function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return
     const hpx = el.clientHeight || 600, unit = orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
     if (P.size >= 2) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinch) orbZoom(pinch / Math.max(d, 1));
+      if (pinch) { orb.R = Math.max(0.25, Math.min(30, orb.R * pinch / Math.max(d, 1))); }
       pinch = d; const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az));
       orb.T.addScaledVector(rt, -dx * unit / 2); orb.T.y += dy * unit / 2; return;
     }
     if (p.b === 2 || p.b === 1 || p.sh) { const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)); orb.T.addScaledVector(rt, -dx * unit); orb.T.y += dy * unit; return; }
-    if (orb.free) { orb.free = false; } orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-0.14, Math.min(0.873, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = Math.max(0.05, D * Math.cos(el)); orb.h = orb.T.y + D * Math.sin(el); } // v11i true spherical orbit
+    orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-1.52, Math.min(1.52, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = Math.max(0.05, D * Math.cos(el)); orb.h = orb.T.y + D * Math.sin(el); } // true spherical orbit: straight-down view reachable
   });
-  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orbZoom(Math.exp(e.deltaY * 0.001)); }, { passive: false });
+  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(0.25, Math.min(30, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
 function camK() { const k = localStorage.getItem('gs_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'int'; } // default: «Интерьер» photo preset, closest to the client renders
 var CAMS = [['std', 'Стандарт'], ['int', 'Интерьер'], ['por', 'Портрет'], ['top3', 'Сверху 3/4']];
-const LENSF = () => 32; // v12a level camera + lens shift
+const LENSF = () => 28;
 function CAMEXP() { return { int: 1.1, por: 1.03 }[camK()] || 1.0; }
 // interior-photographer cameras: own lens, height and viewpoint; verticals stay vertical (level camera + lens shift)
 function camPhoto(k) {
@@ -1110,12 +1056,12 @@ function camPhoto(k) {
 function lensUI() { const k = camK(), b = document.getElementById('lensBtn'); if (!b) return; b.classList.toggle('on', k !== 'std'); b.title = 'Камера: ' + CAMS.find(c => c[0] === k)[1]; }
 // auto-fit: keep the angle, set distance and target so the whole system (with props) fits the free canvas area
 // between the top bar and the bottom toolbar with ~11% margin on each side
-function safeNdc(M) { const r = renderer.domElement.getBoundingClientRect(), H = r.height || 1, tb = $('topbar'), fb = $('floatBar');
+function safeNdc() { const r = renderer.domElement.getBoundingClientRect(), H = r.height || 1, tb = $('topbar'), fb = $('floatBar');
   const top = tb ? Math.max(0, tb.getBoundingClientRect().bottom - r.top) : 0, bot = fb ? Math.max(0, r.bottom - fb.getBoundingClientRect().top) : 0;
-  const yT = 1 - 2 * top / H, yB = -1 + 2 * bot / H, mx = M ? M[0] : 0.19, m = M ? M[1] : 0.19, hy = (yT - yB) * m; return { x0: -1 + 2 * mx, x1: 1 - 2 * mx, y0: yB + hy, y1: yT - hy }; }
-function fitView(M) { if (!orb.on || !WG.length) return; const b = meshBox(); if (b.isEmpty()) return;
+  const yT = 1 - 2 * top / H, yB = -1 + 2 * bot / H, m = 0.11, hy = (yT - yB) * m; return { x0: -1 + 2 * m, x1: 1 - 2 * m, y0: yB + hy, y1: yT - hy }; }
+function fitView() { if (!orb.on || !WG.length) return; const b = meshBox(); if (b.isEmpty()) return;
   const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
-  const sf = safeNdc(M), q = new THREE.Vector3();
+  const sf = safeNdc(), q = new THREE.Vector3();
   for (let it = 0; it < 12; it++) { applyCam(); camera.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
     pts.forEach(p => { q.copy(p).project(camera); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); });
     const s = Math.max((x1 - x0) / (sf.x1 - sf.x0), (y1 - y0) / (sf.y1 - sf.y0)); if (!isFinite(s) || s <= 0) return;
@@ -1125,23 +1071,24 @@ function fitView(M) { if (!orb.on || !WG.length) return; const b = meshBox(); if
     const k = Math.max(0.5, Math.min(2, s)); orb.h = orb.T.y + (orb.h - orb.T.y) * k; orb.R *= k;
     if (Math.abs(s - 1) < 0.02 && Math.abs(dx) < 0.005 && Math.abs(dy) < 0.005) break;
     // the room walls stop the camera from backing off sideways: turn a little more frontal instead
-    if (it >= 3 && s > 1.03 && !M) orb.az *= 0.75; }
+    if (it >= 3 && s > 1.03 && Math.abs(orb.az - defAz()) > 1e-6) orb.az *= 0.75; }
   applyCam(); if (WG.length) rebuildDims(); }
 // selection highlight: blue tint in the color itself plus emissive, so it reads on white (clamped) and black metal alike
 function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.contact || m.userData.hlOrig || Array.isArray(m.material)) return; const o = m.material, c = o.clone(); m.userData.hlOrig = o;
   if (c.color) c.color.set(0x5b9bff); if (c.emissive) { c.emissive.set(0x1f66ff); c.emissiveIntensity = 0.55; } if (c.map && c.color) c.color.set(0x8fbaff); if ('sheen' in c) c.sheen = 0; m.material = c; }); }
 function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
 let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
-function camTo(kind) { if (kind === 'iso') kind = 'nice'; return camLevel(kind); camTo0(kind); fitView(); }
-// v11p: Готово views - level camera (full lens shift) + fit with air margins
-function camLevel(kind) { const c = bbox.getCenter(new THREE.Vector3()), sg = S.layout === 'Lr' ? -1 : 1, corner = S.layout === 'L' || S.layout === 'Lr';
-  const flat = S.layout === 'straight' || S.layout === 'U'; const P = { nice: { az: flat ? sg * 0.3 : sg * 0.7, el: 20 * Math.PI / 180, m: [0.1, 0.12] }, front: { az: corner ? sg * Math.PI / 4 : 0, el: 0.04, m: [0.1, 0.12] }, top: { az: corner ? sg * 0.5 : 0, el: 1.25, m: [0.2, 0.17] }, card: { az: corner ? sg * 0.62 : 0.3, el: 0.2, m: [0.16, 0.22] } }[kind];
-  camera.fov = LENSF(); camera.updateProjectionMatrix(); orb.on = true; controls.enabled = false; orb.snapAz = false; orb.free = false; orb.T.copy(c); orb.az = P.az; orb.R = 12 * Math.cos(P.el); orb.h = c.y + 12 * Math.sin(P.el);
-  fitView(P.m); if (WG.length) rebuildDims(); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); applyLights && applyLights(); }
+// v12b DEFAULT_VIEW: the ONE start camera for page load, Стандарт угловая, Стандарт прямая, С нуля and Сброс.
+// STRICTLY FRONTAL («ровно в кадре»): straight layouts head-on, corner layouts looking symmetrically into the corner.
+// Camera rewrites must NOT change this constant or bypass it.
+const DEFAULT_VIEW = Object.freeze({ azFlat: 0, azCorner: Math.PI / 4, el: 5 * Math.PI / 180 });
+window.DEFAULT_VIEW = DEFAULT_VIEW;
+function defAz() { const corner = S.layout === 'L' || S.layout === 'Lr'; return corner ? (S.layout === 'Lr' ? -1 : 1) * DEFAULT_VIEW.azCorner : DEFAULT_VIEW.azFlat; }
+function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') fitView(); if (kind === 'nice') { for (let i = 0; i < 3; i++) { orb.az = defAz(); const D = Math.hypot(orb.R, orb.h - orb.T.y); orb.R = D * Math.cos(DEFAULT_VIEW.el); orb.h = orb.T.y + D * Math.sin(DEFAULT_VIEW.el); fitView(); } orb.az = defAz(); applyCam(); } }
 function camTo0(kind) {
-  if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
+  if (false && kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
-  const sg = S.layout === 'Lr' ? -1 : 1, flat = kind === 'nice' && (S.layout === 'straight' || S.layout === 'U'), dir = kind === 'front' || flat ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? V(sg * 0.85, 0.14, 1) : V(0, 1, 0.35);
+  const sg = S.layout === 'Lr' ? -1 : 1, flat = kind === 'nice' && (S.layout === 'straight' || S.layout === 'U'), dir = kind === 'front' || flat ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? V(Math.sin(defAz()), Math.tan(DEFAULT_VIEW.el), Math.cos(defAz())) : V(0, 1, 0.35);
   dir.normalize();
   camera.fov = kind === 'top' ? 35 : LENSF(); const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
@@ -1158,7 +1105,21 @@ let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
 function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
-renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+// live AO: plain render while anything moves; ~200 ms after the view settles render once with SAO and hold that frame
+const LV = { t: performance.now(), key: '', done: false, comp: null, w: 0, h: 0 }; window.__lv = LV;
+const liveAct = () => { LV.t = performance.now(); LV.done = false; };
+['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown', 'input', 'change', 'click', 'resize'].forEach(t => addEventListener(t, liveAct, { capture: true, passive: true }));
+function liveComp() { const W = renderer.domElement.width, H = renderer.domElement.height; if (!POST) return null;
+  if (!LV.comp || LV.w !== W || LV.h !== H) { try { LV.comp && LV.comp.dispose(); const c = new POST.EffectComposer(renderer); c.setPixelRatio(1); c.setSize(W, H); c.addPass(new POST.RenderPass(scene, camera)); const sao = new POST.SAOPass(scene, camera); Object.assign(sao.params, { saoIntensity: 0.012, saoScale: 1.0, saoKernelRadius: 24, saoBias: 0.5, saoMinResolution: 0, saoBlur: true, saoBlurRadius: 8, saoBlurStdDev: 4, saoBlurDepthCutoff: 0.01 }); c.addPass(sao); c.addPass(new POST.OutputPass()); LV.comp = c; LV.w = W; LV.h = H; } catch (e) { LV.comp = null; } }
+  return LV.comp; }
+renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc();
+  const e = camera.matrixWorld.elements, key = e.map(v => v.toFixed(4)).join() + camera.projectionMatrix.elements[0].toFixed(4); if (key !== LV.key) { LV.key = key; liveAct(); }
+  if (renderer.shadowMap.needsUpdate) liveAct();
+  const idle = performance.now() - LV.t > 220;
+  if (!idle) renderer.render(scene, camera);
+  else if (!LV.done) { const c = liveComp(); if (c) c.render(); else renderer.render(scene, camera); LV.done = true; window.__aoFrames = (window.__aoFrames || 0) + (c ? 1 : 0); }
+  adapt(); });
+const _rb0 = rebuild; rebuild = function () { liveAct(); return _rb0.apply(this, arguments); };
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -1191,9 +1152,9 @@ function goboTex() {
 const gobo = new THREE.SpotLight(0xffd9a8, 0); gobo.map = goboTex(); gobo.castShadow = true; gobo.shadow.mapSize.set(1024, 1024); gobo.shadow.radius = 4;
 gobo.angle = 0.62; gobo.penumbra = 0.15; gobo.shadow.bias = -0.0005; gobo.decay = 0; scene.add(gobo, gobo.target);
 // «Солнечный свет»: warm low sun from the window side, long soft shadows of the shelves and mesh on the wall and floor
-function sunMode() { if (!S.room || S.room.shP !== 'sun' || S.studio) return; { const c = bbox.getCenter(new THREE.Vector3()), sg = S.layout === 'Lr' ? -1 : 1, dd = S.room.sunD ?? 0; sun.position.set(c.x + sg * 1.4 + dd * 2.2, c.y + 4.6, c.z + 2.2); sun.target.position.set(c.x, c.y * 0.5, 0); sun.target.updateMatrixWorld(); Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 0.3, far: 20 }); sun.shadow.camera.updateProjectionMatrix(); } const big = innerWidth < 800 ? 2048 : 4096;
+function sunMode() { if (!S.room || S.room.shP !== 'sun' || S.studio) return; const big = innerWidth < 800 ? 2048 : 4096;
   if (sun.shadow.mapSize.x !== big) { sun.shadow.mapSize.set(big, big); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); }
-  sun.color.set(0xffd6a6); sun.intensity = 2.6 * (S.room.sunK ?? 1); sun.shadow.radius = 5; sun.shadow.blurSamples = 16; hemi.intensity *= 0.78; fill.intensity *= 0.6; gobo.intensity = 0; }
+  sun.color.set(0xffd6a6); sun.intensity = 2.6; sun.shadow.radius = 5; sun.shadow.blurSamples = 16; hemi.intensity *= 0.78; fill.intensity *= 0.6; gobo.intensity = 0; }
 function applyLights() {
   const c = bbox.getCenter(new THREE.Vector3()); const warm = S.preset === 'warm';
   if (warm && !S.sun) {
@@ -1204,7 +1165,7 @@ function applyLights() {
     gobo.color.set(0xffcf94); gobo.intensity = 9; gobo.position.set(c.x - 1.4, 3.3, 3.0); gobo.target.position.set(c.x + 0.4, 1.5, 0);
     renderer.toneMappingExposure = CAMEXP(); hemi.color.set(0xfff0dd); hemi.groundColor.set(0xe8c49c); hemi.intensity = 1.0; fill.color.set(0xffe2c2); fill.intensity = 0.45; fill.position.set(c.x + 3, 2.2, 4); sideFill.intensity = 2.0; sideFill.position.set(c.x + 4, 1.8, c.z + 1); sideFill.target.position.set(-1, 1.2, c.z);
   } else { sun.color.set(0xffffff); sun.intensity = 1.6; gobo.intensity = 0; renderer.toneMappingExposure = CAMEXP(); hemi.color.set(0xffffff); hemi.groundColor.set(0xd8cfc2); sideFill.intensity = 0; hemi.intensity = 0.6; fill.color.set(0xfff4e6); fill.intensity = 0.35; fill.position.set(-3, 2, 4); }
-  sunMode(); if (S.studioL && !S.studio) { hemi.intensity *= 1.3; fill.intensity *= 1.4; sun.intensity *= 0.85; renderer.toneMappingExposure *= 1.06; }
+  sunMode();
 }
 const glow = new THREE.SpotLight(0xfff0dc, 0, 0, 0.9, 1, 0); scene.add(glow, glow.target);
 const rim = new THREE.DirectionalLight(0xdfe7ff, 0); scene.add(rim, rim.target); // edge light so black RAL 9005 reads in detail
@@ -1215,7 +1176,7 @@ const _sc = new THREE.OrthographicCamera();
 // the highlight light rides with the camera (up and to the right), so edge highlights travel as the view turns
 const _cr = new THREE.Vector3(), _cu = new THREE.Vector3(), _co = new THREE.Vector3();
 // walls and ceiling between the camera and the wardrobe disappear, so the view can go anywhere
-function tickOcc() { const cp = camera.position, und = cp.y < 0.002;  decor.children.forEach(c => { if (c.userData.rug) c.visible = !und; }); room.children.forEach(c => { const u = c.userData; if (u.floorM) { if (!u.fb) u.fb = { p: c.position.clone(), r: c.rotation.x }; const th = cp.y < 0.15 ? Math.min(1.45, Math.atan2(0.15 - cp.y, Math.max(0.3, cp.z)) * 1.25) : 0, s = Math.sin(th), k = Math.cos(th); c.rotation.x = u.fb.r + th; c.position.set(u.fb.p.x, u.fb.p.y - u.fb.p.z * s, u.fb.p.z * k); return; } if (u.occ) { _co.copy(cp); u.occ.worldToLocal(_co); c.visible = _co.z > -0.08; } else if (u.occC != null) c.visible = cp.y < u.occC - 0.005; }); }
+function tickOcc() { const cp = camera.position; room.children.forEach(c => { const u = c.userData; if (u.occ) { _co.copy(cp); u.occ.worldToLocal(_co); c.visible = _co.z > -0.08; } else if (u.occC != null) c.visible = cp.y < u.occC - 0.005; }); }
 function tickSpec() { if (!specL.intensity) return; _cr.set(1, 0, 0).applyQuaternion(camera.quaternion); _cu.set(0, 1, 0).applyQuaternion(camera.quaternion); specL.position.copy(camera.position).addScaledVector(_cr, 1.6).addScaledVector(_cu, 1.4); }
 function applyGlareShadow() {
   const R = S.room || {}, c = bbox.getCenter(new THREE.Vector3()), P = SHP[R.shP] || SHP.soft, ST = !!S.studio && !photo, gmode = R.glareM || 'soft';
@@ -1238,11 +1199,11 @@ function applyGlareShadow() {
   // metal highlights: a key light from the front right that the powder coat and chrome catch as the view turns
   specL.intensity = gmode === 'bright' ? 2.2 : gmode === 'soft' ? 0.5 : 0; specL.target.position.copy(c); tickSpec();
   const gm = { soft: 1, bright: 1, off: 0.35 }[gmode];
-  scene.traverse(o => { if (!o.isMesh || !o.material || !o.material.isMeshStandardMaterial) return; const m = o.material; if (m.metalness > 0.5 && !m.userData.chrome && window.HDR_ENV && m.envMap !== window.HDR_ENV) { m.envMap = window.HDR_ENV; m.needsUpdate = true; } if (m.userData.floor) { m.envMapIntensity = 0; return; } if (!m.isMeshPhysicalMaterial && m !== M.chrome && !m.userData.wall) m.envMapIntensity = (m.metalness > 0.6 ? 1.0 : 0.9) * gm; });
+  scene.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial && !o.material.isMeshPhysicalMaterial && o.material !== M.chrome && !o.material.userData.wall) o.material.envMapIntensity = (o.material.metalness > 0.6 ? 1.0 : 0.9) * gm; });
   sunMode();
-  renderer.shadowMap.needsUpdate = true; setTimeout(() => { renderer.shadowMap.needsUpdate = true; }, 120);
+  bakeShadows();
 }
-function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(S.studio ? (S.wall || S.bg || '#e2ded7') : S.room && S.room.ceiling ? '#fbfbf9' : '#d9d1c4'); }
+function setBg() { scene.background = photo && !$('showRoom').checked ? null : new THREE.Color(S.studio ? (S.bg || '#e2ded7') : S.room && S.room.ceiling ? '#fbfbf9' : '#e9e6e0'); }
 
 // ---------- export ----------
 $('pngBtn').onclick = () => cleanShot(pngShot);
@@ -1321,7 +1282,6 @@ function makeCard() {
 // ---------- spec / summary ----------
 function nearest(arr, v) { return arr.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a); }
 function railCombo(len) { const L = [1560, 1260, 1000, 700, 520], res = []; let rest = len; while (rest > 0) { const fit = L.slice().reverse().find(l => l >= rest); if (fit) { res.push(fit); break; } res.push(1560); rest -= 1560; } return res; }
-const ART = {"Рельс несущий 520 мм":{"white":"74010425","silver":"74010464","black":"74010465"},"Рельс несущий 700 мм":{"white":"74010057","silver":"74010329","black":"74010330"},"Рельс несущий 1000 мм":{"white":"74010058","silver":"74010333","black":"74010334"},"Рельс несущий 1260 мм":{"white":"74010078","silver":"74010460","black":"74010461"},"Рельс несущий 1560 мм":{"white":"74010059","silver":"74010337","black":"74010338"},"Стойка 512 мм":{"white":"74010065","silver":"74010142","black":"74010143"},"Стойка 1025 мм":{"white":"74010061","silver":"74010144","black":"74010145"},"Стойка 1156 мм":{"white":"74010062","silver":"74010149","black":"74010150"},"Стойка 1536 мм":{"white":"74010063","silver":"74010351","black":"74010352"},"Стойка 1920 мм":{"white":"74010064","silver":"74010356","black":"74010357"},"Стойка 2304 мм":{"white":"74010220","silver":"74010526","black":"74010527"},"Кронштейн 335 мм":{"white":"74010025","silver":"74010479","black":"74010275"},"Кронштейн 435 мм":{"white":"74010026","silver":"74010147","black":"74010148"},"Кронштейн 535 мм":{"white":"74010115","silver":"74010140","black":"74010141"},"Полка сетчатая 463x306":{"white":"74010042","silver":"74010189","black":"74010190"},"Полка сетчатая 463x406":{"white":"74010043","silver":"74010197","black":"74010198"},"Полка сетчатая 603x306":{"white":"74010044","silver":"74010191","black":"74010192"},"Полка сетчатая 603x406":{"white":"74010045","silver":"74010199","black":"74010200"},"Полка сетчатая 603x506":{"white":"74010046","silver":"74010205","black":"74010206"},"Полка сетчатая 903x306":{"white":"74010047","silver":"74010193","black":"74010194"},"Полка сетчатая 903x406":{"white":"74010048","silver":"74010201","black":"74010202"},"Полка сетчатая 903x506":{"white":"74010117","silver":"74010207","black":"74010208"},"Полка сетчатая 1203x306":{"white":"74010049","silver":"74010195","black":"74010196"},"Полка сетчатая 1203x406":{"white":"74010050","silver":"74010203","black":"74010204"},"Полка металлическая 597x327":{"white":"74010040","silver":"74010482","black":"74010305"},"Полка металлическая 597x427":{"white":"74010041","silver":"74010483","black":"74010306"},"Полка ЛДСП 446x330":{"white":"74010126","silver":"74010673","black":"74010674"},"Полка ЛДСП 446x430":{"white":"74010127","silver":"74010675","black":"74010676"},"Полка ЛДСП 587x330":{"white":"74010122","silver":"74010677","black":"74010678"},"Полка ЛДСП 587x430":{"white":"74010124","silver":"74010681","black":"74010682"},"Полка ЛДСП 887x330":{"white":"74010123","silver":"74010679","black":"74010680"},"Полка ЛДСП 887x430":{"white":"74010125","silver":"74010683","black":"74010684"},"Комплект крепления ЛДСП 330":{"white":"74010010","silver":"74010653","black":"74010654"},"Комплект крепления ЛДСП 430":{"white":"74010011","silver":"74010657","black":"74010658"},"Корзина сетчатая стационарная 603x340x85":{"white":"74010209","silver":"74010514","black":"74010515"},"Корзина сетчатая стационарная 603x440x85":{"white":"74010022","silver":"74010523","black":"74010266"},"Корзина сетчатая стационарная 903x340x85":{"white":"74010210","silver":"74010518","black":"74010519"},"Корзина сетчатая стационарная 903x440x85":{"white":"74010023","silver":"74010522","black":"74010269"},"Корзина сетчатая выдвижная 563x340x85":{"white":"74010119","silver":"74010453","black":"74010435"},"Корзина сетчатая выдвижная 563x340x181":{"white":"74010118","silver":"74010452","black":"74010434"},"Корзина сетчатая выдвижная 563x440x85":{"white":"74010015","silver":"74010449","black":"74010244"},"Корзина сетчатая выдвижная 563x440x181":{"white":"74010014","silver":"74010448","black":"74010239"},"Корзина сетчатая выдвижная 863x340x85":{"white":"74010121","silver":"74010455","black":"74010439"},"Корзина сетчатая выдвижная 863x340x181":{"white":"74010120","silver":"74010454","black":"74010438"},"Корзина сетчатая выдвижная 863x440x85":{"white":"74010017","silver":"74010451","black":"74010251"},"Корзина сетчатая выдвижная 863x440x181":{"white":"74010016","silver":"74010450","black":"74010248"},"Брючница выдвижная 603x440x45":{"white":"74010001","silver":"74010503","black":"74010241"},"Полка обувная сетчатая 603x406":{"white":"74010038","silver":"74010532","black":"74010300"},"Полка обувная сетчатая 903x406":{"white":"74010039","silver":"74010592","black":"74010303"},"Перекладина 520 мм":{"chrome":"74010219"},"Перекладина 640 мм":{"chrome":"74010029"},"Перекладина 940 мм":{"chrome":"74010030"},"Перекладина 1240 мм":{"chrome":"74010031"},"Перекладина 2000 мм":{"chrome":"74010032"},"Кронштейн для перекладины 30×30×100":{"white":"74010024","silver":"74010534","black":"74010272"},"Заглушки перекладины 17×25,5×17, комплект":{"black":"74010009"},"Соединитель перекладины":{"black":"74010060"},"Переходник для стойки":{"white":"74010033","silver":"74010510","black":"74010511"},"Накладка для кронштейна":{"white":"74010426","silver":"74010649","black":"74010650"}}; /* v11t: Titan-GS factory articles, catalog 2024 */
 function specData() {
   const frame = {}, fill = {}, card = {}, brk = new Set();
   const add = (o, k, n = 1) => o[k] = (o[k] || 0) + n;
@@ -1339,8 +1299,8 @@ function specData() {
       if (o.t === 'basket') { add(fill, `Корзина ${bk} стационарная ${nearest([603, 903], w)}x${d}x${o.h || 85}`); add(card, `Корзина ${nom}`); }
       if (o.t === 'pull') { add(fill, `Корзина ${bk} выдвижная ${nearest([563, 863], w)}x${d}x${o.h || 85}`); add(card, `Корзина выдвижная ${nom}`); }
       if (o.t === 'trouser') { add(fill, `Брючница выдвижная ${nearest([463, 603], w)}x440x45`); add(card, `Брючница ${nom}`); }
-      if (o.t === 'shoe') { add(fill, `Полка обувная сетчатая ${nearest([603, 903], w)}x${o.d === 30 ? 306 : 406}`); add(card, `Полка для обуви ${nom}`); }
-      if (o.t === 'rail') { add(fill, `Перекладина ${nearest([520, 640, 940, 1240, 2000], w)} мм`); add(fill, 'Кронштейн для перекладины 30×30×100', 2); add(fill, 'Заглушки перекладины 17×25,5×17, комплект', 1); add(card, 'Штанга'); const ry = s.items.some(p => p !== o && p.t !== 'rail' && p.t !== 'shoe' && p.y > o.y && p.y - o.y <= 25) ? null : o.y + 9; if (ry != null) [si, si + 1].forEach(p => { const k = `${wi}:${p}:${ry}`; if (!brk.has(k)) { brk.add(k); add(fill, 'Кронштейн 335 мм'); add(card, 'Кронштейн для полки'); } }); }
+      if (o.t === 'shoe') { add(fill, `Полка обувная сетчатая ${nearest([604, 904], w)}x${o.d === 30 ? 306 : 406}`); add(card, `Полка для обуви ${nom}`); }
+      if (o.t === 'rail') { add(fill, `Перекладина ${nearest([520, 640, 940, 1240, 2000], w)} мм`); add(fill, 'Кронштейн для перекладины 30×30×100', 2); add(fill, 'Заглушка перекладины 15×23×23', 2); add(card, 'Штанга'); const ry = s.items.some(p => p !== o && p.t !== 'rail' && p.t !== 'shoe' && p.y > o.y && p.y - o.y <= 25) ? null : o.y + 9; if (ry != null) [si, si + 1].forEach(p => { const k = `${wi}:${p}:${ry}`; if (!brk.has(k)) { brk.add(k); add(fill, 'Кронштейн 335 мм'); add(card, 'Кронштейн для полки'); } }); }
       else [si, si + 1].forEach(p => { const k = `${wi}:${p}:${o.y}`; if (!brk.has(k)) { brk.add(k); add(fill, `Кронштейн ${br} мм`); add(card, 'Кронштейн для полки'); } });
     }));
     walls.push(`<b>${WALLNAMES[wi]}:</b> ${cm(tot)} см, секций ${W.sections.length}, рельс ${rails.join(' + ')} мм`);
@@ -1355,14 +1315,13 @@ function overall() {
   if (S.layout !== 'straight') { const w = [1, 2].filter(i => wallsActive().includes(i)).map(i => effGap(i) + wallWidth(i) / 10 + 2.5); D = Math.round(Math.max(D, ...w)); }
   return `${W} × ${D} × ${S.railTop} см`;
 }
-function artOf(k) { const a = ART[k], c = /Заглушк|Соединитель/.test(k) ? 'black' : /^Перекладина/.test(k) ? ((S.rod || 'chrome') === 'chrome' ? 'chrome' : '') : S.metal; return (a && a[c]) || '<span class="tbd">нет в каталоге</span>'; }
 function summary() {
   const d = specData(), li = o => Object.entries(o).map(([k, v]) => `${k} — ${v} шт`).join('<br>');
   let total = 0; const row = ([k, v]) => { const p = +(S.prices[k] || 0); total += p * v; return `<tr><td>${k}</td><td>${v} шт</td><td><input type="number" min="0" step="1" data-price="${k}" value="${p || ''}" placeholder="цена"></td><td>${p ? (p * v).toLocaleString('ru-RU') + ' ₽' : ''}</td></tr>`; };
   const tb = o => `<table class="est">${Object.entries(o).map(row).join('')}</table>`;
   const fr = tb(d.frame), fi = tb(d.fill);
-  const MC = { white: 'белый RAL 9016', black: 'черный RAL 9005', silver: 'серебристый RAL 9006' }[S.metal], RC = { chrome: 'хром', white: 'белая (своя опция)', black: 'черная (своя опция)' }[S.rod || 'chrome'];
-  const parts = [...Object.entries(d.frame), ...Object.entries(d.fill)].map(([k, v]) => `<tr><td>${artOf(k)}</td><td>${k}</td><td>${/Заглушк/.test(k) ? 'черный' : /Перекладина|Штанга/.test(k) ? RC : MC}</td><td>${v} шт</td></tr>`).join('');
+  const MC = { white: 'белый RAL 9016', black: 'черный RAL 9005', silver: 'серебристый RAL 9006' }[S.metal], RC = { chrome: 'хром', white: 'белый' }[S.rod || 'chrome'];
+  const parts = [...Object.entries(d.frame), ...Object.entries(d.fill)].map(([k, v]) => `<tr><td><span class="tbd">—</span></td><td>${k}</td><td>${/Перекладина|Штанга/.test(k) ? RC : MC}</td><td>${v} шт</td></tr>`).join('');
   const W = [];
   wallsBuilt().forEach(wi => S.walls[wi].sections.forEach((sc, si) => {
     const nm = `${WALLNAMES[wi]}, секция ${si + 1}`;
@@ -1403,13 +1362,15 @@ const ICO = {
   trouser: '<svg viewBox="0 0 48 32"><path d="M4 8h40" stroke-width="3"/><path d="M8 8v4h32V8" fill="none" stroke-width="1.5"/><path d="M12 12v14M18 12v14M24 12v14M30 12v14M36 12v14" stroke-width="2.5"/></svg>'
 };
 const BK = [['pull|mesh', 'Сетчатая выдвижная', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M12 6v20M20 6v20M28 6v20M36 6v20M4 16h40" stroke-width="1.3"/><path d="M18 29h12" stroke-width="3"/>'],
-  ['basket|mesh', 'Стационарная', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M12 6v20M20 6v20M28 6v20M36 6v20M4 16h40" stroke-width="1.3"/>']];
+  ['basket|mesh', 'Стационарная', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M12 6v20M20 6v20M28 6v20M36 6v20M4 16h40" stroke-width="1.3"/>'],
+  ['pull|fine', 'Мелкосетчатая', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M8 6v20M12 6v20M16 6v20M20 6v20M24 6v20M28 6v20M32 6v20M36 6v20M40 6v20M4 10h40M4 14h40M4 18h40M4 22h40" stroke-width="0.8"/>'],
+  ['pull|perf', 'Перфорированная', '<rect x="4" y="6" width="40" height="20" rx="2" fill="none" stroke-width="2.5"/><g stroke-width="2.6" stroke-linecap="round"><path d="M10 11v4M16 11v4M22 11v4M28 11v4M34 11v4M40 11v4M10 18v4M16 18v4M22 18v4M28 18v4M34 18v4M40 18v4"/></g>']];
 function presetItems(t) {
   const top = S.railTop - 18, lo = Math.ceil(postBottom() / 10) + 10, mid = Math.round((top + lo) / 2), M_ = y => it('mesh', S.depth || 40, y), R_ = y => it('rail', 30, y), C_ = y => { const [a, b] = newItem('combo'); a.y = y; return [a, b]; }, B_ = y => Object.assign(it('pull', 40, y, 181), { v: 'mesh' });
   const T = { shelves: () => { const a = []; for (let y = top; y >= lo; y -= 36) a.push(M_(y)); return a; }, rod: () => [...C_(top), M_(lo + 20)], two: () => [...C_(top), ...C_(mid)], baskets: () => [M_(top), M_(top - 38), M_(top - 76), B_(lo + 70), B_(lo + 45), B_(lo + 20)], shoes: () => [M_(top), M_(top - 38), M_(top - 76), it('shoe', 40, lo + 50), it('shoe', 40, lo + 25)] };
   const r = { items: T[t]().map(o => (o.y = clampY(o.y), o)) }; syncLinks(r); return r.items;
 }
-function syncLinks(sec) { sec.items = sec.items.filter(o => !o.lk || sec.items.some(p => p.g === o.lk)); sec.items.forEach(o => { if (o.lk) { const p = sec.items.find(q => q.g === o.lk); o.y = clampY(p.y - (o.lo == null ? 10 : o.lo)); } }); }
+function syncLinks(sec) { sec.items = sec.items.filter(o => !o.lk || sec.items.some(p => p.g === o.lk)); sec.items.forEach(o => { if (o.lk) { const p = sec.items.find(q => q.g === o.lk); o.y = clampY(p.y - 10); } }); }
 function newItem(c) {
   S.q = (S.q || 0) + 1;
   if (c === 'combo') { const g = 'g' + S.q, sh = it('mesh', S.depth || 40, 100), r = it('rail', 30, 90); sh.g = g; sh.q = S.q; r.lk = g; return [sh, r]; }
@@ -1434,18 +1395,6 @@ function placeFree(sec, os, y0) {
   for (let y = y0 + 1; y <= hi; y++) if (ok(y)) return true;
   return false;
 }
-function linkUI() { let L = $('linkBar'); if (!L) { L = document.createElement('span'); L.id = 'linkBar'; L.style.cssText = 'display:inline-flex;gap:6px;margin-right:6px'; $('delBtn').before(L); }
-  const sc = S.walls[cur.w] && S.walls[cur.w].sections[cur.s], o = sc && cur.it >= 0 && sc.items[cur.it]; let h = '';
-  if (o && !window.__propSel && !(window.__plantSel >= 0)) {
-    /* v11p: no rod text buttons; tap the rod to select it, «Удалить» removes it */ }
-  if (L.innerHTML !== h) { L.innerHTML = h; L.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => linkAct(b.dataset.lk)); } }
-function nearShelf(sc, r) { return sc.items.filter(p => !p.g && !p.lk && p.t !== 'rail' && !isBasket(p.t) && p.y > r.y && p.y - r.y <= 40).sort((a, b) => a.y - b.y)[0]; }
-function linkAct(k) { const sc = S.walls[cur.w].sections[cur.s], o = sc.items[cur.it]; if (!o) return;
-  if (k === 'add') { S.q = (S.q || 0) + 1; o.g = 'g' + S.q; const r = it('rail', 30, o.y - 10); r.lk = o.g; sc.items.push(r); }
-  else if (k === 'rm') { const g = o.g; sc.items = sc.items.filter(p => p.lk !== g); delete o.g; cur.it = sc.items.indexOf(o); }
-  else if (k === 'un') { const r = sc.items.find(p => p.lk === o.g); if (r) { delete r.lk; r.q = (S.q = (S.q || 0) + 1); } delete o.g; }
-  else if (k === 'at') { const p = nearShelf(sc, o); if (!p) return; S.q = (S.q || 0) + 1; p.g = 'g' + S.q; o.lk = p.g; cur.it = sc.items.indexOf(p); }
-  syncLinks(sc); rebuild(); renderSec(); }
 function removeItem(sec, i) { const o = sec.items[i]; sec.items.splice(i, 1); if (o && o.g) sec.items = sec.items.filter(p => p.lk !== o.g); }
 function secHint(wi) { const sc = S.walls[wi].sections, g = {}; sc.forEach(x => g[x.w] = (g[x.w] || 0) + 1); const word = n => n % 10 === 1 && n % 100 !== 11 ? 'секция' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'секции' : 'секций'; return Object.entries(g).map(([w, n]) => `${n} ${word(n)} по ${w} см`).join(' + ') + ` = ${Math.round(wallWidth(wi) / 10)} см`; }
 function renderSizes() {
@@ -1454,7 +1403,7 @@ function renderSizes() {
   const WS = [60, 90, 120, 150, 180, 240, 270, 300, 360];
   const AW = wallsActive(), tabs = AW.length > 1 ? '<div class="wtabs">' + AW.map(wi => `<button data-wt="${wi}" class="${wi === cur.w ? 'on' : ''}">${wi === 0 ? 'Основная стена' : AW.length > 2 ? (wi === 1 ? 'Левая стена' : 'Правая стена') : 'Вторая стена'}</button>`).join('') + '</div>' : '';
   $('wallSz').innerHTML = tabs + [cur.w].map(wi => { const t = Math.round(wallWidth(wi) / 10), nn = S.walls[wi].sections.length, nm = AW.length > 1 ? '' : 'Стена';
-    return `<div class="wallblk"><div class="szlab">Ширина всей конструкции на стене (верхний рельс), см</div><div class="sz">${WS.map(v => `<button data-ww="${wi}:${v}" class="${v === t ? 'on' : ''}">${v}</button>`).join('')}<button data-wown="${wi}" class="${WS.includes(t) ? '' : 'on'}">Свой размер${WS.includes(t) ? '' : ': ' + t}</button></div>
+    return `<div class="wallblk"><div class="szlab">Ширина конструкции (верхний рельс), см</div><div class="sz">${WS.map(v => `<button data-ww="${wi}:${v}" class="${v === t ? 'on' : ''}">${v}</button>`).join('')}<button data-wown="${wi}" class="${WS.includes(t) ? '' : 'on'}">Свой размер${WS.includes(t) ? '' : ': ' + t}</button></div>
     <div class="own hide" id="wown${wi}"><input type="range" data-wr="${wi}" min="40" max="720" step="1" value="${t}"><input type="number" data-wf="${wi}" min="40" max="720" step="1" value="${t}"></div>
     <div class="szlab">Количество секций</div><div class="sz cnt6">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div><p class="foot">${secHint(wi)}</p></div>`; }).join('');
   const setW = (wi, v, live) => { const sc = S.walls[wi].sections, n = sc.length || 1, w = Math.max(20, Math.min(200, Math.round(v / n))), ws = live ? w : nearest([45, 60, 90, 120], w); sc.forEach(x => x.w = ws); clearTimeout(dimT); dimT = setTimeout(() => { rebuild(); if (!live) renderSec(); }, live ? 40 : 0); };
@@ -1487,7 +1436,7 @@ function renderSec() {
   h += '<div class="tabs secchips">' + W.sections.map((s, i) => `<button data-s="${i}" class="${i === cur.s ? 'on' : ''}">Секция ${i + 1}<small>${s.w} см · ${s.items.length} эл.</small></button>`).join('') + '</div>';
   $('secTabs').innerHTML = h;
   $('secTabs').querySelectorAll('[data-w]').forEach(b => b.onclick = () => { cur = { w: +b.dataset.w, s: 0, it: -1 }; renderSec(); rebuild(); flashWall(cur.w); });
-  $('secTabs').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { cur.s = +b.dataset.s; cur.it = -1; renderSec(); rebuild(); flashWall(cur.w, cur.s); });
+  $('secTabs').querySelectorAll('[data-s]').forEach(b => b.onclick = () => { cur.s = +b.dataset.s; cur.it = -1; renderSec(); rebuild(); });
   renderGaps();
   renderSizes();
   if (W.off) { $('secEdit').innerHTML = `<div class="offbox"><b>${act.length > 2 ? ['Основная стена', 'Левая стена', 'Правая стена'][cur.w] : WALLNAMES[cur.w]}: конструкция убрана</b><p class="foot">Стена комнаты осталась. Стойки, рельс и наполнение можно вернуть.</p><button class="acc" data-restore="${cur.w}">Вернуть конструкцию</button></div>`; $('secEdit').querySelector('[data-restore]').onclick = () => { W.off = false; rebuild(); renderSec(); renderWallsPop(); }; return; }
@@ -1498,16 +1447,17 @@ function renderSec() {
   e += `<div class="wrow"><span>Ширина секции</span><div class="sz wbtn">${[45, 60, 90, 120].map(v => `<button data-pw="${v}" class="${s.w === v ? 'on' : ''}">${v}</button>`).join('')}</div></div>`;
   if (s.items.length && ![45, 60, 90, 120].includes(s.w)) e += `<div class="wtxt">Ширины ${s.w} см нет в каталоге. Подходят: 45, 60, 90, 120 см</div>`;
   e += '<div class="szlab">Готовые наборы</div><div class="chips">' + [['shelves', 'Только полки'], ['rod', 'Штанга + полки'], ['two', 'Две штанги'], ['baskets', 'Полки + корзины'], ['shoes', 'Полки + обувь']].map(([k, t]) => `<button data-pre="${k}">${t}</button>`).join('') + '<button data-empty="1">Очистить</button></div>';
-  const icoBtn = c => `<div class="ico"><button class="big" data-app="${c}" title="Добавить ниже последнего">${ICO[c]}<span class="${c === 'combo' ? 'two' : ''}">${c === 'combo' ? 'Полка<br>со штангой' : CATS[c]}</span></button><div class="cnt"><button data-dec="${c}">−</button><b>${cnt(c)}</b><button data-inc="${c}">+</button></div></div>`;
+  const icoBtn = c => `<div class="ico"><button class="big" data-app="${c}" title="Добавить ниже последнего">${ICO[c]}<span class="${c === 'combo' ? 'two' : ''}">${c === 'combo' ? 'Штанга<br>с полкой' : CATS[c]}</span></button><div class="cnt"><button data-dec="${c}">−</button><b>${cnt(c)}</b><button data-inc="${c}">+</button></div></div>`;
   e += '<div class="szlab">Элементы</div><div class="icons">' + ['shelf', 'rod', 'combo', 'trouser'].map(icoBtn).join('') + '</div>';
-  e += '<div class="bgroup"><div class="icons">' + icoBtn('basket') + '<div class="bnote">Тип корзины: нажмите на картинку, чтобы выбрать тип и добавить корзину</div></div><div class="btiles">' + BK.map(([k, t, svg]) => `<button data-bk="${k}" class="${(S.bKind || 'pull|mesh') === k ? 'on' : ''}"><svg viewBox="0 0 48 32">${svg}</svg><span>${t}</span></button>`).join('') + '</div>' + basketBlock(s) + '</div>';
+  e += '<div class="bgroup"><div class="icons">' + icoBtn('basket') + '<div class="bnote">Тип корзины: нажмите на картинку, чтобы выбрать тип и добавить корзину</div></div><div class="btiles">' + BK.map(([k, t, svg]) => `<button data-bk="${k}" class="${(S.bKind || 'pull|mesh') === k ? 'on' : ''}"><svg viewBox="0 0 48 32">${svg}</svg><span>${t}</span></button>`).join('') + '</div></div>';
   const ord = s.items.map((o, i) => [o, i]).filter(p => !p[0].lk).sort((a, b) => b[0].y - a[0].y), coll = collisions(s);
   if (!s.items.length) e += '<p class="sum">Секция пустая. Нажимайте на значки выше: каждый новый элемент встает ниже предыдущего.</p>';
   ord.forEach(([o, i], k) => {
     const c = rowCat(o), vv = c === 'basket' ? o.t + '|' + (o.v || 'mesh') : o.t;
-    e += `<div class="item${coll.has(i) ? ' warn' : ''}${cur.it === i ? ' sel' : ''}" data-row="${i}"><div class="top"><b class="num">${k + 1}</b><span class="mico">${ICO[c]}</span>${isBasket(o.t) ? `<span class="bname">${(VARS[c].find(([kk]) => kk === vv) || [0, 'Корзина'])[1]} · ${o.h || 85} мм</span>` : `<select data-i="${i}" data-k="var">${VARS[c].map(([kk, v]) => `<option value="${kk}" ${kk === vv ? 'selected' : ''}>${v}</option>`).join('')}</select>`}
+    e += `<div class="item${coll.has(i) ? ' warn' : ''}${cur.it === i ? ' sel' : ''}" data-row="${i}"><div class="top"><b class="num">${k + 1}</b><span class="mico">${ICO[c]}</span><select data-i="${i}" data-k="var">${VARS[c].map(([kk, v]) => `<option value="${kk}" ${kk === vv ? 'selected' : ''}>${v}</option>`).join('')}</select>
+    ${isBasket(o.t) ? `<select data-i="${i}" data-k="h" class="dsel">${[85, 181, 285].map(v => `<option value="${v}" ${v === (o.h || 85) ? 'selected' : ''}>${v} мм</option>`).join('')}</select>` : ''}
     <button class="mini" data-sw="${i}" data-dir="-1" ${k === 0 ? 'disabled' : ''}>↑</button><button class="mini" data-sw="${i}" data-dir="1" ${k === ord.length - 1 ? 'disabled' : ''}>↓</button><button class="mini danger" data-del="${i}">✕</button></div>
-    ${c === 'shelf' || isBasket(o.t) ? '' : `<div class="ld"><span>Длина</span><div class="sz">${lensOf(o).map(mm => `<button data-len="${i}:${mm}" class="${secW(mm) === s.w ? 'on' : ''}" title="${mm} мм">${Math.round(mm / 10)}</button>`).join('')}</div></div>`}${o.t === 'rail' || isBasket(o.t) ? '' : `<div class="ld"><span>Глубина</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div>`}
+    <div class="ld"><span>Длина</span><div class="sz">${lensOf(o).map(mm => `<button data-len="${i}:${mm}" class="${secW(mm) === s.w ? 'on' : ''}" title="${mm} мм">${Math.round(mm / 10)}</button>`).join('')}</div></div>${o.t === 'rail' ? '' : `<div class="ld"><span>Глубина</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div>`}
     <div class="yrow"><input type="range" data-i="${i}" data-k="yr" min="${lo}" max="${hi}" step="1" value="${o.y}"><label class="yn"><input type="number" data-i="${i}" data-k="y" value="${o.y}" min="${lo}" max="${hi}"> см</label></div>
     ${coll.has(i) ? '<div class="wtxt">Пересекается с соседним элементом</div>' : ''}</div>`;
   });
@@ -1535,18 +1485,9 @@ function renderSec() {
   E.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { const i = +b.dataset.sw, k = ord.findIndex(p => p[1] === i), j = ord[k + +b.dataset.dir]; if (!j) return; const o = s.items[i], p = j[0], t = o.y; o.y = p.y; p.y = t; cur.it = i; go(); });
   E.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { removeItem(s, +b.dataset.del); cur.it = -1; go(); });
   E.querySelectorAll('[data-len]').forEach(b => b.onclick = () => { const [i, mm] = b.dataset.len.split(':').map(Number); cur.it = i; s.w = secW(mm); go(); });
-  E.querySelectorAll('[data-bh]').forEach(b => b.onclick = () => { const [i, h] = b.dataset.bh.split(':').map(Number); cur.it = i; s.items[i].h = h; go(); });
-  E.querySelectorAll('[data-bw]').forEach(b => b.onclick = () => { s.w = +b.dataset.bw; go(); });
   E.querySelectorAll('[data-dep]').forEach(b => b.onclick = () => { const [i, d] = b.dataset.dep.split(':').map(Number), o = s.items[i]; cur.it = i; o.d = d; s.items.forEach(p => { if (o.g && p.lk === o.g && DEPTHS[p.t].includes(d)) p.d = d; }); go(); });
-  // v11u: a newly selected item (e.g. a basket tapped in 3D) brings its settings block right under the tabs
-  { const key = cur.it >= 0 ? cur.w + ':' + cur.s + ':' + cur.it : ''; if (key && key !== window.__selKey) { const t = E.querySelector(`[data-bset="${cur.it}"]`) || E.querySelector('.item.sel'), P = $('panel'); if (t && P) requestAnimationFrame(() => { const st = document.getElementById('stepper'), pr = P.getBoundingClientRect(), top = Math.max(pr.top, st ? st.getBoundingClientRect().bottom : pr.top); P.scrollTo({ top: P.scrollTop + t.getBoundingClientRect().top - top - 8, behavior: 'smooth' }); }); } window.__selKey = key; }
 }
 
-// v11p: all basket settings in one block right under the basket tiles (length = section width)
-function basketBlock(s) { const bi = s.items.map((o, i) => [o, i]).filter(p => isBasket(p[0].t)); if (!bi.length) return '';
-  const [o, i] = (bi.find(p => p[1] === cur.it) || bi[bi.length - 1]);
-  return `<div class="bset" data-bset="${i}"><div class="szlab">Корзина ${bi.length > 1 ? (bi.findIndex(p => p[1] === i) + 1) + ' из ' + bi.length : ''} · длина = ширина секции ${s.w} см</div><div class="ld"><span>Глубина от стены</span><div class="sz">${depthsOf(o).map(d => `<button data-dep="${i}:${d}" class="${d === o.d ? 'on' : ''}" title="${REAL_DEPTH[o.t][d]} мм">${d}</button>`).join('')}</div></div><div class="ld"><span>Высота корзины</span><div class="sz">${(o.t === 'basket' ? [85] : BKH).map(h => `<button data-bh="${i}:${h}" class="${(o.h || 85) === h ? 'on' : ''}">${h}</button>`).join('')}</div></div></div>`; }
-const BKH = [85, 181];
 let lastCam = 'front';
 // ---------- collisions, dims fields, mirror, catalog ----------
 function collisions(sec) {
@@ -1575,7 +1516,7 @@ function setLift(v, live) { const d = Math.round(v) - liftCm(); if (!d) return; 
 [['W', setWidth], ['H', setHeight], ['D', setDepth]].forEach(([k, f]) => { $('r' + k).oninput = e => f(+e.target.value, true); $('r' + k).onchange = e => f(+e.target.value); $('f' + k).onchange = e => f(+e.target.value || 0); });
 $('lift').oninput = e => setLift(+e.target.value, true); $('lift').onchange = e => setLift(+e.target.value);
 $('layout').innerHTML = Object.entries(LAYOUTS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
-$('layout').onchange = e => { S.layout = e.target.value; if (S.layout === 'straight') { S.room.ceiling = true; ['ceilT', 'ceilT2'].forEach(i => $(i) && ($(i).checked = true)); } cur = { w: 0, s: 0 }; rebuild(); renderSec(); fillDims(); lastCam = 'nice'; window.__userCam = false; camTo('nice'); };
+$('layout').onchange = e => { S.layout = e.target.value; cur = { w: 0, s: 0 }; rebuild(); renderSec(); fillDims(); };
 // «Зеркально» keeps the framing: same zoom, height and target offset, mirrored azimuth around the construction
 function mirrorKeep() { const c0 = bbox.getCenter(new THREE.Vector3()), o = { dx: orb.T.x - c0.x, ty: orb.T.y, tz: orb.T.z, az: orb.az, R: orb.R, h: orb.h, on: orb.on, p: camera.position.clone(), t: controls.target.clone() };
   mirror(); const put = () => { const c1 = bbox.getCenter(new THREE.Vector3());
@@ -1645,10 +1586,8 @@ function itemGroups(wi, si, idxs) { const out = []; model.traverse(o => { const 
   el.addEventListener('pointerdown', e => {
     if (!orb.on || e.button !== 0 || cur.it < 0) return;
     // the selected item can be grabbed even if another item overlaps it
-    const hit = pickHits(e).find(h => { const g = findRef(h.object); if (!g) return false; const { wi, si, ii } = g.userData.ref; return wi === cur.w && si === cur.s && (ii === cur.it || mainIdx(wi, si, ii) === cur.it); });
+    const hit = pickHits(e).find(h => { const g = findRef(h.object); if (!g) return false; const { wi, si, ii } = g.userData.ref; return wi === cur.w && si === cur.s && mainIdx(wi, si, ii) === cur.it; });
     if (!hit) return; const sc = S.walls[cur.w].sections[cur.s], o = sc.items[cur.it]; if (!o) return;
-    // v11q: a rod hanging from this shelf (holders on its brackets) always rides along, even if it was never linked explicitly
-    if (o.t !== 'rail' && !isBasket(o.t)) sc.items.forEach(p => { if (p.t === 'rail' && !p.lk && !p.q && nearShelf(sc, p) === o && o.y - p.y <= 25) { if (!o.g) { S.q = (S.q || 0) + 1; o.g = 'g' + S.q; } p.lk = o.g; p.lo = o.y - p.y; } });
     const linked = sc.items.map((p, i) => [p, i]).filter(([p]) => o.g && p.lk === o.g), r = el.getBoundingClientRect();
     drag = { cx: e.clientX, cy: e.clientY, t0: performance.now(), drop: o.y - itemBot(o) * 100, o, linked: linked.map(p => p[0]), gs: itemGroups(cur.w, cur.s, [cur.it, ...linked.map(p => p[1])]), y0: o.y, ly0: linked.map(p => p[0].y), py: e.clientY, unit: hit.distance * Math.tan(camera.fov * Math.PI / 360) * 2 / (el.clientHeight || 600) * 100, wi: cur.w, si: cur.s };
     e.stopImmediatePropagation(); el.setPointerCapture(e.pointerId);
@@ -1662,15 +1601,12 @@ function itemGroups(wi, si, idxs) { const out = []; model.traverse(o => { const 
     // alignment with a shelf in another section: haptic tick + brief guide line, no snapping
     { let best = null; wallsBuilt().forEach(wi => S.walls[wi].sections.forEach((sc, si) => { if (wi === drag.wi && si === drag.si) return; sc.items.forEach(p => { if (!p.lk && p.t !== 'rail' && p.y === ny) best = p.y; }); }));
       if (best != null) { if (drag.snap !== best) { drag.snap = best; haptic(); showSnap(best, drag.wi); } } else drag.snap = null; }
-    // v11q: a detached rod reaching its shelf seat snaps in: tick + brief blue flash, re-linked on release
-    if (drag.o.t === 'rail' && !drag.o.lk) { const sc = S.walls[drag.wi].sections[drag.si], p = nearShelf(sc, { y: ny - 3 }), off = drag.o.lo == null ? 10 : drag.o.lo;
-      if (p && Math.abs(p.y - off - ny) <= 3) { ny = p.y - off; if (drag.seat !== p) { drag.seat = p; tick('bright'); haptic(); drag.gs.forEach(g => hlOn(g)); setTimeout(() => drag && drag.gs.forEach(g => hlOff(g)), 350); } } else drag.seat = null; }
-    const dy = ny - drag.y0; drag.o.y = ny; if (drag.o.lk) { const pp = S.walls[drag.wi].sections[drag.si].items.find(q => q.g === drag.o.lk); if (pp) drag.o.lo = pp.y - ny; } drag.linked.forEach((p, k) => p.y = drag.ly0[k] + dy);
+    const dy = ny - drag.y0; drag.o.y = ny; drag.linked.forEach((p, k) => p.y = drag.ly0[k] + dy);
     drag.gs.forEach(g => g.position.y = dy / 100);
     if (dimsOn() && !drag.t) drag.t = setTimeout(() => { if (drag) { drag.t = 0; rebuildDims(); } }, 60);
     tip.textContent = `от пола ${ny} см${drag.snap === ny ? ' · вровень' : ''}`; nbTip(drag, e, r); placeTips(drag, e, r);
   }, true);
-  const up = e => { if (!drag) return; e.stopImmediatePropagation(); clearTimeout(drag.t); const tap = !drag.moved && performance.now() - drag.t0 < 600; if (drag.seat && drag.o.t === 'rail') { const p = drag.seat; drag.gs.forEach(g => hlOff(g)); if (!p.g) { S.q = (S.q || 0) + 1; p.g = 'g' + S.q; } drag.o.lk = p.g; drag.o.lo = p.y - drag.o.y; delete drag.o.q; } drag = null; tip.classList.add('hide'); $('dragTipL').classList.add('hide'); if (tap && e.type === 'pointerup') return handleTap(e); rebuild(); renderSec(); };
+  const up = e => { if (!drag) return; e.stopImmediatePropagation(); clearTimeout(drag.t); const tap = !drag.moved && performance.now() - drag.t0 < 600; drag = null; tip.classList.add('hide'); $('dragTipL').classList.add('hide'); if (tap && e.type === 'pointerup') return handleTap(e); rebuild(); renderSec(); };
   el.addEventListener('pointerup', up, true); el.addEventListener('pointercancel', up, true);
 }
 document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => { lastCam = b.dataset.cam; camTo(lastCam); });
@@ -1678,7 +1614,7 @@ const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textConte
 $('shareBtn').onclick = async () => { const u = location.origin + location.pathname + '?cfg=' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); try { await navigator.clipboard.writeText(u); msg('Ссылка скопирована'); } catch (e) { prompt('Ссылка на конфигурацию', u); } };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = migrate(v); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); renderDeco(); setBg(); camTo(lastCam); msg('Конфигурация загружена'); };
-$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname + '?v=v12a&r=' + Date.now()); return; /* v11x: keep cache-busting query, plain pathname could load a cached old build */ S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
+$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname + '?v=v12b&r=' + Date.now()); return; /* cache-bust */ S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
 
 async function fontsFor(C) { const f = { montserrat: 'Montserrat', inter: 'Inter', playfair: 'Playfair Display' }[C.font] || 'Manrope'; await Promise.all([document.fonts.load(`700 60px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load('500 30px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load('800 48px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load(`800 48px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load(`500 30px "${f}"`, 'Наполнение КАРКАС 0123')]).catch(() => {}); }
 $('cardBtn').onclick = async () => { cardRead(); await fontsFor(S.card); const o = cleanShot(makeCard); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
@@ -1690,14 +1626,14 @@ $('bStyle').onchange = e => { S.basketStyle = e.target.value; rebuild(); };
 [['ceilT', 'ceiling'], ['skirtT', 'skirting'], ['lampT', 'lamps'], ['shOnT', 'shOn']].forEach(([id, k]) => $(id).onchange = e => { S.room[k] = e.target.checked; rebuild(); });
 [['angR', 'angle', 'angV', v => v + '°'], ['shAng', 'shAng', 'shAngV', v => v + '°'], ['shBlur', 'shBlur', 'shBlurV', v => v], ['shDist', 'shDist', 'shDistV', v => Math.round(v * 100) + '%'], ['glare', 'glare', 'glareV', v => Math.round(v * 100) + '%'], ['shadow', 'shadow', 'shadowV', v => Math.round(v * 100) + '%'], ['roomX', 'extra', 'roomV', v => v], ['ceilH', 'ceilH', 'ceilV', v => v]].forEach(([id, k, lab, f]) => { let t; $(id).oninput = e => { S.room[k] = +e.target.value; $(lab).textContent = f(S.room[k]); clearTimeout(t); t = setTimeout(rebuild, 40); }; });
 const SW = ['#b3b1ad', '#c9c7c2', '#ecdcc8', '#e8d3bd', '#f2efe9', '#ffffff', '#dcd9d3', '#c9d3cf', '#d8c3b0', '#bfc7d1'];
-document.querySelectorAll('[data-skc]').forEach(b => b.onclick = () => { $('skirtC').value = b.dataset.skc; $('skirtC').onchange({ target: $('skirtC') }); }); $('skirtC').oninput = $('skirtC').onchange = e => { S.room.skirtColor = e.target.value; S.room.skirting = true; $('skirtT').checked = true; rebuild(); localStorage.setItem('gs_auto', JSON.stringify(S)); }; $('glowS').onchange = e => { S.room.glow = e.target.value; rebuild(); };
+$('skirtC').oninput = $('skirtC').onchange = e => { S.room.skirtColor = e.target.value; S.room.skirting = true; $('skirtT').checked = true; rebuild(); localStorage.setItem('gs_auto', JSON.stringify(S)); }; $('glowS').onchange = e => { S.room.glow = e.target.value; rebuild(); };
 $('undoBtn').onclick = undo; $('redoBtn').onclick = redo;
 addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { if (e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); } else if (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey)) { e.preventDefault(); redo(); } } });
 $('viewMode').onchange = e => { S.view = e.target.value; rebuild(); };
 $('preset').onchange = e => { S.preset = e.target.value; if (S.preset === 'warm') { S.wall = '#ecdcc8'; S.floor = 'oak'; } fillGeneral(); rebuild(); };
 fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) { lastCam = S._cam; delete S._cam; } camTo(lastCam === 'card' ? 'card' : 'nice');
 // iOS settles the canvas size late (toolbar, safe areas): refit once the final size is known
-{ renderer.domElement.addEventListener('pointerdown', () => { window.__userCam = true; }, true); const late = () => { if (lastCam === 'card' || window.__userCam) return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late);
+{ const late = () => { if (lastCam === 'card') return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late);
   if (window.visualViewport) { let vt = 0; visualViewport.addEventListener('resize', () => { clearTimeout(vt); vt = setTimeout(late, 150); }); } }
 const _x=0;window.__gs = { vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [0.05, 1.5]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
@@ -1724,7 +1660,7 @@ function handleTap(e) {
     if (selPost) { selPost = null; $('postPop').classList.add('hide'); }
     if (findRef(h0.object)) {
       // overlapping items: a second tap on the same spot selects the item behind
-      const refs = []; hits.forEach(h => { const g = findRef(h.object); if (!g || h.distance > h0.distance + 0.25) return; const { wi, si, ii } = g.userData.ref, ti = S.walls[wi].sections[si] && S.walls[wi].sections[si].items[ii], k = [wi, si, ti && ti.t === 'rail' ? ii : mainIdx(wi, si, ii)]; if (!refs.some(r => r.join() === k.join())) refs.push(k); });
+      const refs = []; hits.forEach(h => { const g = findRef(h.object); if (!g || h.distance > h0.distance + 0.25) return; const { wi, si, ii } = g.userData.ref, k = [wi, si, mainIdx(wi, si, ii)]; if (!refs.some(r => r.join() === k.join())) refs.push(k); });
       let k = refs[0]; const ci = refs.findIndex(r => r[0] === cur.w && r[1] === cur.s && r[2] === cur.it); if (ci >= 0 && refs.length > 1) k = refs[(ci + 1) % refs.length];
       cur = { w: k[0], s: k[1], it: k[2] }; rebuild(); renderSec(); if (window.goStep) goStep(1); return;
     }
@@ -1747,9 +1683,7 @@ function wbShot() {
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q);
 };
 
-$('niceBtn').onclick = () => { lastCam = 'nice'; if (!orb.on) { camTo('nice'); rebuildDims(); return; } const a0 = { az: orb.az, el: Math.atan2(orb.h - orb.T.y, orb.R) }, T0 = orb.T.clone(), D0 = Math.hypot(orb.R, orb.h - orb.T.y);
-  camTo('nice'); const a1 = { az: orb.az, el: Math.atan2(orb.h - orb.T.y, orb.R) }; orb.T.copy(T0); let da = a1.az - a0.az; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; const t0 = performance.now();
-  const st = () => { const k = Math.min(1, (performance.now() - t0) / 450), e = k * k * (3 - 2 * k), el = a0.el + (a1.el - a0.el) * e; orb.az = a0.az + da * e; orb.R = D0 * Math.cos(el); orb.h = orb.T.y + D0 * Math.sin(el); if (k < 1) requestAnimationFrame(st); else rebuildDims(); }; st(); };
+$('niceBtn').onclick = () => { lastCam = 'nice'; camTo('nice'); rebuildDims(); };
 
 { const o = $('ceilT').onchange; $('ceilT').onchange = e => { o(e); setBg(); }; }
 // ---------- stepper ----------
@@ -1794,17 +1728,16 @@ function cleanShot(fn) {
 }
 // wall outline flash (never in snapshots: cleanShot hides it)
 const flashG = new THREE.Group(); scene.add(flashG); let flashT0 = 0, flashMat = null;
-function flashWall(wi, si) {
+function flashWall(wi) {
   const g = WG[wi]; if (!g) return; flashG.clear(); g.updateMatrixWorld(true);
   const tot = wallWidth(wi) * MM, top = S.railTop * 10 * MM + 0.035, xs = [0]; S.walls[wi].sections.forEach(s => xs.push(xs[xs.length - 1] + s.w / 100));
-  const bot = Math.min(...xs.map((x, i) => (S.railTop * 10 - 10 - postLen(wi, i)) * MM)) - 0.035, x0 = si != null ? xs[si] - 0.01 : -0.05, x1 = si != null ? xs[si + 1] + 0.01 : tot + 0.05, th = 0.007, z = 0.012;
+  const bot = Math.min(...xs.map((x, i) => (S.railTop * 10 - 10 - postLen(wi, i)) * MM)) - 0.035, x0 = -0.05, x1 = tot + 0.05, th = 0.007, z = 0.012;
   flashMat = new THREE.MeshBasicMaterial({ color: 0x2f7bff, transparent: true, opacity: 0, depthTest: false, toneMapped: false });
   const h = new THREE.Group(); h.matrixAutoUpdate = false; h.matrix.copy(g.matrixWorld); flashG.add(h);
   [[x1 - x0, th, (x0 + x1) / 2, top], [x1 - x0, th, (x0 + x1) / 2, bot], [th, top - bot, x0, (top + bot) / 2], [th, top - bot, x1, (top + bot) / 2]].forEach(([w, hh, x, y]) => { const m = new THREE.Mesh(BOX, flashMat); m.scale.set(w, hh, th); m.position.set(x, y, z); m.renderOrder = 30; h.add(m); });
-  const fm = new THREE.MeshBasicMaterial({ color: 0x8cc4ff, transparent: true, opacity: 0, depthTest: false, depthWrite: false, toneMapped: false }); fm.userData.fill = true; const fp = new THREE.Mesh(BOX, fm); fp.scale.set(x1 - x0, top - bot, 0.002); fp.position.set((x0 + x1) / 2, (top + bot) / 2, 0.006); fp.renderOrder = 29; h.add(fp); window.__flashFill = fm;
   flashT0 = performance.now();
 }
-function tickFlash() { if (!flashMat) return; const t = (performance.now() - flashT0) / 1000; if (window.__flashFill) window.__flashFill.opacity = t < 1.1 ? 0.5 * Math.min(1, t * 6) * (t < 0.8 ? 1 : (1.1 - t) / 0.3) : 0; if (t > 1.3) { flashG.clear(); flashMat = null; return; } flashMat.opacity = 0.9 * Math.abs(Math.sin(t * Math.PI * 1.55)) * (1 - t / 1.3); }
+function tickFlash() { if (!flashMat) return; const t = (performance.now() - flashT0) / 1000; if (t > 1.3) { flashG.clear(); flashMat = null; return; } flashMat.opacity = 0.9 * Math.abs(Math.sin(t * Math.PI * 1.55)) * (1 - t / 1.3); }
 // raise-from-floor: standard mark at 20 cm with haptic tick
 { let prev = liftCm(); $('lift').addEventListener('input', e => { const v = +e.target.value; if (v !== prev && (v === 20 || Math.sign(prev - 20) * Math.sign(v - 20) < 0)) haptic(); prev = v; }); }
 // delete selected item from the bottom strip
@@ -1867,25 +1800,24 @@ const BGT = ['#ffffff', '#f6f4f0', '#efece7', '#e9e6e0', '#e4e7ea', '#ddd8cf', '
 const drawBgPick = colorPicker($('bgPick'), () => S.bg || '#e2ded7', (c, fin) => { S.bg = c; setBg(); if (fin) { localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); } }, BGT);
 function renderDeco() {
   const st = !!S.studio, R = S.room; $('dRoom').classList.toggle('hide', st); $('dStudio').classList.toggle('hide', !st);
-  document.querySelectorAll('[data-dt]').forEach(b => b.classList.toggle('on', (b.dataset.dt === 'studio') === (st || !!S.studioL)));
+  document.querySelectorAll('[data-dt]').forEach(b => b.classList.toggle('on', (b.dataset.dt === 'studio') === st));
   const fin = S.wallFin || 'paint', fv = finVar();
   $('finVars').style.gridTemplateColumns = `repeat(${evenCols(FINS[fin].length)},1fr)`; $('finBtns').innerHTML = [['paint', 'Краска'], ['plaster', 'Штукатурка'], ['relief', 'Рельеф'], ['paper', 'Обои']].map(([k, t]) => `<button data-fin="${k}" class="${fin === k ? 'on' : ''}">${t}</button>`).join('');
   $('finVars').innerHTML = FINS[fin].map(([k, t]) => `<button data-fv="${k}" class="${fv === k ? 'on' : ''}"><i style="background-image:url(${finSwatch(k)})"></i><span>${t}</span></button>`).join('');
-  const FL = [['oak', 'Паркет', 'herringbone_parquet', ''], ['lam', 'Светлый ламинат', 'laminate_light', ''], ['lamD', 'Темный ламинат', 'wood_floor_worn', 'filter:brightness(.62) saturate(1.1)'], ['conc', 'Бетон', 'concrete_floor_worn_001', 'filter:brightness(1.08) grayscale(.4)'], ['marble', 'Мрамор', 'marble_01', ''], ['carpet', 'Ковролин', '', '']];
+  const FL = [['oak', 'Паркет', 'herringbone_parquet', ''], ['lam', 'Светлый ламинат', 'laminate_floor_02', ''], ['lamD', 'Темный ламинат', 'wood_floor_worn', 'filter:brightness(.62) saturate(1.1)'], ['conc', 'Бетон', 'concrete_floor_worn_001', 'filter:brightness(1.08) grayscale(.4)'], ['marble', 'Мрамор', 'marble_01', ''], ['carpet', 'Ковролин', '', '']];
   $('floorBtns').style.gridTemplateColumns = `repeat(${evenCols(FL.length)},1fr)`; $('floorBtns').innerHTML = FL.map(([k, t, tx, f]) => `<button data-fl="${k}" class="${S.floor === k ? 'on' : ''}"><i style="${tx ? `background-image:url(tex/${tx}_diff.jpg);background-size:${k === 'oak' ? 160 : 120}%;${f}` : 'background:#b9ab98'}"></i><span>${t}</span></button>`).join('');
   $('finBtns').querySelectorAll('[data-fin]').forEach(b => b.onclick = () => { S.wallFin = b.dataset.fin; $('wallFin').value = S.wallFin; rebuild(); renderDeco(); });
-  if (fv === 'brick') { $('finVars').insertAdjacentHTML('beforeend', `<div style="width:100%"></div><button data-lt="#fbf8f3" class="${S.wall === '#fbf8f3' ? 'on' : ''}">Теплый белый</button><button data-lt="#f6f9fc" class="${S.wall === '#f6f9fc' ? 'on' : ''}">Холодный белый</button>`); $('finVars').querySelectorAll('[data-lt]').forEach(b => b.onclick = () => { S.wall = b.dataset.lt; S.wallCustom = true; rebuild(); renderDeco(); pushHist(); }); }
   $('finVars').querySelectorAll('[data-fv]').forEach(b => b.onclick = () => { S.wallVar = Object.assign({}, S.wallVar, { [fin]: b.dataset.fv }); const AC = { brick: '#ffffff', beige: '#ffffff', slats: '#ffffff', woodp: '#ffffff', stone: '#ffffff', conc2: '#ffffff' }[b.dataset.fv]; if (AC && !S.wallCustom) S.wall = AC; rebuild(); renderDeco(); });
   $('floorBtns').querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { S.floor = b.dataset.fl; $('floor').value = S.floor; rebuild(); renderDeco(); });
   // rug: shape x pile
   const rg = S.rug, carpet = S.floor === 'carpet';
-  $('rugBox').innerHTML = carpet ? '' : `<div class="sz"><button data-rs="round" class="${rg && rg.shape === 'round' ? 'on' : ''}">Круглый</button><button data-rs="rect" class="${rg && rg.shape === 'rect' ? 'on' : ''}">Прямоугольный</button></div><div class="sz"><button data-rp="fluffy" class="${rg && rg.pile === 'fluffy' ? 'on' : ''}">Пушистый</button><button data-rp="flat" class="${rg && rg.pile === 'flat' ? 'on' : ''}">Джут</button><button data-rugoff="1" class="${rg ? '' : 'on'}">Убрать ковер</button></div>`;
+  $('rugBox').innerHTML = carpet ? '' : `<div class="sz"><button data-rs="round" class="${rg && rg.shape === 'round' ? 'on' : ''}">Круглый</button><button data-rs="rect" class="${rg && rg.shape === 'rect' ? 'on' : ''}">Прямоугольный</button></div><div class="sz"><button data-rp="fluffy" class="${rg && rg.pile === 'fluffy' ? 'on' : ''}">Пушистый</button><button data-rp="flat" class="${rg && rg.pile === 'flat' ? 'on' : ''}">Плоский</button><button data-rugoff="1" class="${rg ? '' : 'on'}">Убрать ковер</button></div>`;
   if (!carpet && rg) { $('rugBox').insertAdjacentHTML('beforeend', `<div class="szlab">Размер ковра: <b id="rugKv">${Math.round((rg.k || 1) * 100)}%</b></div><input type="range" id="rugK" min="50" max="200" step="1" value="${Math.round((rg.k || 1) * 100)}">` + (rg.shape === 'round' ? '' : `<div class="szlab">Поворот ковра: <b id="rugRv">${Math.round((rg.r || 0) * 180 / Math.PI)}°</b></div><input type="range" id="rugR" min="-90" max="90" step="1" value="${Math.round((rg.r || 0) * 180 / Math.PI)}">`));
     const rm = () => decor.children.find(c => c.userData.rug), kk = $('rugK'), rr = $('rugR');
     kk.oninput = () => { const k = kk.value / 100, m = rm(); S.rug.k = k; $('rugKv').textContent = kk.value + '%'; if (m) m.scale.set(k / (m.userData.k0 || 1), 1, k / (m.userData.k0 || 1)); }; kk.onchange = () => { rebuild(); pushHist(); };
     if (rr) { rr.oninput = () => { const a = rr.value * Math.PI / 180, m = rm(); S.rug.r = a; $('rugRv').textContent = rr.value + '°'; if (m) m.rotation.y = a; }; rr.onchange = () => { localStorage.setItem('gs_auto', JSON.stringify(S)); pushHist(); }; } }
   $('rugNote').textContent = carpet ? 'На ковролин ковер не кладется: выберите другой пол.' : '';
-  $('rugBox').querySelectorAll('[data-rs]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: b.dataset.rs, pile: (S.rug && S.rug.pile) || 'fluffy' }; rebuild(); renderDeco(); });
+  $('rugBox').querySelectorAll('[data-rs]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: b.dataset.rs, pile: (S.rug && S.rug.pile) || 'flat' }; rebuild(); renderDeco(); });
   $('rugBox').querySelectorAll('[data-rp]').forEach(b => b.onclick = () => { S.rug = { ...(S.rug || {}), shape: (S.rug && S.rug.shape) || 'rect', pile: b.dataset.rp }; rebuild(); renderDeco(); });
   $('rugBox').querySelectorAll('[data-rugoff]').forEach(b => b.onclick = () => { S.rug = null; rebuild(); renderDeco(); });
   // openings
@@ -1902,7 +1834,7 @@ function renderDeco() {
     S.plants = [...(S.plants || []), { k, x: px, z: pz, s: 1, r: pr }]; plantSel = n; rebuild(); renderDeco(); });
   $('plantList').querySelectorAll('[data-ps]').forEach(el => { el.oninput = () => { const i = +el.dataset.ps; S.plants[i].s = +el.value; plantSel = i; const g = decor.children.find(c => c.userData.plant === i); if (g) g.scale.setScalar(+el.value); }; el.onchange = () => { rebuild(); }; });
   $('plantList').querySelectorAll('[data-pd]').forEach(b => b.onclick = () => { S.plants.splice(+b.dataset.pd, 1); plantSel = -1; rebuild(); renderDeco(); });
-  $('cornT').checked = !!R.cornice; $('skirtT').checked = R.skirting !== false; $('skirtC').value = R.skirtColor || '#ffffff'; $('cornC').value = R.cornColor || '#fbfaf6'; $('ceilH2').value = R.ceilH || 285; if ($('ceilT2')) $('ceilT2').checked = !!R.ceiling; $('ceilV2').textContent = R.ceilH || 285;
+  $('cornT').checked = !!R.cornice; $('skirtT').checked = R.skirting !== false; $('skirtC').value = R.skirtColor || '#ffffff'; $('cornC').value = R.cornColor || '#fbfaf6'; $('ceilH2').value = R.ceilH || 285; $('ceilV2').textContent = R.ceilH || 285;
   renderLight(); renderSwatches(); renderAng();
   drawWallPick(); drawBgPick();
 }
@@ -1912,20 +1844,16 @@ function renderLight() {
   $('shPBtns').innerHTML = [['soft', 'Мягкая'], ['left', 'Слева'], ['right', 'Справа'], ['top', 'Сверху'], ['sharp', 'Четкая'], ['sun', 'Солнечный свет'], ['none', 'Без тени']].map(([k, t]) => `<button data-shp="${k}" class="${(R.shP || 'soft') === k ? 'on' : ''}">${t}</button>`).join('');
   $('glMBtns').innerHTML = [['soft', 'Мягкие'], ['bright', 'Яркие'], ['off', 'Выкл']].map(([k, t]) => `<button data-glm="${k}" class="${(R.glareM || 'soft') === k ? 'on' : ''}">${t}</button>`).join('');
   $('winL').value = R.winL || 'off'; $('winL').disabled = !!S.studio;
-  { let sl = $('sunSl'); if (!sl) { sl = document.createElement('div'); sl.id = 'sunSl'; $('shPBtns').after(sl); } sl.innerHTML = R.shP === 'sun' ? `<label class="rng">Сила солнца<input type="range" id="sunK" min="0.3" max="1.6" step="0.05" value="${R.sunK ?? 1}"></label><label class="rng">Направление<input type="range" id="sunD" min="-1" max="1" step="0.05" value="${R.sunD ?? 0}"></label>` : '';
-    ['sunK', 'sunD'].forEach(k => { const el = $(k); if (el) el.oninput = () => { R[k] = +el.value; applyGlareShadow(); localStorage.setItem('gs_auto', JSON.stringify(S)); }; }); }
   $('shPBtns').querySelectorAll('[data-shp]').forEach(b => b.onclick = () => { R.shP = b.dataset.shp; R.shOn = R.shP !== 'none'; rebuild(); renderLight(); });
   $('glMBtns').querySelectorAll('[data-glm]').forEach(b => b.onclick = () => { R.glareM = b.dataset.glm; rebuild(); renderLight(); });
 }
 $('winL').onchange = e => { S.room.winL = e.target.value; rebuild(); };
 { let t; $('winX').oninput = e => { S.room.winX = +e.target.value; $('winXV').textContent = S.room.winX; clearTimeout(t); t = setTimeout(rebuild, 40); }; }
 function renderSwatches() {
-  const MSW = [['white', 'Белый', '#f7f9fc'], ['black', 'Черный', '#202124'], ['silver', 'Серебро', 'linear-gradient(135deg,#eceef0,#a7abaf 55%,#d9dcdf)']].map(([k, t, c]) => `<button data-msw="${k}" class="${S.metal === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
-  const sysC = { white: '#f7f9fc', black: '#202124', silver: 'linear-gradient(135deg,#eceef0,#a7abaf 55%,#d9dcdf)' }[S.metal] || '#f7f9fc';
-  const RSW = [['chrome', 'Хром', 'linear-gradient(135deg,#ffffff,#55595e 40%,#f4f6f8 58%,#2b2e31)'], ['white', 'Белая', '#ffffff'], ['black', 'Черная', '#1a1a1a']].map(([k, t, c]) => `<button data-rsw="${k}" class="${(S.rod || 'chrome') === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
-  ['metalSw', 'metalSw0'].forEach(id => $(id) && ($(id).innerHTML = MSW)); ['rodSw', 'rodSw0'].forEach(id => $(id) && ($(id).innerHTML = RSW));
-  document.querySelectorAll('[data-msw]').forEach(b => b.onclick = () => { $('metal').value = b.dataset.msw; $('metal').onchange({ target: $('metal') }); renderSwatches(); });
-  document.querySelectorAll('[data-rsw]').forEach(b => b.onclick = () => { S.rod = b.dataset.rsw; $('rodC').value = S.rod; rebuild(); renderSwatches(); });
+  $('metalSw').innerHTML = [['white', 'Белый', '#f7f9fc'], ['black', 'Черный', '#202124'], ['silver', 'Серебро', 'linear-gradient(135deg,#eceef0,#a7abaf 55%,#d9dcdf)']].map(([k, t, c]) => `<button data-msw="${k}" class="${S.metal === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
+  $('rodSw').innerHTML = [['white', 'Белый', '#f7f9fc'], ['chrome', 'Хром', 'linear-gradient(135deg,#ffffff,#9aa0a6 45%,#f4f6f8 62%,#7d838a)']].map(([k, t, c]) => `<button data-rsw="${k}" class="${(S.rod || 'chrome') === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
+  $('metalSw').querySelectorAll('[data-msw]').forEach(b => b.onclick = () => { $('metal').value = b.dataset.msw; $('metal').onchange({ target: $('metal') }); });
+  $('rodSw').querySelectorAll('[data-rsw]').forEach(b => b.onclick = () => { S.rod = b.dataset.rsw; $('rodC').value = S.rod; rebuild(); renderSwatches(); });
 }
 // «Раскрыть угол стен»: the same slider in Каркас and Оформление
 function renderAng() {
@@ -1944,17 +1872,16 @@ function renderGaps() {
   const html = ks.length ? '<div class="szlab">Сдвиг от угла, см</div>' + ks.map(([k, t]) => { const eg = gapGet(k), og = Math.min(300, optGap(k)); return `<label class="gapl">${t}: <b data-gv="${k}">${eg}</b> см<span class="own"><span class="rng"><input type="range" data-gr="${k}" min="0" max="300" step="1" value="${eg}"><i class="opt" style="left:calc(${og / 300} * (100% - 18px) + 9px)" title="Без пересечения полок: ${og} см"></i></span><input type="number" data-gf="${k}" min="0" max="300" step="1" value="${eg}"></span></label>`; }).join('') + '<p class="foot"><i class="opt inl"></i> красная точка — положение, при котором полки двух стен не пересекаются</p>' : '';
   ['posGap', 'posGap2'].forEach(id => $(id).innerHTML = html);
   const sh = { '0': S.layout === 'U' ? 'Осн. слева' : 'Основная', '0r': 'Осн. справа', '1': S.layout === 'U' ? 'Левая' : 'Вторая', '2': S.layout === 'U' ? 'Правая' : 'Вторая' };
-  $('posGap3').innerHTML = ks.length ? '<div class="szlab">Сдвиг от угла, см</div><div class="gr2">' + ks.map(([k]) => `<label>${sh[k]}: <b data-gv="${k}">${gapGet(k)}</b><span class="rng"><input type="range" data-gr="${k}" min="0" max="300" step="1" value="${gapGet(k)}"><i class="opt" style="left:calc(${Math.min(300, optGap(k)) / 300} * (100% - 18px) + 9px)" title="Без пересечения полок: ${Math.min(300, optGap(k))} см"></i></span></label>`).join('') + '</div>' : '';
-  const set = (k, v, live, src) => { const prev = gapGet(k), og = Math.min(300, optGap(k)); let nv = Math.max(0, Math.min(300, Math.round(v))); if (Math.abs(nv - og) <= 4) nv = og; gapSet(k, nv); if (prev !== nv && nv === og) { haptic(); tick('bright'); }
+  $('posGap3').innerHTML = ks.length ? '<div class="szlab">Сдвиг от угла, см</div><div class="gr2">' + ks.map(([k]) => `<label>${sh[k]}: <b data-gv="${k}">${gapGet(k)}</b><input type="range" data-gr="${k}" min="0" max="300" step="1" value="${gapGet(k)}"></label>`).join('') + '</div>' : '';
+  const set = (k, v, live, src) => { const prev = gapGet(k), nv = Math.max(0, Math.min(300, Math.round(v))); gapSet(k, nv); const og = Math.min(300, optGap(k)); if (prev !== nv && (nv === og || Math.sign(prev - og) !== Math.sign(nv - og))) haptic();
     document.querySelectorAll(`[data-gv="${k}"]`).forEach(e => e.textContent = nv); document.querySelectorAll(`[data-gr="${k}"],[data-gf="${k}"]`).forEach(e => { if (e !== src) e.value = nv; }); clearTimeout(gapTmr); gapTmr = setTimeout(rebuild, live ? 30 : 0); };
   document.querySelectorAll('[data-gr]').forEach(el => { el.oninput = () => set(el.dataset.gr, +el.value, true, el); el.onchange = () => set(el.dataset.gr, +el.value, false, el); });
   document.querySelectorAll('[data-gf]').forEach(el => el.onchange = () => set(el.dataset.gf, +el.value || 0, false, el));
 }
-document.querySelectorAll('[data-dt]').forEach(b => b.onclick = () => { S.studio = b.dataset.dt === 'studio'; S.studioL = false; setBg(); rebuild(); renderDeco(); });
+document.querySelectorAll('[data-dt]').forEach(b => b.onclick = () => { S.studio = b.dataset.dt === 'studio'; setBg(); rebuild(); renderDeco(); });
 $('cornC').oninput = $('cornC').onchange = e => { S.room.cornColor = e.target.value; S.room.cornice = true; $('cornT').checked = true; rebuild(); localStorage.setItem('gs_auto', JSON.stringify(S)); };
 { let t; $('ceilH2').oninput = e => { S.room.ceilH = +e.target.value; $('ceilV2').textContent = S.room.ceilH; if ($('ceilH')) { $('ceilH').value = S.room.ceilH; } if ($('ceilV')) $('ceilV').textContent = S.room.ceilH; clearTimeout(t); t = setTimeout(rebuild, 40); }; }
 { const o = $('ceilT').onchange; $('ceilT').onchange = e => { o(e); renderDeco(); }; }
-if ($('ceilT2')) { $('ceilT2').onchange = e => { $('ceilT').checked = e.target.checked; $('ceilT').onchange({ target: $('ceilT') }); }; } /* v11u: visible «Потолок» toggle in Оформление */
 { const o = $('layout').onchange; $('layout').onchange = e => { o(e); renderAng(); renderWallsPop(); }; }
 // neighbour distances while dragging: left of the finger, «от пола» on the right
 // both hints sit right beside the dragged item on screen, clamped inside the view
@@ -1991,7 +1918,7 @@ function snap34() {
   sun.shadow.mapSize.set(4096, 4096); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null);
   renderer.setPixelRatio(1); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix(); if (orb.on) applyCam();
   renderer.shadowMap.needsUpdate = true; let comp = null;
-  try { if (POST && !isIOS() && !matchMedia('(pointer: coarse)').matches) { comp = new POST.EffectComposer(renderer); comp.setSize(CW, CH); comp.addPass(new POST.RenderPass(scene, camera)); const sao = new POST.SAOPass(scene, camera); Object.assign(sao.params, { saoIntensity: 0.025, saoScale: 3, saoKernelRadius: 28, saoBias: 0.5, saoMinResolution: 0, saoBlur: true, saoBlurRadius: 6 }); comp.addPass(sao); comp.addPass(new POST.OutputPass()); comp.render(); } } catch (er) { comp = null; }
+  try { if (POST) { comp = new POST.EffectComposer(renderer); comp.setSize(CW, CH); comp.addPass(new POST.RenderPass(scene, camera)); const sao = new POST.SAOPass(scene, camera); Object.assign(sao.params, { saoIntensity: 0.025, saoScale: 3, saoKernelRadius: 28, saoBias: 0.5, saoMinResolution: 0, saoBlur: true, saoBlurRadius: 6 }); comp.addPass(sao); comp.addPass(new POST.OutputPass()); comp.render(); } } catch (er) { comp = null; }
   if (!comp) renderer.render(scene, camera);
   const out = document.createElement('canvas'); out.width = CW; out.height = CH; const g = out.getContext('2d');
   if (photoImg && !$('showRoom').checked) { const s = Math.max(CW / photoImg.width, CH / photoImg.height), iw = photoImg.width * s, ih = photoImg.height * s; g.drawImage(photoImg, (CW - iw) / 2, (CH - ih) / 2, iw, ih); }
@@ -2003,7 +1930,6 @@ function snap34() {
 const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 $('camBtn').onclick = () => { try { camShot(); } catch (er) { msg('Не удалось сделать снимок'); } };
 function camShot() {
-  try { hlOnly(null); window.__plantSel = -1; window.__propSel = null; $('delBtn').classList.add('hide'); } catch (e) {}
   const out = cleanShot(snap34), name = 'garderob-' + new Date().toISOString().slice(0, 10) + '-1800x2400.png';
   if (matchMedia('(pointer: coarse)').matches || isIOS()) { showShot(out, name); return; }
   if (isIOS() && navigator.canShare) { try { const bin = atob(out.toDataURL('image/png').split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const file = new File([u8], name, { type: 'image/png' }); if (navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(e => { if (!e || e.name !== 'AbortError') dl(); }); return; } } catch (er) {} }
@@ -2046,9 +1972,8 @@ try { renderDeco(); setBg(); rebuild(); renderSec(); } catch (e) { console.warn(
 { const pop = document.createElement('div'); pop.id = 'camPop'; pop.className = 'hide'; document.body.appendChild(pop);
   const draw = () => { pop.innerHTML = '<div class="szlab">Камера</div>' + CAMS.map(([k, t]) => `<button data-cs="${k}" class="${camK() === k ? 'on' : ''}">${t}</button>`).join('');
     pop.querySelectorAll('[data-cs]').forEach(b => b.onclick = () => { localStorage.setItem('gs_cam', b.dataset.cs); lensUI(); pop.classList.add('hide'); applyLights(); $('niceBtn').click(); }); };
-  $('lensBtn2').onclick = e => { e.stopPropagation(); if (!pop.classList.contains('hide')) return pop.classList.add('hide'); draw(); const r = $('lensBtn2').getBoundingClientRect(); pop.classList.remove('hide'); const ph = pop.offsetHeight || 200; pop.style.top = Math.max(6, r.top - ph - 8) + 'px'; pop.style.right = Math.max(6, innerWidth - r.right - 60) + 'px'; };
   $('lensBtn').onclick = e => { e.stopPropagation(); draw(); const r = $('lensBtn').getBoundingClientRect(); pop.style.top = (r.bottom + 6) + 'px'; pop.style.right = Math.max(6, innerWidth - r.right - 40) + 'px'; pop.classList.toggle('hide'); };
-  document.addEventListener('pointerdown', e => { if (!pop.contains(e.target) && !$('lensBtn').contains(e.target) && !$('lensBtn2').contains(e.target)) pop.classList.add('hide'); }); }
+  document.addEventListener('pointerdown', e => { if (!pop.contains(e.target) && e.target !== $('lensBtn') && !$('lensBtn').contains(e.target)) pop.classList.add('hide'); }); }
 lensUI();
 // «Эффект»: a per-camera photo look (no blur); live as CSS filter + overlays, baked into 📷 by pixels
 const FXP = { std: { b: 1.02, c: 1.03, s: 1.04, w: 0.03, l: 0, v: 0.2 }, int: { b: 1.08, c: 0.92, s: 1.03, w: 0.035, l: 0.04, v: 0 }, por: { b: 1.0, c: 1.16, s: 1.06, w: 0, l: 0, v: 0.32 }, top3: { b: 1.04, c: 1.03, s: 0.9, w: -0.035, l: 0, v: 0.06 } };
@@ -2068,7 +1993,7 @@ function fxBake(g, W, H) { if (!fxOn()) return; const p = FXP[camK()] || FXP.std
   g.putImageData(im, 0, 0); }
 $('fxBtn').onclick = () => { localStorage.setItem('gs_fx', fxOn() ? '0' : '1'); fxUI(); msg('Эффект: ' + (fxOn() ? 'вкл' : 'выкл')); };
 addEventListener('resize', () => setTimeout(fxUI, 50)); fxUI();
-{ let rt = 0, lw = innerWidth; const refit = () => { clearTimeout(rt); rt = setTimeout(() => { try { resize(); if (innerWidth !== lw) { lw = innerWidth; fitView(); } } catch (e) {} }, 150); }; addEventListener('resize', refit); addEventListener('orientationchange', refit); }
+{ let rt = 0; const refit = () => { clearTimeout(rt); rt = setTimeout(() => { try { resize(); fitView(); } catch (e) {} }, 150); }; addEventListener('resize', refit); addEventListener('orientationchange', refit); }
 { const o = lensUI; lensUI = function () { o(); try { fxUI(); } catch (e) {} }; }
 
 // ---- v10 props: add to the selected (or first fitting) shelf / rod, drag along it with a finger, delete with 🗑
@@ -2101,13 +2026,9 @@ renderPropBtns();
 // iPhone: show the shot as a plain <img>; long-press → «Сохранить в Фото» (no iCloud/Files needed); «Поделиться» as an extra
 function showShot(cv, name) { const url = cv.toDataURL('image/jpeg', 0.92), ov = document.createElement('div'); ov.id = 'shotOv';
   ov.innerHTML = '<button class="x" aria-label="Закрыть">✕</button><img alt="Снимок"><p>Нажмите и удерживайте фото → «Сохранить в Фото»</p><button class="sh">Поделиться</button>';
-  ov.querySelector('img').src = url; document.body.appendChild(ov); const close = () => ov.remove(); ov.querySelector('.x').onclick = close;
-  let lp = 0; ov.addEventListener('touchstart', e => { if (e.target.tagName === 'IMG') lp = performance.now(); }, { passive: true }); ov.addEventListener('click', e => { if (e.target === ov || (e.target.tagName === 'P')) close(); });
-  document.addEventListener('visibilitychange', function vc() { if (document.visibilityState === 'visible' && lp) { document.removeEventListener('visibilitychange', vc); } });
-  ov.addEventListener('contextmenu', () => { setTimeout(() => { if (document.body.contains(ov)) ov.dataset.saved = '1'; }, 0); });
+  ov.querySelector('img').src = url; document.body.appendChild(ov); ov.querySelector('.x').onclick = () => ov.remove();
   const shb = ov.querySelector('.sh'); if (!navigator.share) shb.remove();
-  shb.onclick = () => { fetch(url).then(r => r.blob()).then(b => { const f = new File([b], name.replace(/\.png$/, '.jpg'), { type: 'image/jpeg' }); return navigator.share(navigator.canShare && navigator.canShare({ files: [f] }) ? { files: [f] } : { url: location.href }); }).then(close).catch(() => {}); };
-  ov.querySelector('img').addEventListener('touchend', () => { if (lp && performance.now() - lp > 600) setTimeout(() => { const once = () => { close(); removeEventListener('focus', once); }; addEventListener('pointerdown', once, { once: true, capture: true }); }, 300); }); }
+  shb.onclick = () => { fetch(url).then(r => r.blob()).then(b => { const f = new File([b], name.replace(/\.png$/, '.jpg'), { type: 'image/jpeg' }); return navigator.share(navigator.canShare && navigator.canShare({ files: [f] }) ? { files: [f] } : { url: location.href }); }).catch(() => {}); }; }
 // rug: a tap selects it; only a selected rug follows one finger; a second finger always goes to the camera
 { const el = renderer.domElement, fp = new THREE.Plane(V(0, 1, 0), 0), TP = new Set(); let pd = null, sel = null, tap = null;
   addEventListener('pointerdown', e => TP.add(e.pointerId), true);

@@ -183,7 +183,4 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 #topbar>#fxBtn+#lensBtn{margin-left:0}
 #fxBtn svg{width:20px;height:20px;display:block}#fxBtn.on{background:#efe7da;border-color:#d9cdb8}
 #shotOv{position:fixed;inset:0;z-index:120;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:calc(env(safe-area-inset-top) + 44px) 12px calc(env(safe-area-inset-bottom) + 16px)}#shotOv img{max-width:100%;max-height:72vh;object-fit:contain;-webkit-touch-callout:default!important;-webkit-user-select:auto!important;user-select:auto!important;pointer-events:auto}#shotOv p{color:#eee;font-size:15px;margin:0;text-align:center}#shotOv .x{position:absolute;top:calc(env(safe-area-inset-top) + 8px);right:12px;width:40px;height:40px;border-radius:20px;border:0;background:#fff3;color:#fff;font-size:20px}#shotOv .sh{padding:11px 22px;border-radius:22px;border:0;background:#fff;color:#111;font-size:15px}
-
-.btype{margin:6px 0 2px;font-size:14px}.btype b{background:#2f7bff;color:#fff;padding:3px 10px;border-radius:12px}
-
-#floatBar #niceBtn{display:none}#floatBar #dimBtn.on{background:#e6f0ff;border-color:#8fb4ff}
+#view{position:relative}#view::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 58%,rgba(0,0,0,.13) 100%);z-index:1}
