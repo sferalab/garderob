@@ -128,7 +128,7 @@ const scene = new THREE.Scene();
 const pm = new THREE.PMREMGenerator(renderer);
 scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 // indoor HDRI (Poly Haven studio_small_09, CC0) for metal/chrome reflections; background unchanged
-import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().setDataType(THREE.FloatType).load('tex/interior_1k.hdr', t => { { const d = t.image.data; for (let i = 0; i < d.length; i += 4) { const l = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; d[i] = l * 0.97; d[i + 1] = l; d[i + 2] = l * 1.04; } t.needsUpdate = true; } /* v11u: neutral-cool, no warm cast on chrome */ t.mapping = THREE.EquirectangularReflectionMapping; window.ROD_ENV = pm.fromEquirectangular(t).texture; t.dispose(); /* v11t: real interior photo (Poly Haven lebombo, CC0) reflected only in chrome */ scene.traverse(o => { if (o.isMesh && o.material && o.material.userData && o.material.userData.chrome) { o.material.envMap = window.ROD_ENV; o.material.needsUpdate = true; } }); if (M.chrome) M.chrome.envMap = window.ROD_ENV; })).catch(() => {});
+import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().setDataType(THREE.FloatType).load('tex/interior_1k.hdr', t => { { const d = t.image.data; for (let i = 0; i < d.length; i += 4) { const l0 = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2], l = 0.78 + 0.55 * l0 / (l0 + 0.5); /* v11v: bright, low-contrast in every direction - chrome never goes black */ d[i] = l * 0.97; d[i + 1] = l; d[i + 2] = l * 1.04; } t.needsUpdate = true; } /* v11u: neutral-cool, no warm cast on chrome */ t.mapping = THREE.EquirectangularReflectionMapping; window.ROD_ENV = pm.fromEquirectangular(t).texture; t.dispose(); /* v11t: real interior photo (Poly Haven lebombo, CC0) reflected only in chrome */ scene.traverse(o => { if (o.isMesh && o.material && o.material.userData && o.material.userData.chrome) { o.material.envMap = window.ROD_ENV; o.material.needsUpdate = true; } }); if (M.chrome) M.chrome.envMap = window.ROD_ENV; })).catch(() => {});
 import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; window.HDR_ENV = pm.fromEquirectangular(t).texture; t.dispose(); try { applyGlareShadow(); } catch (e) {} })).catch(() => {});
 // SSAO only for the 📷 snapshot (loaded in the background, never used in the live view)
 let POST = null; Promise.all(['postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/SAOPass.js', 'postprocessing/OutputPass.js'].map(f => import('three/addons/' + f))).then(m => { POST = Object.assign({}, ...m); }).catch(() => {});
@@ -328,7 +328,7 @@ function makeMats() {
   // Titan-GS powder coat: RAL 9016 snow white (slightly cool, glowing), RAL 9006 silver, RAL 9005 black
   const gm = { soft: 1, bright: 1, off: 0.3 }[S.room.glareM || 'soft'] || 1, bright = S.room.glareM === 'bright';
   const PB = {
-    white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.55, clearcoatRoughness: bright ? 0.05 : 0.3, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0x50555f), envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
+    white: { color: 0xffffff, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.55, clearcoatRoughness: bright ? 0.05 : 0.3, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0xc4c7cb), toneMapped: false, envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
     silver: { metalness: 0.8, roughness: 0.32, clearcoat: 0.5, clearcoatRoughness: 0.3, specularIntensity: 0.9, color: 0xc9cfd8, emissive: new THREE.Color(0x24272c), envMapIntensity: 1.7 * gm }, /* v11t: light satin silver like the Titan drawing */
     black: { color: METAL.black, metalness: 0.3, roughness: 0.45, clearcoat: bright ? 0.5 : 0.35, clearcoatRoughness: 0.32, specularIntensity: 0.7, /* v11s: satin black powder coat as in the photo */ sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x4a4d53), envMapIntensity: 0.9 * gm }
   }[S.metal] || {}; if (S.metal !== 'silver' && S.room.glareM !== 'off') Object.assign(PB, { envMap: window.ROD_ENV || chromeEnv(), userData: { chrome: true } }); /* v11u: soft moving satin sheen from the same neutral interior env */ if (S.metal === 'silver') Object.assign(PB, { map: tex('rodsoft_diff', true, '1x1'), roughnessMap: tex('rodsoft_rough', false, '1x1'), envMap: window.ROD_ENV || chromeEnv(), userData: { chrome: true } }); /* v11u: one kit with the chrome rod: same tint, same env */
@@ -528,9 +528,9 @@ function buildItem(g, item, x0, x1, sec) {
     const sh = sec && sec.items.filter(o => o !== item && o.t !== 'rail' && o.t !== 'shoe' && o.y > item.y && o.y - item.y <= 25).sort((p, q) => p.y - q.y)[0];
     const by = sh ? sh.y * 10 * MM : y + 0.09, zr = Math.min(ZI + (sh ? (REAL_DEPTH[sh.t][sh.d] || 400) * MM : 0.4) - 0.07, 0.36);
     if (!sh) { bracket(g, x0, by, 0.355); bracket(g, x1, by, 0.355); }
-    const ca = x0 + 0.004, cb = x1 - 0.004; g.userData.rodZ = zr;
+    const ca = x0 - 0.026, cb = x1 + 0.026; g.userData.rodZ = zr; /* v11v: rod lies through both U cradles and sticks out ~11 mm past each holder, capped */
     [x0, x1].forEach(x => rodHolder(g, x, by, y, zr));
-    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.0155]], M.rod); rr.geometry = ROD_G; g.add(rr); [ca, cb].forEach(xc => { const cp = new THREE.Mesh(new THREE.CylinderGeometry(0.0163, 0.0163, 0.005, 24), CAP_M || (CAP_M = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.45 }))); cp.rotation.z = Math.PI / 2; cp.position.set(xc, y, zr); g.add(cp); }); /* end caps */
+    const rr = rods([[V(ca, y, zr), V(cb, y, zr), 0.0155]], M.rod); rr.geometry = ROD_G; g.add(rr); [ca, cb].forEach(xc => { const cp = new THREE.Mesh(new THREE.CylinderGeometry(0.0163, 0.0163, 0.005, 24), CAP_M || (CAP_M = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.45 }))); cp.rotation.z = Math.PI / 2; cp.position.set(xc + (xc < x0 ? -0.0025 : 0.0025), y, zr); g.add(cp); }); /* end caps */
   }
 }
 
@@ -692,13 +692,14 @@ function buildRoom() {
   // floor laid from the corner: tiles and parquet at 45 deg, laminate along the main wall (real scale, see FLOORS)
   const fc = cl ? left : cr ? right : F.x0, FD = FLOORS[S.floor] || FLOORS.oak, fRot = FD[4] ? Math.PI / 4 : 0;
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), floorM); fl.rotation.set(-Math.PI / 2, 0, fRot); fl.position.set(fc, 0, 0); fl.receiveShadow = !ST; fl.userData.floorM = true; room.add(fl);
+  if (!ST) { /* v11v: floor-coloured slab under the floor - in ortho low views no white band under the walls */ const sl = new THREE.Mesh(new THREE.BoxGeometry(240, 40, 240), new THREE.MeshBasicMaterial({ color: (floorM.color || new THREE.Color(0xcfc6b8)).clone().multiplyScalar(0.9) })); sl.position.set(fc, -20.004, 0); sl.userData.slab = true; window.FSLAB = sl; room.add(sl); } else window.FSLAB = null;
   const FJ = FLOORS[S.floor] && FLOORS[S.floor][3];
   if (!ST && FJ) { const jt = jointTex(S.floor).clone(); jt.needsUpdate = true; jt.repeat.set(240 / FJ[0], 240 / FJ[1]); const j = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshBasicMaterial({ map: jt, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); j.rotation.set(-Math.PI / 2, 0, fRot); j.position.set(fc, 0.0005, 0); room.add(j); }
   const ops = ST ? [] : openingsList(F, CH), WH = CH + 0.03, bk = new THREE.Group(); room.add(bk);
   const wallPlane = (w, x, z, ry, parent, holes) => {
     const sh = new THREE.Shape(); sh.moveTo(-w / 2, -WH / 2); sh.lineTo(w / 2, -WH / 2); sh.lineTo(w / 2, WH / 2); sh.lineTo(-w / 2, WH / 2); sh.lineTo(-w / 2, -WH / 2);
     holes.forEach(o => { const x0 = o.c - o.w / 2, y0 = Math.max(o.b, 0.002) - WH / 2, p = new THREE.Path(); p.moveTo(x0, y0); p.lineTo(x0 + o.w, y0); p.lineTo(x0 + o.w, o.b + o.h - WH / 2); p.lineTo(x0, o.b + o.h - WH / 2); p.lineTo(x0, y0); sh.holes.push(p); });
-    const geo = new THREE.ShapeGeometry(sh), grp = new THREE.Group(); grp.position.set(x, WH / 2, z); grp.rotation.y = ry; parent.add(grp);
+    const geo = new THREE.ShapeGeometry(sh); { const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) + WH / 2 + 0.0313); } /* v11v: uv v = floor height + 31 mm, so the 80 mm plinth top falls mid brick course */ const grp = new THREE.Group(); grp.position.set(x, WH / 2, z); grp.rotation.y = ry; parent.add(grp);
     if (!ST) { const wm = new THREE.Mesh(geo, wallMat()); wm.material.side = THREE.DoubleSide; /* v11s: no white void from behind/above */ wm.receiveShadow = S.room.shP === 'sun'; grp.add(wm); }
     const q = new THREE.Mesh(geo, wallShadowMat()); q.receiveShadow = true; grp.add(q);
     holes.forEach(o => buildOpening(grp, o, WH)); grp.userData.wallG = true; return grp;
@@ -886,7 +887,7 @@ function labelSprite(text, mode) {
   g.fillStyle = white ? '#ffffff' : '#1e1e1e'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, 32);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true, toneMapped: false, sizeAttenuation: false }));
-  /* about 17 css px tall at any zoom */ const h = 2 * Math.tan(camera.fov * Math.PI / 360) * ((view.clientHeight || 600) < 700 ? 14 : 16) / Math.max(300, view.clientHeight || 600); sp.scale.set(h * w / 60, h, 1); sp.renderOrder = 10;
+  /* about 17 css px tall at any zoom */ const h = 2 * Math.tan(camera.fov * Math.PI / 360) * ((view.clientHeight || 600) < 700 ? 14 : 16) / Math.max(300, view.clientHeight || 600); sp.scale.set(h * w / 60 * (camera.userData.ortho && !camera.userData.noOrtho ? camera.userData.oD : 1), h * (camera.userData.ortho && !camera.userData.noOrtho ? camera.userData.oD : 1), 1); sp.renderOrder = 10;
   // h: above the line; vL / vR: vertical text left / right of a vertical line; tL / tR: tag anchored at its left / right bottom corner
   if (mode === 'vL') { sp.center.set(0.5, 0); sp.material.rotation = Math.PI / 2; } else if (mode === 'vR') { sp.center.set(0.5, 1); sp.material.rotation = Math.PI / 2; } else if (mode === 'tL') sp.center.set(0, 0); else if (mode === 'tR') sp.center.set(1, 0); else sp.center.set(0.5, 0);
   return sp;
@@ -1057,23 +1058,24 @@ function applyCam(cam = camera) {
   // Height range kept to the original [-0.6R, +0.75R] so the shift stays moderate and nothing stretches; never below 0.35 m (no diving under shelves).
   const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
   if (o.free) { o.R = Math.max(ORB_RMIN(), o.R); // only the separate «Сверху» button: a true top-down tilt
-    cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az)); cam.up.set(0, 1, 0); cam.lookAt(o.T); cam.clearViewOffset(); cam.updateMatrixWorld(); return; }
+    ortho(cam, o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az), o.T, Math.hypot(o.R, o.h - o.T.y)); return; }
   // v11r: free orbit all the way to the top, side and bottom. Near eye level it is the loved level camera (pitch 0 + lens shift, no stretching);
   // further up/down the lens gradually tilts toward the target, so the shift never grows large and nothing stretches.
   let D = Math.hypot(o.R, o.h - o.T.y), el = Math.atan2(o.h - o.T.y, o.R); D = Math.max(ORB_RMIN(), D); el = Math.max(-1.5, Math.min(1.5, el));
   o.R = D * Math.cos(el); o.h = o.T.y + D * Math.sin(el);
-  // v11t: dolly-zoom toward orthographic as |pitch| grows - camera backs off and the lens narrows by the same factor,
-  // so framing stays the same while verticals become parallel (no roll: they stay screen-vertical), nothing stretches
-  const ae0 = Math.abs(el), u1 = Math.max(0, Math.min(1, (ae0 - 0.22) / 0.4)), s1 = u1 * u1 * (3 - 2 * u1), mz = 1 + 14 * s1 * s1, ud = cam.userData; /* v11u: zoom-out only as fast as the lens tilts, so no oblique shear */
-  if (ud.dz && cam.fov !== ud.lf) ud.f0 = cam.fov; /* fov set elsewhere (views, lens) becomes the new base */
-  if (mz > 1.0005) { if (!ud.dz) { ud.dz = true; ud.f0 = cam.fov; } cam.fov = ud.lf = 2 * Math.atan(Math.tan(ud.f0 * Math.PI / 360) / mz) * 180 / Math.PI; }
-  else if (ud.dz) { ud.dz = false; cam.fov = ud.f0; }
-  cam.near = 0.08 * Math.min(mz, 6); cam.far = Math.max(160, D * mz + 60); cam.updateProjectionMatrix();
-  cam.position.set(o.T.x + mz * o.R * Math.sin(o.az), o.T.y + mz * (o.h - o.T.y), o.T.z + mz * o.R * Math.cos(o.az));
-  const pt = el * s1;
-  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, cam.position.y - mz * o.R * Math.tan(pt), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
-  const q = o.T.clone().applyMatrix4(cam.matrixWorldInverse), yN = (q.y / -q.z) / Math.tan(cam.fov * Math.PI / 360);
-  const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
+  // v11v: true orthographic projection at every angle - verticals and walls always straight and parallel, no convergence, no stretching
+  ortho(cam, o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az), o.T, D);
+}
+function ortho(cam, x, y, z, T, D) {
+  cam.position.set(x, y, z); cam.up.set(0, 1, 0); cam.lookAt(T); cam.clearViewOffset(); cam.updateMatrixWorld();
+  if (window.FSLAB) window.FSLAB.visible = y > 0.01; const ud = cam.userData; ud.ortho = true; ud.oD = D; cam.updateProjectionMatrix();
+}
+{ const up0 = camera.updateProjectionMatrix.bind(camera);
+  camera.updateProjectionMatrix = function () { const ud = this.userData;
+    if (!ud.ortho || ud.noOrtho) { this.isPerspectiveCamera = true; this.isOrthographicCamera = false; return up0(); }
+    const hh = ud.oD * Math.tan(this.fov * Math.PI / 360) / (this.zoom || 1), hw = hh * this.aspect;
+    this.near = 0.05; this.far = ud.oD + 160; this.isPerspectiveCamera = false; this.isOrthographicCamera = true;
+    this.projectionMatrix.makeOrthographic(-hw, hw, hh, -hh, this.near, this.far); this.projectionMatrixInverse.copy(this.projectionMatrix).invert(); };
 }
 function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return Math.max(0.8, Math.min(1.6, Math.max(sz.x, sz.y) * 0.35)); } catch (e) { return 0.8; } }
 {
@@ -1085,7 +1087,7 @@ function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   el.addEventListener('pointermove', e => {
     if (!orb.on || !P.has(e.pointerId)) return; if (window.__rugDrag) { const q = P.get(e.pointerId); q.x = e.clientX; q.y = e.clientY; last = null; pinch = null; return; } const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
-    const hpx = el.clientHeight || 600, unit = orb.R * Math.tan((camera.userData.dz ? camera.userData.f0 : camera.fov) * Math.PI / 360) * 2 / hpx;
+    const hpx = el.clientHeight || 600, unit = (camera.userData.oD || orb.R) * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
     if (P.size >= 2) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
       if (pinch) { { const f = Math.max(0.2, Math.min(5, pinch / Math.max(d, 1))); orb.R *= f; orb.h = orb.T.y + (orb.h - orb.T.y) * f; } }
@@ -1277,7 +1279,7 @@ function makeCard() {
   const sv = { pos: camera.position.clone(), tg: controls.target.clone(), pr: renderer.getPixelRatio() };
   const dimsWas = dimsG.visible; if (!C.dims) setDims(false);
   renderer.setPixelRatio(2); renderer.setSize(CW, CH, false); camera.aspect = CW / CH; camera.updateProjectionMatrix();
-  const sfov = camera.fov; if (orb.on) applyCam();
+  const sfov = camera.fov; camera.userData.noOrtho = true; if (orb.on) applyCam();
   { // same viewing angle as on screen; only dolly back/shift (no rotation) so the set fits between texts
     const b = meshBox(), pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
     const fwd = V(0, 0, -1).applyQuaternion(camera.quaternion), up = V(0, 1, 0).applyQuaternion(camera.quaternion), rt = V(1, 0, 0).applyQuaternion(camera.quaternion);
@@ -1319,7 +1321,7 @@ function makeCard() {
     g.textAlign = 'left'; g.font = `500 ${Math.round(24 * k)}px ${serif}`; lines.forEach((t, i) => g.fillText(t, px + 32 * k, py + (112 + i * 40) * k));
   }
   // restore
-  renderer.setPixelRatio(sv.pr); resize(); camera.fov = sfov; camera.updateProjectionMatrix(); camera.position.copy(sv.pos); controls.target.copy(sv.tg); controls.update(); if (dimsWas) setDims(true);
+  renderer.setPixelRatio(sv.pr); resize(); camera.fov = sfov; camera.userData.noOrtho = false; camera.updateProjectionMatrix(); camera.position.copy(sv.pos); controls.target.copy(sv.tg); controls.update(); if (dimsWas) setDims(true);
   return out;
 }
 
