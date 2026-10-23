@@ -1044,7 +1044,7 @@ function syncFromCam(kind) {
 }
 function applyCam(cam = camera) {
   const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.h = Math.max(o.T.y - o.R * 20, Math.min(o.T.y + o.R * Math.tan(35 * Math.PI / 180), o.h)); // v13b: top capped at 35 deg (pure lens shift, stretch ~1.22); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
+  o.h = Math.max(o.T.y - o.R * 20, Math.min(o.T.y + o.R * Math.tan(25 * Math.PI / 180), o.h)); // v13c: top capped at 25 deg (pure lens shift, stretch ~1.10); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
   // plain perspective: true tilt at every angle, no lens shift, free orbit all around (walls facing the camera hide via tickOcc) // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
   // two-point perspective: level camera + vertical lens shift keeps verticals straight at normal angles;
@@ -1664,7 +1664,7 @@ const msg = t => { $('msg').textContent = t; setTimeout(() => $('msg').textConte
 $('shareBtn').onclick = async () => { const u = location.origin + location.pathname + '?cfg=' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); try { await navigator.clipboard.writeText(u); msg('Ссылка скопирована'); } catch (e) { prompt('Ссылка на конфигурацию', u); } };
 $('saveBtn').onclick = () => { localStorage.setItem('gs_saved', JSON.stringify(S)); msg('Конфигурация сохранена'); };
 $('loadBtn').onclick = () => { const v = load('gs_saved'); if (!v) return msg('Сохраненной конфигурации нет'); S = migrate(v); cur = { w: 0, s: 0 }; fillGeneral(); rebuild(); renderSec(); renderDeco(); setBg(); camTo(lastCam); msg('Конфигурация загружена'); };
-$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname + '?v=v13b&r=' + Date.now()); return; S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
+$('resetBtn').onclick = () => { if (!confirm('Сбросить к исходному? Сохраненные настройки на этом устройстве будут удалены.')) return; clearSaved(); location.replace(location.pathname + '?v=v13c&r=' + Date.now()); return; S = migrate(defaults()); cur = { w: 0, s: 0, it: -1 }; lastCam = 'nice'; fillGeneral(); cardUI(); rebuild(); renderSec(); setBg(); renderDeco(); camTo('nice'); if (window.goStep) goStep(0); };
 
 async function fontsFor(C) { const f = { montserrat: 'Montserrat', inter: 'Inter', playfair: 'Playfair Display' }[C.font] || 'Manrope'; await Promise.all([document.fonts.load(`700 60px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load('500 30px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load('800 48px Manrope', 'Наполнение КАРКАС 0123'), document.fonts.load(`800 48px "${f}"`, 'Наполнение КАРКАС 0123'), document.fonts.load(`500 30px "${f}"`, 'Наполнение КАРКАС 0123')]).catch(() => {}); }
 $('cardBtn').onclick = async () => { cardRead(); await fontsFor(S.card); const o = cleanShot(makeCard); o.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'kartochka-900x1200.png'; a.click(); }, 'image/png'); };
