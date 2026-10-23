@@ -1049,16 +1049,20 @@ function applyCam(cam = camera) {
   const o = orb; if (o.snapTo != null) { let d = o.snapTo - o.az; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; if (Math.abs(d) < 0.0005) { o.az = o.snapTo; o.snapTo = null; } else o.az += d * 0.2; } if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
   o.h = Math.max(o.T.y - o.R * Math.tan(12 * Math.PI / 180), Math.min(o.T.y + o.R * Math.tan(35 * Math.PI / 180), o.h)); // v13d: elevation -20..35 deg (pure lens shift); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
   /* v13d: longer lens at steep angles - FOV 30 -> 11 deg as |elevation| goes 10 deg -> cap, distance scaled so framing stays the same (flatter perspective, corner stays ~90 deg, less shift stretch) */
-  { const el = Math.atan2(o.h - o.T.y, o.R), cap = (el >= 0 ? 35 : 12) * Math.PI / 180, u = Math.max(0, Math.min(1, (Math.abs(el) - (el >= 0 ? 10 : 2) * Math.PI / 180) / (cap - (el >= 0 ? 10 : 2) * Math.PI / 180))), sm = u * u * (3 - 2 * u), f0 = 30, f = window.__noFovK ? f0 : f0 - 19 * sm; /* down to 11 deg (near-orthographic) at the caps */
+  { const el = Math.atan2(o.h - o.T.y, o.R), cap = (el >= 0 ? 35 : 12) * Math.PI / 180, u = Math.max(0, Math.min(1, (Math.abs(el) - (el >= 0 ? 10 : 2) * Math.PI / 180) / (cap - (el >= 0 ? 10 : 2) * Math.PI / 180))), sm = u * u * (3 - 2 * u), f0 = 30, f = window.__noFovK ? f0 : 1; /* v13f: near-orthographic at ALL angles (FOV 1 deg, distance x30) - parallel lines stay parallel, same framing; sm unused */
     const k = Math.tan(f0 * Math.PI / 360) / Math.tan(f * Math.PI / 360);
-    if (Math.abs(cam.fov - f) > 1e-6) { cam.fov = f; cam.far = 40 * k; cam.updateProjectionMatrix(); }
+    { const nr = Math.max(0.05, (k - 1) * o.R * 0.9); if (Math.abs(cam.fov - f) > 1e-6 || Math.abs(cam.near - nr) > 0.01) { cam.fov = f; cam.near = nr; cam.far = 40 * k + k * o.R; cam.updateProjectionMatrix(); } }
     cam.position.set(o.T.x + k * o.R * Math.sin(o.az), o.T.y + k * (o.h - o.T.y), o.T.z + k * o.R * Math.cos(o.az)); }
   // plain perspective: true tilt at every angle, no lens shift, free orbit all around (walls facing the camera hide via tickOcc) // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
   // two-point perspective: level camera + vertical lens shift keeps verticals straight at normal angles;
   // the shift is capped (30°) so the image never stretches, and from 40° to 65° it hands over smoothly to a real tilt
   const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, sh = ea, p = 0; /* v13b: pure lens shift at all elevations - pitch always 0, verticals stay vertical */
-  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, cam.position.y, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
-  if (sh > 1e-4) { const yN = -Math.tan(Math.sign(a) * sh) / Math.tan(cam.fov * Math.PI / 360), H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); }
+  const ortho = !window.__noFovK; /* v13f: near-orthographic - real pitch (no lens shift, no stretch); with FOV 2 verticals stay vertical, parallels stay parallel */
+  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, ortho ? o.T.y : cam.position.y, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  if (!ortho && sh > 1e-4) { const yN = -Math.tan(Math.sign(a) * sh) / Math.tan(cam.fov * Math.PI / 360), H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); }
+  /* v13f: oblique (cabinet-like) drafting projection - the frontal wall keeps true proportions, the receding wall is sheared sideways by depth, so its plinth and top line stay parallel */
+  if (ortho) { cam.updateProjectionMatrix(); let t = S.layout === 'L' ? o.az / (Math.PI / 2) : S.layout === 'Lr' ? 1 + o.az / (Math.PI / 2) : -1; const a = t < -0.5 ? 0 : (window.__shK ?? 0.45) * (2 * Math.max(0, Math.min(1, t)) - 1), dist = cam.position.distanceTo(o.T);
+    if (Math.abs(a) > 1e-5) { const Sh = new THREE.Matrix4().set(1, -a * Math.sin(Math.atan2(o.h - o.T.y, o.R)), a * Math.cos(Math.atan2(o.h - o.T.y, o.R)), a * dist * Math.cos(Math.atan2(o.h - o.T.y, o.R)), 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1); cam.projectionMatrix.multiply(Sh); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert(); } }
 }
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
