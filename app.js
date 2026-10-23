@@ -7,7 +7,7 @@ import { CATALOG, RULES } from './catalog.js';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
-const METAL = { white: 0xfdfdfd, black: 0x111111, silver: 0xdadde0 };
+const METAL = { white: 0xffffff, black: 0x111111, silver: 0xdadde0 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
 const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_light', 3.0, 0xffffff, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x9c8573, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
@@ -45,7 +45,7 @@ function defaults() {
   };
 }
 const ROOMDEF = { shP: 'soft', winL: 'off', glareM: 'soft', win: false, door: false, winX: 0, cornice: false, extra: 250, ceiling: false, ceilH: 275, skirting: true, lamps: false, glare: 0.3, shadow: 0.5, angle: 90, skirtColor: '#ffffff', lampType: 'spot', glow: 'none', shOn: true, shAng: 20, shBlur: 4, shDist: 0.12, shadow: 0.55 };
-function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v11m) { S.v11m = 1; Object.assign(S, { wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', floor: 'lam', metal: 'black' }); S.wallVar = Object.assign({}, S.wallVar, { relief: 'brick' }); } if (!S.v10) { S.v10 = 1; if (S.dimC === 'white') S.dimC = 'auto'; delete S.dims; } if (!Array.isArray(S.props)) S.props = []; if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.v7) { S.v7 = 1; const d = S.dm || {}; S.dm = { o: !!(d.t || d.v), s: !!d.s, h: false, g: !!d.c, sd: false }; S.room.shAng = Math.max(-35, Math.min(35, S.room.shAng ?? 20)); S.room.shBlur = Math.min(8, S.room.shBlur ?? 4); S.room.shadow = Math.max(0.2, Math.min(0.8, S.room.shadow ?? 0.55)); } if (S.metal === 'graphite') S.metal = 'black'; if (!METAL[S.metal]) S.metal = 'white'; S.rod = S.rod === 'sys' ? 'sys' : 'chrome'; if (!S.dm || !('o' in S.dm)) S.dm = { o: false, s: false, h: false, g: false, sd: false }; S.dimC = S.dimC === 'black' ? 'black' : 'white'; S.dimStyle = S.dimStyle === 'thin' ? 'thin' : 'bold'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40;
+function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.v11m) { S.v11m = 1; Object.assign(S, { wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', floor: 'lam', metal: 'black' }); S.wallVar = Object.assign({}, S.wallVar, { relief: 'brick' }); } if (!S.v10) { S.v10 = 1; if (S.dimC === 'white') S.dimC = 'auto'; delete S.dims; } if (!Array.isArray(S.props)) S.props = []; if (!S.v4) { S.v4 = 1; Object.assign(S.room, { shBlur: 4, shDist: 0.12, shadow: 0.55 }); } S.room.lampType = 'spot'; if (!S.v7) { S.v7 = 1; const d = S.dm || {}; S.dm = { o: !!(d.t || d.v), s: !!d.s, h: false, g: !!d.c, sd: false }; S.room.shAng = Math.max(-35, Math.min(35, S.room.shAng ?? 20)); S.room.shBlur = Math.min(8, S.room.shBlur ?? 4); S.room.shadow = Math.max(0.2, Math.min(0.8, S.room.shadow ?? 0.55)); } if (S.metal === 'graphite') S.metal = 'black'; if (!METAL[S.metal]) S.metal = 'white'; if (S.rod === 'sys') S.rod = S.metal === 'black' ? 'black' : S.metal === 'silver' ? 'metal' : 'white'; if (!['chrome', 'metal', 'white', 'black'].includes(S.rod)) S.rod = 'chrome'; if (!S.dm || !('o' in S.dm)) S.dm = { o: false, s: false, h: false, g: false, sd: false }; S.dimC = S.dimC === 'black' ? 'black' : 'white'; S.dimStyle = S.dimStyle === 'thin' ? 'thin' : 'bold'; if (!S.basketStyle) S.basketStyle = 'mesh'; if (!S.prices) S.prices = {}; if (!S.depth) S.depth = 40;
   if (!S.v8) { S.v8 = 1; if (S.wall === '#b3b1ad') S.wall = '#a9a49c'; S.room.shP = S.room.shOn === false ? 'none' : 'soft'; S.room.extra = Math.max(250, S.room.extra || 0); S.room.glareM = 'soft'; if (S.rug === true) S.rug = { shape: 'rect', pile: 'flat' }; }
   if (S.floor === 'tile') S.floor = 'marble'; if (S.rug && typeof S.rug !== 'object') S.rug = { shape: 'rect', pile: 'fluffy' }; if (!S.plants) S.plants = []; if (!S.wallVar) S.wallVar = { paint: 'matte', plaster: 'koroed', paper: 'linen' }; if (!['soft', 'left', 'right', 'top', 'sharp', 'sun', 'none'].includes(S.room.shP)) S.room.shP = 'soft'; if (!['off', 'wall', 'floor', 'both'].includes(S.room.winL)) S.room.winL = 'off'; if (!['soft', 'bright', 'off'].includes(S.room.glareM)) S.room.glareM = 'soft';
   // v9: ceiling always on (a bit higher), walls at full width, short attached shadows
@@ -81,7 +81,7 @@ function validState(v) {
   const D = defaults(); if (!v || typeof v !== 'object' || !Array.isArray(v.walls) || !v.walls.length) return null;
   const ok = (k, set) => { if (!set.includes(v[k])) v[k] = D[k]; };
   ok('layout', ['L', 'Lr', 'U', 'straight']); ok('metal', Object.keys(METAL)); ok('view', ['all', 'frame', 'fill']);
-  if (!FLOORS[v.floor]) v.floor = D.floor; if (v.rod !== 'sys' && v.rod !== 'chrome') v.rod = D.rod || 'chrome';
+  if (!FLOORS[v.floor]) v.floor = D.floor; if (v.rod === 'sys') v.rod = v.metal === 'black' ? 'black' : v.metal === 'silver' ? 'metal' : 'white'; if (!['chrome', 'metal', 'white', 'black'].includes(v.rod)) v.rod = D.rod || 'chrome';
   v.railTop = num(v.railTop, 120, 300, D.railTop); v.postH = num(v.postH, 500, 3000, D.postH);
   if (typeof v.wall !== 'string' || !/^#[0-9a-f]{6}$/i.test(v.wall)) v.wall = D.wall;
   let bad = 0;
@@ -324,7 +324,7 @@ function makeMats() {
   // Titan-GS powder coat: RAL 9016 snow white (slightly cool, glowing), RAL 9006 silver, RAL 9005 black
   const gm = { soft: 1, bright: 1, off: 0.3 }[S.room.glareM || 'soft'] || 1, bright = S.room.glareM === 'bright';
   const PB = {
-    white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.6, clearcoatRoughness: bright ? 0.05 : 0.16, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xeef4ff), emissive: new THREE.Color(0x06080b), envMapIntensity: 0.8 * gm },
+    white: { color: METAL.white, metalness: 0.04, roughness: S.room.glareM === 'off' ? 0.6 : 0.3, clearcoat: S.room.glareM === 'off' ? 0 : bright ? 1 : 0.6, clearcoatRoughness: bright ? 0.05 : 0.16, specularIntensity: bright ? 1 : S.room.glareM === 'off' ? 0.12 : 0.5, sheen: S.room.glareM === 'off' ? 0 : 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0x4a4a4a), envMapIntensity: 0.9 * gm }, /* v11r: snow white - neutral emissive lift so ACES never grays it */
     silver: { color: METAL.silver, metalness: 0.62, roughness: 0.4, clearcoat: bright ? 0.6 : 0.25, clearcoatRoughness: bright ? 0.12 : 0.4, specularIntensity: 0.75, envMapIntensity: 1.35 * gm },
     black: { color: METAL.black, metalness: 0.85, roughness: 0.45, clearcoat: bright ? 0.5 : 0.15, clearcoatRoughness: 0.35, specularIntensity: 0.9, sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0x6c7078), envMapIntensity: 1.25 * gm }
   }[S.metal] || {};
@@ -338,8 +338,10 @@ function makeMats() {
   const rt = slotTex(true, dark).clone(); rt.needsUpdate = true; M.railTex = rt;
   // top rail: smooth solid profile without perforation (only the uprights carry the slot rows)
   M.rail = new THREE.MeshPhysicalMaterial({ ...PB, normalMap: rep(G.nor, 30, 1), normalScale: new THREE.Vector2(0.18, 0.18), roughnessMap: rep(G.rough, 30, 1) });
-  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.05, clearcoat: 0.6, clearcoatRoughness: 0.02, specularIntensity: 1, emissive: new THREE.Color(0x000000), envMap: chromeEnv(), envMapIntensity: 1.6, userData: { chrome: true } });
-  M.rod = S.rod === 'sys' ? new THREE.MeshPhysicalMaterial({ ...PB }) : M.chrome; /* v11q: chrome or in the system color */ void (S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: METAL.white, metalness: 0.04, roughness: 0.3, clearcoat: 0.6, clearcoatRoughness: 0.16, emissive: new THREE.Color(0x10141a), sheen: 0.3, sheenColor: new THREE.Color(0xeef4ff), envMapIntensity: 0.95 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : 0);
+  M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.05, clearcoat: 0.6, clearcoatRoughness: 0.02, specularIntensity: 1, emissive: new THREE.Color(0x000000), envMap: chromeEnv(), envMapIntensity: 1.9, userData: { chrome: true } });
+  M.rod = S.rod === 'white' ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.1, specularIntensity: 0.6, envMapIntensity: 0.7 })
+    : S.rod === 'black' ? new THREE.MeshPhysicalMaterial({ color: 0x141414, metalness: 0.3, roughness: 0.35, clearcoat: 0.7, clearcoatRoughness: 0.15, specularIntensity: 0.8, envMapIntensity: 1.0 })
+    : S.rod === 'metal' ? new THREE.MeshPhysicalMaterial({ color: 0xd4d7db, metalness: 0.9, roughness: 0.32, clearcoat: 0.3, clearcoatRoughness: 0.3, envMap: chromeEnv(), envMapIntensity: 1.3, userData: { chrome: true } }) : M.chrome; /* v11r: four rod colors */
   M.brk = new THREE.MeshPhysicalMaterial({ ...PB }); // v11q: brackets and rod holders - same clean powder coat as the uprights, no grain
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
@@ -429,8 +431,8 @@ let _GRM = null, _GRK = null; function gridMat() { if (_GRM && _GRK === M.metal)
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(34, 15); t.anisotropy = 4; _GRK = M.metal; _GRM = M.metal.clone(); _GRM.alphaMap = t; _GRM.alphaTest = 0.5; _GRM.side = THREE.DoubleSide; _GRM.normalMap = null; return _GRM; }
 let _CHE = null; function chromeEnv() { if (_CHE) return _CHE; const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
   // v11q: contrasty chrome - dark room with a bright softbox band above and a dark floor band; rod shows a bright center line, dark bands and darker edges on any wall
-  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#5a5e63'); gr.addColorStop(0.3, '#ffffff'); gr.addColorStop(0.4, '#ffffff'); gr.addColorStop(0.46, '#3a3d41'); gr.addColorStop(0.5, '#141517'); gr.addColorStop(0.56, '#8d9298'); gr.addColorStop(0.7, '#2a2c2f'); gr.addColorStop(1, '#0e0f10'); g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
-  g.fillStyle = '#ffffff'; [[30, 40], [250, 56], [470, 18]].forEach(([x, w]) => g.fillRect(x, 60, w, 50)); g.fillStyle = '#0d0e0f'; [[100, 14], [215, 10], [330, 16], [440, 10]].forEach(([x, w]) => g.fillRect(x, 0, w, 256));
+  const gr = g.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#e8eaec'); gr.addColorStop(0.3, '#ffffff'); gr.addColorStop(0.42, '#ffffff'); gr.addColorStop(0.47, '#8a8e93'); gr.addColorStop(0.5, '#4a4d51'); gr.addColorStop(0.54, '#c9ccd0'); gr.addColorStop(0.7, '#f2f3f5'); gr.addColorStop(0.85, '#9a9ea3'); gr.addColorStop(1, '#d8dadd'); /* v11r: bright chrome, soft dark bands */ g.fillStyle = gr; g.fillRect(0, 0, 512, 256);
+  g.fillStyle = '#ffffff'; [[30, 40], [250, 56], [470, 18]].forEach(([x, w]) => g.fillRect(x, 60, w, 50)); g.fillStyle = 'rgba(60,63,67,0.55)'; [[100, 14], [215, 10], [330, 16], [440, 10]].forEach(([x, w]) => g.fillRect(x, 0, w, 256));
   const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; _CHE = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; return _CHE; }
 function rodHolder(g, x, by, ry, zr) {
   // Titan-GS: slim pressed-steel strap from the shelf bracket down to a neat cup sized to the rod (system color, clean powder coat)
@@ -1040,13 +1042,16 @@ function applyCam(cam = camera) {
   // v11q: the original level camera (a095b25, «Обычная»): pitch always 0, the lens never tilts; looking from above/below = camera height + lens shift.
   // Height range kept to the original [-0.6R, +0.75R] so the shift stays moderate and nothing stretches; never below 0.35 m (no diving under shelves).
   const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.R = Math.max(ORB_RMIN(), o.R);
-  if (o.free) { // only the separate «Сверху» button: a true top-down tilt
+  if (o.free) { o.R = Math.max(ORB_RMIN(), o.R); // only the separate «Сверху» button: a true top-down tilt
     cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az)); cam.up.set(0, 1, 0); cam.lookAt(o.T); cam.clearViewOffset(); cam.updateMatrixWorld(); return; }
-  o.h = Math.max(0.35, Math.min(o.T.y + o.R * 0.75, Math.max(o.h, o.T.y - o.R * 0.6)));
+  // v11r: free orbit all the way to the top, side and bottom. Near eye level it is the loved level camera (pitch 0 + lens shift, no stretching);
+  // further up/down the lens gradually tilts toward the target, so the shift never grows large and nothing stretches.
+  let D = Math.hypot(o.R, o.h - o.T.y), el = Math.atan2(o.h - o.T.y, o.R); D = Math.max(ORB_RMIN(), D); el = Math.max(-1.5, Math.min(1.5, el));
+  o.R = D * Math.cos(el); o.h = o.T.y + D * Math.sin(el);
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
-  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
-  const yN = (o.T.y - o.h) / (o.R * Math.tan(cam.fov * Math.PI / 360));
+  const ae = Math.abs(el), u = Math.max(0, Math.min(1, (ae - 0.3) / 0.7)), s = u * u * (3 - 2 * u), pt = el * s;
+  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(pt), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  const q = o.T.clone().applyMatrix4(cam.matrixWorldInverse), yN = (q.y / -q.z) / Math.tan(cam.fov * Math.PI / 360);
   const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
 }
 function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return Math.max(0.8, Math.min(1.6, Math.max(sz.x, sz.y) * 0.35)); } catch (e) { return 0.8; } }
@@ -1062,14 +1067,14 @@ function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return
     const hpx = el.clientHeight || 600, unit = orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
     if (P.size >= 2) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinch) { orb.R = Math.max(ORB_RMIN(), Math.min(30, orb.R * pinch / Math.max(d, 1))); }
+      if (pinch) { { const f = Math.max(0.2, Math.min(5, pinch / Math.max(d, 1))); orb.R *= f; orb.h = orb.T.y + (orb.h - orb.T.y) * f; } }
       pinch = d; const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az));
       orb.T.addScaledVector(rt, -dx * unit / 2); orb.T.y += dy * unit / 2; return;
     }
     if (p.b === 2 || p.b === 1 || p.sh) { const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)); orb.T.addScaledVector(rt, -dx * unit); orb.T.y += dy * unit; return; }
-    if (orb.free) { orb.free = false; orb.h = orb.T.y + orb.R * 0.75; } orb.az -= dx * 0.004; orb.h += dy * unit * 1.2; // v11q: level orbit - dragging moves the camera up/down, the lens stays level
+    if (orb.free) { orb.free = false; } orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-1.5, Math.min(1.5, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = D * Math.cos(el); orb.h = orb.T.y + D * Math.sin(el); } // v11r: free orbit up/down; // v11q: level orbit - dragging moves the camera up/down, the lens stays level
   });
-  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(ORB_RMIN(), Math.min(30, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
+  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); { const f = Math.exp(e.deltaY * 0.001); if (Math.hypot(orb.R, orb.h - orb.T.y) * f < 30) { orb.R *= f; orb.h = orb.T.y + (orb.h - orb.T.y) * f; } } }, { passive: false });
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
@@ -1899,7 +1904,7 @@ $('winL').onchange = e => { S.room.winL = e.target.value; rebuild(); };
 function renderSwatches() {
   const MSW = [['white', 'Белый', '#f7f9fc'], ['black', 'Черный', '#202124'], ['silver', 'Серебро', 'linear-gradient(135deg,#eceef0,#a7abaf 55%,#d9dcdf)']].map(([k, t, c]) => `<button data-msw="${k}" class="${S.metal === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
   const sysC = { white: '#f7f9fc', black: '#202124', silver: 'linear-gradient(135deg,#eceef0,#a7abaf 55%,#d9dcdf)' }[S.metal] || '#f7f9fc';
-  const RSW = [['chrome', 'Хром', 'linear-gradient(135deg,#ffffff,#55595e 40%,#f4f6f8 58%,#2b2e31)'], ['sys', 'В цвет системы', sysC]].map(([k, t, c]) => `<button data-rsw="${k}" class="${(S.rod || 'chrome') === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
+  const RSW = [['chrome', 'Хром', 'linear-gradient(135deg,#ffffff,#55595e 40%,#f4f6f8 58%,#2b2e31)'], ['metal', 'Металлик', 'linear-gradient(135deg,#f2f3f5,#a9adb2 50%,#e6e8ea)'], ['white', 'Белая', '#ffffff'], ['black', 'Черная', '#1a1a1a']].map(([k, t, c]) => `<button data-rsw="${k}" class="${(S.rod || 'chrome') === k ? 'on' : ''}" title="${t}"><i style="background:${c}"></i><span>${t}</span></button>`).join('');
   ['metalSw', 'metalSw0'].forEach(id => $(id) && ($(id).innerHTML = MSW)); ['rodSw', 'rodSw0'].forEach(id => $(id) && ($(id).innerHTML = RSW));
   document.querySelectorAll('[data-msw]').forEach(b => b.onclick = () => { $('metal').value = b.dataset.msw; $('metal').onchange({ target: $('metal') }); renderSwatches(); });
   document.querySelectorAll('[data-rsw]').forEach(b => b.onclick = () => { S.rod = b.dataset.rsw; $('rodC').value = S.rod; rebuild(); renderSwatches(); });
