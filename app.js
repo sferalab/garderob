@@ -1054,17 +1054,15 @@ function syncFromCam(kind) {
   orb.T.copy(T); orb.az = Math.atan2(p.x - T.x, p.z - T.z); orb.R = Math.max(0.5, Math.hypot(p.x - T.x, p.z - T.z)); orb.h = p.y; applyCam();
 }
 function applyCam(cam = camera) {
-  // v11q: the original level camera (a095b25, «Обычная»): pitch always 0, the lens never tilts; looking from above/below = camera height + lens shift.
-  // Height range kept to the original [-0.6R, +0.75R] so the shift stays moderate and nothing stretches; never below 0.35 m (no diving under shelves).
-  const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  if (o.free) { o.R = Math.max(ORB_RMIN(), o.R); // only the separate «Сверху» button: a true top-down tilt
-    ortho(cam, o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az), o.T, Math.hypot(o.R, o.h - o.T.y)); return; }
-  // v11r: free orbit all the way to the top, side and bottom. Near eye level it is the loved level camera (pitch 0 + lens shift, no stretching);
-  // further up/down the lens gradually tilts toward the target, so the shift never grows large and nothing stretches.
-  let D = Math.hypot(o.R, o.h - o.T.y), el = Math.atan2(o.h - o.T.y, o.R); D = Math.max(ORB_RMIN(), D); el = Math.max(-1.5, Math.min(1.5, el));
-  o.R = D * Math.cos(el); o.h = o.T.y + D * Math.sin(el);
-  // v11v: true orthographic projection at every angle - verticals and walls always straight and parallel, no convergence, no stretching
-  ortho(cam, o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az), o.T, D);
+  // v11w: the a095b25 camera one-to-one: level lens (pitch 0), drag up/down = camera height, lens shift keeps the target centered
+  const o = orb; o.snapAz = false;
+  if (o.free) { o.R = Math.max(ORB_RMIN(), o.R); cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az)); cam.up.set(0, 1, 0); cam.lookAt(o.T); cam.clearViewOffset(); cam.updateMatrixWorld(); if (window.FSLAB) window.FSLAB.visible = o.h > 0.01; return; }
+  o.h = Math.max(0.15, Math.min(o.T.y + o.R * 0.75, Math.max(o.h, o.T.y - o.R * 0.6)));
+  cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
+  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  if (window.FSLAB) window.FSLAB.visible = true; cam.userData.ortho = false;
+  const yN = (o.T.y - o.h) / (o.R * Math.tan(cam.fov * Math.PI / 360));
+  const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
 }
 function ortho(cam, x, y, z, T, D) {
   cam.position.set(x, y, z); cam.up.set(0, 1, 0); cam.lookAt(T); cam.clearViewOffset(); cam.updateMatrixWorld();
@@ -1087,17 +1085,17 @@ function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   el.addEventListener('pointermove', e => {
     if (!orb.on || !P.has(e.pointerId)) return; if (window.__rugDrag) { const q = P.get(e.pointerId); q.x = e.clientX; q.y = e.clientY; last = null; pinch = null; return; } const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
-    const hpx = el.clientHeight || 600, unit = (camera.userData.oD || orb.R) * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
+    const hpx = el.clientHeight || 600, unit = orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
     if (P.size >= 2) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinch) { { const f = Math.max(0.2, Math.min(5, pinch / Math.max(d, 1))); orb.R *= f; orb.h = orb.T.y + (orb.h - orb.T.y) * f; } }
+      if (pinch) { orb.R = Math.max(0.6, Math.min(30, orb.R * pinch / Math.max(d, 1))); }
       pinch = d; const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az));
       orb.T.addScaledVector(rt, -dx * unit / 2); orb.T.y += dy * unit / 2; return;
     }
     if (p.b === 2 || p.b === 1 || p.sh) { const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)); orb.T.addScaledVector(rt, -dx * unit); orb.T.y += dy * unit; return; }
-    if (orb.free) { orb.free = false; } orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-1.5, Math.min(1.5, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = D * Math.cos(el); orb.h = orb.T.y + D * Math.sin(el); } // v11r: free orbit up/down; // v11q: level orbit - dragging moves the camera up/down, the lens stays level
+    if (orb.free) { orb.free = false; } orb.az -= dx * 0.004; orb.h += dy * unit * 1.2; // v11w: a095b25 level orbit
   });
-  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); { const f = Math.exp(e.deltaY * 0.001); if (Math.hypot(orb.R, orb.h - orb.T.y) * f < 30) { orb.R *= f; orb.h = orb.T.y + (orb.h - orb.T.y) * f; } } }, { passive: false });
+  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(0.6, Math.min(30, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
