@@ -33,13 +33,17 @@ const WALLNAMES = ['Основная стена', 'Вторая стена', 'В
 
 function sec(w, items) { return { w, items }; }
 function it(t, d, y, h) { const o = { t, d, y }; if (h) o.h = h; return o; }
+// v13b: ONE shared set of standard levels for auto placement (start layout + presets); manual moves stay free
+const LV = Object.freeze({ top: 192, rod: 182, sh: [192, 152, 112, 72, 40], mid: 112, bk: [75, 57, 39], shoe: [55, 31] });
 function defaults() {
+  const D = defaults0(); let q = 0; D.walls.forEach(w => w.sections.forEach(sc => { const sh = sc.items.find(o => o.t === 'mesh' && o.y === LV.top), r = sc.items.find(o => o.t === 'rail' && o.y === LV.rod); if (sh && r) { q++; sh.g = 'g' + q; sh.q = q; r.lk = sh.g; } })); D.q = q; return D; } // v13b: start rods are combined «Полка со штангой» (Разделить splits them)
+function defaults0() {
   return {
     __fresh: true, v10: 1, v4: 1, v5: 1, v7: 1, v8: 1, layout: 'L', metal: 'black', wall: '#fbf8f3', wallCustom: true, wallFin: 'relief', wallVar: { paint: 'matte', plaster: 'koroed', paper: 'linen', relief: 'brick' }, v11m: 1, floor: 'lam', preset: 'warm', view: 'all', decor: false, card: null, postH: 1920, railTop: 213, plants: [], dims: false, dm: { o: false, s: false, h: false, g: false, sd: false }, dimC: 'auto', dimStyle: 'bold', studio: false, rug: null, room: { shOn: true, shP: 'soft', winL: 'off', glareM: 'soft', glare: 0.3, shadow: 0.55, shBlur: 4, shDist: 0.12, ceiling: false, skirting: true, extra: 250 },
     walls: [
-      { gap: 0, gapR: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), Object.assign(it('pull', 40, 75, 181), { v: 'mesh' }), Object.assign(it('pull', 40, 52, 181), { v: 'mesh' })])] },
-      { gap: 50, sections: [sec(60, [it('mesh', 40, 192), it('mesh', 40, 150), it('mesh', 40, 110), it('mesh', 40, 70)]), sec(90, [it('mesh', 40, 192), it('rail', 30, 183), it('mesh', 40, 40)])] },
-      { gap: 50, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, 183)]), sec(60, [it('mesh', 40, 192), it('mesh', 40, 140), it('mesh', 40, 90), it('shoe', 40, 30)])] }
+      { gap: 0, gapR: 0, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, LV.rod), it('mesh', 40, 40)]), sec(90, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), Object.assign(it('pull', 40, LV.bk[0], 181), { v: 'mesh' }), Object.assign(it('pull', 40, LV.bk[1], 181), { v: 'mesh' })])] },
+      { gap: 50, sections: [sec(60, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), it('mesh', 40, 72)]), sec(90, [it('mesh', 40, 192), it('rail', 30, LV.rod), it('mesh', 40, 40)])] },
+      { gap: 50, sections: [sec(90, [it('mesh', 40, 192), it('rail', 30, LV.rod)]), sec(60, [it('mesh', 40, 192), it('mesh', 40, 152), it('mesh', 40, 112), it('shoe', 40, LV.shoe[1])])] }
     ]
   };
 }
@@ -53,8 +57,8 @@ function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.
   if (!S.v12e) { S.v12e = 1; S.room.ceiling = true; } S.room.extra = 400; /* v12e: ceiling follows the Потолок toggle */ S.room.ceilH = Math.max(230, Math.min(400, S.room.ceilH || 300));
   S.walls.forEach(w => { if (w.gap == null) w.gap = 0; }); if (S.walls[0].gapR == null) S.walls[0].gapR = 0; return S; }
 function setTemplate(t) {
-  const m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y: y + 3 }), sh = y => ({ t: 'shoe', d: 40, y }), pu = (y, h) => ({ t: 'pull', d: 40, y, h });
-  const A = () => ({ w: 90, items: [m(192), rl(180), m(40)] }), B = () => ({ w: 90, items: [m(192), m(152), m(112), m(72), m(32)] }), C = () => ({ w: 60, items: [m(192), m(150), pu(95, 181), pu(70, 181), sh(30)] }), D = () => ({ w: 90, items: [m(192), rl(180), rl(100)] });
+  const m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y: y + 2 }), sh = y => ({ t: 'shoe', d: 40, y }), pu = (y, h) => ({ t: 'pull', d: 40, y, h });
+  const A = () => ({ w: 90, items: [m(LV.top), rl(LV.rod - 2), m(LV.sh[4])] }), B = () => ({ w: 90, items: LV.sh.map(m) }), C = () => ({ w: 60, items: [m(LV.sh[0]), m(LV.sh[1]), pu(LV.bk[0], 181), pu(LV.bk[1], 181), sh(LV.shoe[1])] }), D = () => ({ w: 90, items: [m(LV.top), rl(LV.rod - 2), rl(LV.mid - 12)] });
   S.walls[0].gap = S.walls[0].gap || 0;
   if (t === 'p2') { S.layout = 'straight'; S.walls[0].sections = [A(), B()]; }
   if (t === 'p3') { S.layout = 'straight'; S.walls[0].sections = [A(), B(), D()]; }
@@ -1390,7 +1394,7 @@ const BK = [['pull|mesh', 'Сетчатая выдвижная', '<path d="M4 6h
   ['basket|mesh', 'Стационарная', '<path d="M4 6h40v20H4z" fill="none" stroke-width="2.5"/><path d="M12 6v20M20 6v20M28 6v20M36 6v20M4 16h40" stroke-width="1.3"/>']];
 function presetItems(t) {
   const top = S.railTop - 18, lo = Math.ceil(postBottom() / 10) + 10, mid = Math.round((top + lo) / 2), M_ = y => it('mesh', S.depth || 40, y), R_ = y => it('rail', 30, y), C_ = y => { const [a, b] = newItem('combo'); a.y = y; return [a, b]; }, B_ = y => Object.assign(it('pull', 40, y, 181), { v: 'mesh' });
-  const T = { shelves: () => { const a = []; for (let y = top; y >= lo; y -= 36) a.push(M_(y)); return a; }, rod: () => [...C_(top), M_(lo + 20)], two: () => [...C_(top), ...C_(mid)], baskets: () => [M_(top), M_(top - 38), M_(top - 76), B_(lo + 70), B_(lo + 45), B_(lo + 20)], shoes: () => [M_(top), M_(top - 38), M_(top - 76), it('shoe', 40, lo + 50), it('shoe', 40, lo + 25)] };
+  const T = { shelves: () => LV.sh.map(M_), rod: () => [...C_(LV.top), M_(LV.sh[4])], two: () => [...C_(LV.top), ...C_(LV.mid)], baskets: () => [M_(LV.sh[0]), M_(LV.sh[1]), M_(LV.sh[2]), ...LV.bk.map(B_)], shoes: () => [M_(LV.sh[0]), M_(LV.sh[1]), M_(LV.sh[2]), ...LV.shoe.map(y => it('shoe', 40, y))] }; /* v13b: shared LV levels */
   const r = { items: T[t]().map(o => (o.y = clampY(o.y), o)) }; syncLinks(r); return r.items;
 }
 function syncLinks(sec) { sec.items = sec.items.filter(o => !o.lk || sec.items.some(p => p.g === o.lk)); sec.items.forEach(o => { if (o.lk) { const p = sec.items.find(q => q.g === o.lk); o.y = clampY(p.y - 10); } }); }
@@ -1421,7 +1425,7 @@ function placeFree(sec, os, y0) {
 function linkUI() { let L = $('linkBar'); if (!L) { L = document.createElement('span'); L.id = 'linkBar'; L.style.cssText = 'display:inline-flex;gap:6px;margin-right:6px'; $('delBtn').before(L); }
   const sc = S.walls[cur.w] && S.walls[cur.w].sections[cur.s], o = sc && cur.it >= 0 && sc.items[cur.it]; let h = '';
   if (o && !window.__propSel && !(window.__plantSel >= 0)) {
-    if (o.g) h = '<button class="rnd lk" data-lk="rm">Убрать штангу</button><button class="rnd lk" data-lk="un">Отцепить штангу</button>';
+    if (o.g) h = '<button class="rnd lk" data-lk="rm">Убрать штангу</button><button class="rnd lk" data-lk="un">Разделить</button>';
     else if (o.t === 'rail' && !o.lk) { const p = nearShelf(sc, o); if (p) h = '<button class="rnd lk" data-lk="at">Прикрепить к полке</button>'; }
     else if (!isBasket(o.t) && o.t !== 'rail' && o.t !== 'trouser') h = '<button class="rnd lk" data-lk="add">Добавить штангу</button>'; }
   if (L.innerHTML !== h) { L.innerHTML = h; L.querySelectorAll('[data-lk]').forEach(b => b.onclick = () => linkAct(b.dataset.lk)); } }
