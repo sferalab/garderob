@@ -1065,7 +1065,7 @@ function applyCam(cam = camera) {
   // v11r: free orbit all the way to the top, side and bottom. Near eye level it is the loved level camera (pitch 0 + lens shift, no stretching);
   // further up/down the lens gradually tilts toward the target, so the shift never grows large and nothing stretches.
   let D = Math.hypot(o.R, o.h - o.T.y), el = Math.atan2(o.h - o.T.y, o.R); D = Math.max(ORB_RMIN(), D); el = Math.max(-1.5, Math.min(1.5, el));
-  /* v13o: views from below restored; floor hides cleanly under it */
+  { const lo = Math.asin(Math.max(-1, Math.min(0, (0.12 - o.T.y) / D))), hi = 0.92; if (el < lo || el > hi) { el = Math.max(lo, Math.min(hi, el)); o.h = o.T.y + D * Math.sin(el); o.R = D * Math.cos(el); } } /* v13p: camera stays just above the floor looking up, and tops out at ~53 deg so the construction keeps real volume */
   o.R = D * Math.cos(el); o.h = o.T.y + D * Math.sin(el);
   /* v13n: azimuth softened around the main view (corner / front): the side wing turns away slowly, so it is never squashed edge-on; full orbit still reachable */
   const ac = S.layout === 'L' ? Math.PI / 4 : S.layout === 'Lr' ? -Math.PI / 4 : 0; let dl = o.az - ac; while (dl > Math.PI) dl -= 2 * Math.PI; while (dl < -Math.PI) dl += 2 * Math.PI;
