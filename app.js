@@ -1054,9 +1054,9 @@ function syncFromCam(kind) {
 }
 function applyCam(cam = camera) {
   const o = orb; if (o.snapTo != null) { let d = o.snapTo - o.az; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; if (Math.abs(d) < 0.0005) { o.az = o.snapTo; o.snapTo = null; } else o.az += d * 0.2; } if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.h = Math.max(o.T.y - o.R * Math.tan(12 * Math.PI / 180), Math.min(o.T.y + o.R * Math.tan(40 * Math.PI / 180), o.h)); // v13h: top 40; v13d: elevation -20..35 deg (pure lens shift); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
+  o.h = Math.max(0.05, Math.min(o.T.y + o.R * 2.4, Math.max(o.h, o.T.y - o.R * 0.6))); // v13j: v11b/snapshot model - |elevation| up to 67 deg, fixed lens // v13h: top 40; v13d: elevation -20..35 deg (pure lens shift); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
   /* v13d: longer lens at steep angles - FOV 30 -> 11 deg as |elevation| goes 10 deg -> cap, distance scaled so framing stays the same (flatter perspective, corner stays ~90 deg, less shift stretch) */
-  { const el = Math.atan2(o.h - o.T.y, o.R), cap = (el >= 0 ? 35 : 12) * Math.PI / 180, u = Math.max(0, Math.min(1, (Math.abs(el) - (el >= 0 ? 10 : 2) * Math.PI / 180) / (cap - (el >= 0 ? 10 : 2) * Math.PI / 180))), sm = u * u * (3 - 2 * u), f0 = 30, f = window.__noFovK ? f0 : f0 - 19 * sm; /* down to 11 deg (near-orthographic) at the caps */
+  { const el = Math.atan2(o.h - o.T.y, o.R), cap = (el >= 0 ? 35 : 12) * Math.PI / 180, u = Math.max(0, Math.min(1, (Math.abs(el) - (el >= 0 ? 10 : 2) * Math.PI / 180) / (cap - (el >= 0 ? 10 : 2) * Math.PI / 180))), sm = u * u * (3 - 2 * u), f0 = 28, f = f0; /* v13j: constant 28 deg lens like the 📷 snapshot and the 22 Oct live view (no long-lens flattening) */ /* down to 11 deg (near-orthographic) at the caps */
     const k = Math.tan(f0 * Math.PI / 360) / Math.tan(f * Math.PI / 360);
     { const fr = (40 + 2 * Math.hypot(o.R, o.h - o.T.y)) * k; if (Math.abs(cam.fov - f) > 1e-6 || Math.abs(cam.far - fr) > 0.5) { cam.fov = f; cam.far = fr; cam.updateProjectionMatrix(); } }
     cam.position.set(o.T.x + k * o.R * Math.sin(o.az), o.T.y + k * (o.h - o.T.y), o.T.z + k * o.R * Math.cos(o.az)); }
@@ -1092,7 +1092,7 @@ function applyCam(cam = camera) {
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
 function camK() { const k = localStorage.getItem('gs_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'int'; } // default: «Интерьер» photo preset, closest to the client renders
 var CAMS = [['std', 'Стандарт'], ['int', 'Интерьер'], ['por', 'Портрет'], ['top3', 'Сверху 3/4']];
-const LENSF = () => 30;
+const LENSF = () => 28;
 function CAMEXP() { return { int: 1.1, por: 1.03 }[camK()] || 1.0; }
 // interior-photographer cameras: own lens, height and viewpoint; verticals stay vertical (level camera + lens shift)
 function camPhoto(k) {
