@@ -118,7 +118,7 @@ function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v
 // ---------- renderer ----------
 const view = $('view');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: false });
-const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 2 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
+const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 3 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
 renderer.setPixelRatio(PR);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; renderer.shadowMap.autoUpdate = false; // shadow map only re-rendered after changes
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = CAMEXP();
@@ -137,7 +137,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minPolarAngle = 0.05; controls.maxPolarAngle = Math.PI - 0.05; controls.minDistance = 0.5; controls.maxDistance = 30;
 const hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc2, 0.6); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 6; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.01;
+sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); /* v13l: 4096, baked only on scene change */ sun.shadow.radius = 6; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.01;
 const sc = sun.shadow.camera; sc.left = -5; sc.right = 5; sc.top = 5; sc.bottom = -5; sc.near = 0.5; sc.far = 20;
 scene.add(sun, sun.target);
 const fill = new THREE.DirectionalLight(0xfff4e6, 0.35); fill.position.set(-3, 2, 4); scene.add(fill);
@@ -681,8 +681,10 @@ let GLOWT = null;
 function glowTex() { if (!GLOWT) { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 10, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,0.0)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.35)'); gr.addColorStop(0.75, 'rgba(255,255,255,0.12)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); GLOWT = new THREE.CanvasTexture(c); } return GLOWT; }
 let JOINTS = {};
 function jointTex(k) { if (!JOINTS[k]) { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); g.clearRect(0, 0, 256, 256); g.fillStyle = 'rgba(70,64,58,0.55)'; g.fillRect(0, 0, 256, 2); g.fillRect(0, 0, 2, 256); g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(0, 2, 256, 1); g.fillRect(2, 0, 1, 256); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; JOINTS[k] = t; } return JOINTS[k]; }
+const FILLS = [];
 function buildRoom() {
   room.clear();
+  FILLS.length = 0;
   if (!catcher) { catcher = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.25 })); catcher.rotation.x = -Math.PI / 2; catcher.receiveShadow = true; model.add(catcher); }
   const F = frame(), backW = F.backW, ST = !!S.studio && !photo, CH = Math.max(S.room.ceilH || 300, S.railTop + 4) / 100, Mg = 0.8 + (S.room.extra ?? 250) / 100;
   const cl = F.xL != null, cr = F.xR != null, left = cl ? F.xL : F.x0 - Mg, right = cr ? F.xR : F.x0 + backW + Mg, cx = (left + right) / 2;
@@ -718,6 +720,8 @@ function buildRoom() {
     const so = ops.filter(o => o.wall === (L ? 'L' : 'R')).map(o => ({ ...o, c: L ? sideLen / 2 - o.z : o.z - sideLen / 2 }));
     pv.userData.occ = wallPlane(sideLen, 0, sideLen / 2, L ? Math.PI / 2 : -Math.PI / 2, pv, so);
     if (ST) return;
+    // v13a: floor fill under this side wall, shaped each frame to the folded-floor wedge (no white gap from below)
+    { const fm = floorM.clone(); fm.side = THREE.DoubleSide; const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(new Array(9).fill(0), 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(6).fill(0), 2)); const f = new THREE.Mesh(fg, fm); f.frustumCulled = false; f.visible = false; f.userData.floorFill = { L, len: 60 }; pv.add(f); FILLS.push(f); }
     const fr = new THREE.Group(); fr.rotation.y = L ? Math.PI / 2 : -Math.PI / 2; if (L) fr.scale.x = -1; pv.add(fr); // local x = u (z in room), local z into the room
     if (!ST) skirt(fr, 0, sideLen, doorCuts(ops.filter(o => o.wall === (L ? 'L' : 'R')), 'z'), () => {});
     if (S.room.cornice) cornice(sideLen, g => g.position.x = sideLen / 2, fr);
@@ -1146,7 +1150,7 @@ function camLevel(kind) { const c = bbox.getCenter(new THREE.Vector3()), sg = S.
 function camTo0(kind) {
   if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
-  const sg = S.layout === 'Lr' ? -1 : 1, flat = kind === 'nice' && (S.layout === 'straight' || S.layout === 'U'), dir = kind === 'front' || flat ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? V(sg * 0.85, 0.14, 1) : V(0, 1, 0.35);
+  const sg = S.layout === 'Lr' ? -1 : 1, flat = kind === 'nice' && (S.layout === 'straight' || S.layout === 'U'), dir = kind === 'front' || flat ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? V(sg * 1, 0.14, 1) /* v13l: symmetric corner, 45 deg */ : V(0, 1, 0.35);
   dir.normalize();
   camera.fov = kind === 'top' ? 35 : LENSF(); const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
@@ -1160,10 +1164,23 @@ function camTo0(kind) {
 function resize() { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(view);
 let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
-function adapt() { fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
+function adapt() { if (!window.__adaptOnce) { window.__adaptOnce = { t0: performance.now(), n: 0, done: false }; } { const A = window.__adaptOnce; if (!A.done) { A.n++; const dt = performance.now() - A.t0; if (dt > 4000) { A.done = true; const fps = A.n * 1000 / dt; if (fps < 28 && PR > 2) { PR = 2; renderer.setPixelRatio(PR); resize(); } } } } return; fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
-renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+const SS = (() => { const c = document.createElement('canvas'); c.id = 'ssStill'; Object.assign(c.style, { position: 'absolute', left: 0, top: 0, pointerEvents: 'none', opacity: 0, transition: 'opacity .18s', zIndex: 1 }); view.style.position = view.style.position || 'relative'; view.appendChild(c);
+  const st = { c, last: new THREE.Matrix4(), lastP: new THREE.Matrix4(), still: 0, shown: false, dirty: true, t: performance.now() };
+  st.hide = () => { if (st.shown || c.style.opacity !== '0') { c.style.transition = 'none'; c.style.opacity = 0; st.shown = false; } st.t = performance.now(); };
+  ['pointerdown', 'wheel', 'touchstart', 'keydown', 'input', 'change', 'click'].forEach(ev => addEventListener(ev, () => { st.hide(); }, true)); addEventListener('pointermove', e => { if (e.buttons) st.hide(); }, true); addEventListener('touchmove', () => st.hide(), true);
+  st.tick = () => { const m = camera.matrixWorld, p = camera.projectionMatrix; let d = 0; for (let i = 0; i < 16; i++) d += Math.abs(m.elements[i] - st.last.elements[i]) + Math.abs(p.elements[i] - st.lastP.elements[i]);
+    st.last.copy(m); st.lastP.copy(p); if (d > 1e-6 || window.__rugDrag) st.hide();
+    if (!st.shown && performance.now() - st.t > 300 && !document.hidden) st.capture(); };
+  st.capture = () => { const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return; const pr = renderer.getPixelRatio(), k = Math.min(2, 4096 / Math.max(w, h) / pr); if (k < 1.2) { st.shown = true; return; }
+    renderer.setPixelRatio(pr * k); renderer.setSize(w, h, false); renderer.render(scene, camera);
+    c.width = Math.round(w * pr); c.height = Math.round(h * pr); c.style.width = w + 'px'; c.style.height = h + 'px'; const g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(renderer.domElement, 0, 0, c.width, c.height);
+    renderer.setPixelRatio(pr); renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; renderer.render(scene, camera);
+    c.style.transition = 'opacity .18s'; c.style.opacity = 1; st.shown = true; window.__ssN = (window.__ssN || 0) + 1; };
+  return st; })(); window.__ss = SS;
+renderer.setAnimationLoop(() => { if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); SS.tick(); adapt(); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -1220,7 +1237,9 @@ const _sc = new THREE.OrthographicCamera();
 // the highlight light rides with the camera (up and to the right), so edge highlights travel as the view turns
 const _cr = new THREE.Vector3(), _cu = new THREE.Vector3(), _co = new THREE.Vector3();
 // walls and ceiling between the camera and the wardrobe disappear, so the view can go anywhere
-function tickOcc() { const cp = camera.position, und = cp.y < 0.002;  decor.children.forEach(c => { if (c.userData.rug) c.visible = !und; }); room.children.forEach(c => { const u = c.userData; if (u.floorM) { if (!u.fb) u.fb = { p: c.position.clone(), r: c.rotation.x }; const th = cp.y < 0.15 ? Math.min(1.45, Math.atan2(0.15 - cp.y, Math.max(0.3, cp.z)) * 1.25) : 0, s = Math.sin(th), k = Math.cos(th); c.rotation.x = u.fb.r + th; c.position.set(u.fb.p.x, u.fb.p.y - u.fb.p.z * s, u.fb.p.z * k); return; } if (u.occ) { _co.copy(cp); u.occ.worldToLocal(_co); c.visible = _co.z > -0.08; } else if (u.occC != null) c.visible = cp.y < u.occC - 0.005; }); }
+function fillFold(th) { const s = Math.sin(th), k = Math.cos(th), Z = 30; FILLS.forEach(f => { f.visible = th > 0.001; if (!f.visible) return; const x = f.userData.floorFill.L ? 0.001 : -0.001, p = f.geometry.attributes.position, uv = f.geometry.attributes.uv, R = 1 / 2.25;
+  p.setXYZ(0, x, 0.0005, 0); p.setXYZ(1, x, 0.0005, Z); p.setXYZ(2, x, -Z * s, Z * k); uv.setXY(0, 0, 0); uv.setXY(1, Z * R, 0); uv.setXY(2, Z * k * R, -Z * s * R); p.needsUpdate = uv.needsUpdate = true; f.geometry.computeVertexNormals(); f.geometry.computeBoundingSphere(); }); }
+function tickOcc() { const cp = camera.position, und = cp.y < 0.002;  decor.children.forEach(c => { if (c.userData.rug) c.visible = !und; }); room.children.forEach(c => { const u = c.userData; if (u.floorM) { if (!u.fb) u.fb = { p: c.position.clone(), r: c.rotation.x }; const th = cp.y < 0.15 ? Math.min(1.45, Math.atan2(0.15 - cp.y, Math.max(0.3, cp.z)) * 1.25) : 0, s = Math.sin(th), k = Math.cos(th); c.rotation.x = u.fb.r + th; c.position.set(u.fb.p.x, u.fb.p.y - u.fb.p.z * s, u.fb.p.z * k); fillFold(th); return; } if (u.occ) { _co.copy(cp); u.occ.worldToLocal(_co); c.visible = _co.z > -0.08; } else if (u.occC != null) c.visible = cp.y < u.occC - 0.005; }); }
 function tickSpec() { if (!specL.intensity) return; _cr.set(1, 0, 0).applyQuaternion(camera.quaternion); _cu.set(0, 1, 0).applyQuaternion(camera.quaternion); specL.position.copy(camera.position).addScaledVector(_cr, 1.6).addScaledVector(_cu, 1.4); }
 function applyGlareShadow() {
   const R = S.room || {}, c = bbox.getCenter(new THREE.Vector3()), P = SHP[R.shP] || SHP.soft, ST = !!S.studio && !photo, gmode = R.glareM || 'soft';
