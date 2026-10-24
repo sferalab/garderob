@@ -1052,43 +1052,46 @@ function syncFromCam(kind) {
   const T = controls.target.clone(), p = camera.position;
   orb.T.copy(T); orb.az = Math.atan2(p.x - T.x, p.z - T.z); orb.R = Math.max(0.5, Math.hypot(p.x - T.x, p.z - T.z)); orb.h = p.y; applyCam();
 }
-const EL_MIN = -20 * Math.PI / 180, EL_MAX = Math.atan(0.75); // v12c
-function applyCam(cam = camera) { /* v13i: camera ported 1:1 from v12c (c73d826) */
+function applyCam(cam = camera) { /* v13i: camera ported 1:1 from v11q (317ad8c); v13i: zoom-out 30 -> 80 */
+  // v11q: the original level camera (a095b25, «Обычная»): pitch always 0, the lens never tilts; looking from above/below = camera height + lens shift.
+  // Height range kept to the original [-0.6R, +0.75R] so the shift stays moderate and nothing stretches; never below 0.35 m (no diving under shelves).
   const o = orb; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  let D = Math.max(0.3, Math.hypot(o.R, o.h - o.T.y)), el = Math.max(EL_MIN, Math.min(EL_MAX, Math.atan2(o.h - o.T.y, o.R)));
-  const elF = Math.asin(Math.max(-1, Math.min(1, (0.08 - o.T.y) / D))); if (el < elF) el = elF; // never under the floor
-  o.R = D * Math.cos(el); o.h = o.T.y + D * Math.sin(el);
+  o.R = Math.max(ORB_RMIN(), o.R);
+  if (o.free) { // only the separate «Сверху» button: a true top-down tilt
+    cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az)); cam.up.set(0, 1, 0); cam.lookAt(o.T); cam.clearViewOffset(); cam.updateMatrixWorld(); return; }
+  o.h = Math.max(0.35, Math.min(o.T.y + o.R * 0.75, Math.max(o.h, o.T.y - o.R * 0.6)));
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
-  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld(); // pitch = 0
-  const yN = (o.T.y - o.h) / (o.R * Math.tan(cam.fov * Math.PI / 360)), H = 1000, W = 1000 * cam.aspect;
-  if (Math.abs(yN) > 1e-6) cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
+  { const fr = 40 + 2 * Math.hypot(o.R, o.h - o.T.y); if (Math.abs(cam.far - fr) > 0.5) { cam.far = fr; cam.updateProjectionMatrix(); } } cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  const yN = (o.T.y - o.h) / (o.R * Math.tan(cam.fov * Math.PI / 360));
+  const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
 }
+function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return Math.max(0.8, Math.min(1.6, Math.max(sz.x, sz.y) * 0.35)); } catch (e) { return 0.8; } }
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
   el.addEventListener('contextmenu', e => e.preventDefault());
-  el.addEventListener('pointerdown', e => { if (!orb.on) return; orb.snapAz = false; if (e.isPrimary) { P.clear(); } /* v12c: iOS may drop pointerup - stale pointers made 1-finger drags act as pinch (stuck rotation) */ el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
+  el.addEventListener('pointerdown', e => { if (!orb.on) return; orb.snapAz = false; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
   // straight and U: a near-frontal view settles exactly frontal, so the ceiling and floor edges read level
   const end = e => { P.delete(e.pointerId); last = null; pinch = null; if (!P.size && (S.layout === 'straight' || S.layout === 'U') && Math.abs(orb.az) < 0.16) orb.snapAz = true; };
-  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); el.addEventListener('lostpointercapture', end);
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   el.addEventListener('pointermove', e => {
     if (!orb.on || !P.has(e.pointerId)) return; if (window.__rugDrag) { const q = P.get(e.pointerId); q.x = e.clientX; q.y = e.clientY; last = null; pinch = null; return; } const p = P.get(e.pointerId), dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
     const hpx = el.clientHeight || 600, unit = orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / hpx;
     if (P.size >= 2) {
       const [a, b] = [...P.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinch) { orb.R = Math.max(0.25, Math.min(30, orb.R * pinch / Math.max(d, 1))); }
+      if (pinch) { orb.R = Math.max(ORB_RMIN(), Math.min(80, orb.R * pinch / Math.max(d, 1))); }
       pinch = d; const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az));
-      return; /* v12c: pivot locked to the wardrobe centre - no two-finger pan */
+      orb.T.addScaledVector(rt, -dx * unit / 2); orb.T.y += dy * unit / 2; return;
     }
-    if (p.b === 2 || p.b === 1 || p.sh) return; /* v12c: no pan, pivot stays at the bbox centre */
-    orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(EL_MIN, Math.min(EL_MAX, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = Math.max(0.05, D * Math.cos(el)); orb.h = orb.T.y + D * Math.sin(el); } // true spherical orbit: straight-down view reachable
+    if (p.b === 2 || p.b === 1 || p.sh) { const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)); orb.T.addScaledVector(rt, -dx * unit); orb.T.y += dy * unit; return; }
+    if (orb.free) { orb.free = false; orb.h = orb.T.y + orb.R * 0.75; } orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-Math.atan(0.6), Math.min(Math.atan(0.75), Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = D * Math.cos(el); orb.h = orb.T.y + D * Math.sin(el); } // v13i: constant-distance orbit (circle around the target), lens stays level (v11q shift)
   });
-  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(0.25, Math.min(30, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
+  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(ORB_RMIN(), Math.min(80, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
 function camK() { const k = localStorage.getItem('snapv13i_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'int'; } // default: «Интерьер» photo preset, closest to the client renders
 var CAMS = [['std', 'Стандарт'], ['int', 'Интерьер'], ['por', 'Портрет'], ['top3', 'Сверху 3/4']];
-const LENSF = () => 28;
+const LENSF = () => 30;
 function CAMEXP() { return { int: 1.1, por: 1.03 }[camK()] || 1.0; }
 // interior-photographer cameras: own lens, height and viewpoint; verticals stay vertical (level camera + lens shift)
 function camPhoto(k) {
@@ -1110,7 +1113,7 @@ function fitView() { if (!orb.on || !WG.length) return; const b = meshBox(); if 
   const sf = safeNdc(), q = new THREE.Vector3();
   for (let it = 0; it < 12; it++) { applyCam(); camera.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
     pts.forEach(p => { q.copy(p).project(camera); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); });
-    const s = Math.max((x1 - x0) / (sf.x1 - sf.x0), (y1 - y0) / (sf.y1 - sf.y0)); if (!isFinite(s) || s <= 0) return;
+    const s = 1.12 * Math.max((x1 - x0) / (sf.x1 - sf.x0), (y1 - y0) / (sf.y1 - sf.y0)); /* v13i: side air */ if (!isFinite(s) || s <= 0) return;
     const dist = camera.position.distanceTo(orb.T), t = Math.tan(camera.fov * Math.PI / 360), rt = V(1, 0, 0).applyQuaternion(camera.quaternion);
     const dx = ((x0 + x1) - (sf.x0 + sf.x1)) / 2 * dist * t * camera.aspect, dy = ((y0 + y1) - (sf.y0 + sf.y1)) / 2 * dist * t;
     orb.T.addScaledVector(V(rt.x, 0, rt.z).normalize(), dx); orb.T.y += dy; orb.h += dy;
