@@ -1141,7 +1141,17 @@ function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.
   if (c.color) c.color.set(0x5b9bff); if (c.emissive) { c.emissive.set(0x1f66ff); c.emissiveIntensity = 0.55; } if (c.map && c.color) c.color.set(0x8fbaff); if ('sheen' in c) c.sheen = 0; m.material = c; }); }
 function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
 let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
-function camTo(kind) { if (kind === 'iso') kind = 'nice'; if (kind === 'front' || kind === 'top' || kind === 'card') return camLevel(kind); camTo0(kind); fitView(); }
+function camTo(kind) { if (kind === 'iso') kind = 'nice'; if (kind === 'front' || kind === 'top' || kind === 'card') return camLevel(kind); camTo0(kind); fitView(); if (kind === 'nice' && orb.on && (S.layout === 'L' || S.layout === 'Lr') && ROOMB) cornerView(); }
+/* symmetric corner view: azimuth exactly 45 deg, the wall corner on the screen centre line, distance fitted with air on the sides */
+function cornerView() { const sg = S.layout === 'Lr' ? -1 : 1, cxw = sg < 0 ? ROOMB.r : ROOMB.l; if (!isFinite(cxw) || Math.abs(cxw) > 1e8) return;
+  orb.az = sg * Math.PI / 4; const d = V(Math.sin(orb.az), 0, Math.cos(orb.az)), t = (orb.T.x - cxw) * d.x + orb.T.z * d.z; orb.T.x = cxw + d.x * t; orb.T.z = d.z * t;
+  const b = meshBox(); if (b.isEmpty()) { applyCam(); return; } const sf = safeNdc(), q = new THREE.Vector3();
+  for (let it = 0; it < 14; it++) { applyCam(); camera.updateMatrixWorld(); let x0 = 9, x1 = -9, y0 = 9, y1 = -9;
+    for (let i = 0; i < 8; i++) { q.set(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z).project(camera); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
+    const s = Math.max(Math.max(Math.abs(x0), Math.abs(x1)) * 2 / (sf.x1 - sf.x0), (y1 - y0) / (sf.y1 - sf.y0)) * 1.1; if (!isFinite(s) || s <= 0) break;
+    const dy = ((y0 + y1) - (sf.y0 + sf.y1)) / 2 * camera.position.distanceTo(orb.T) * Math.tan(camera.fov * Math.PI / 360); orb.T.y += dy; orb.h += dy;
+    const k = Math.max(0.5, Math.min(2, s)); orb.h = orb.T.y + (orb.h - orb.T.y) * k; orb.R *= k; if (Math.abs(s - 1) < 0.01 && Math.abs(dy) < 0.003) break; }
+  applyCam(); if (WG.length) rebuildDims(); }
 // v11p: Готово views - level camera (full lens shift) + fit with air margins
 function camLevel(kind) { const c = bbox.getCenter(new THREE.Vector3()), sg = S.layout === 'Lr' ? -1 : 1, corner = S.layout === 'L' || S.layout === 'Lr';
   const P = { front: { az: corner ? sg * Math.PI / 4 : 0, el: 0.04, m: [0.17, 0.2] }, top: { az: corner ? sg * 0.5 : 0, el: 1.25, m: [0.2, 0.17] }, card: { az: corner ? sg * 0.62 : 0.3, el: 0.2, m: [0.16, 0.22] } }[kind];
