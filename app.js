@@ -1074,10 +1074,17 @@ function applyCam(cam = camera) {
   else if (ud.dz) { ud.dz = false; cam.fov = ud.f0; }
   cam.near = 0.08 * Math.min(mz, 6); cam.far = Math.max(160, D * mz + 60); cam.updateProjectionMatrix();
   cam.position.set(o.T.x + mz * o.R * Math.sin(o.az), o.T.y + mz * (o.h - o.T.y), o.T.z + mz * o.R * Math.cos(o.az));
-  const pt = el * s1;
-  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, cam.position.y - mz * o.R * Math.tan(pt), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
-  const q = o.T.clone().applyMatrix4(cam.matrixWorldInverse), yN = (q.y / -q.z) / Math.tan(cam.fov * Math.PI / 360);
-  const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
+  /* v13m «Upright»: the camera really looks at the target (real pitch, roll 0); the projection then gets a 2D homography that rotates the image plane
+     back to vertical (verticals parallel and screen-vertical), anchored at the target, and rescaled (x by cos, y by cos^2) so shapes match an
+     ordinary tilted view at this elevation (no stretching). Continuous in elevation; dolly-zoom (mz) above still flattens residual perspective. */
+  cam.up.set(0, 1, 0); cam.lookAt(o.T); cam.clearViewOffset(); cam.updateMatrixWorld(); uprightProj(cam, el, D * mz);
+}
+var _RX, _PM;
+function uprightProj(cam, el, dist) {
+  if (!_RX) { _RX = new THREE.Matrix4(); _PM = new THREE.Matrix4(); } const c = Math.cos(el), t = Math.tan(el), fy = 1 / Math.tan(cam.fov * Math.PI / 360), fx = fy / cam.aspect, kx = c, ky = c * c;
+  const dl = dist * c, n = Math.max(0.02, dl - 12), f = dl + 120, A = -(f + n) / (f - n), B = -2 * f * n / (f - n);
+  _PM.set(kx * fx, 0, 0, 0,  0, ky * fy, -ky * fy * t, 0,  0, 0, A, B,  0, 0, -1, 0);
+  _RX.makeRotationX(-el); cam.projectionMatrix.multiplyMatrices(_PM, _RX); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
 }
 function ORB_RMIN() { try { const sz = bbox.getSize(new THREE.Vector3()); return Math.max(0.8, Math.min(1.6, Math.max(sz.x, sz.y) * 0.35)); } catch (e) { return 0.8; } }
 {
@@ -1160,7 +1167,7 @@ function camLevel(kind) { const c = bbox.getCenter(new THREE.Vector3()), sg = S.
 function camTo0(kind) {
   if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
-  const sg = S.layout === 'Lr' ? -1 : 1, flat = kind === 'nice' && (S.layout === 'straight' || S.layout === 'U'), dir = kind === 'front' || flat ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? V(sg * 1, 0.14, 1) /* v13l: symmetric corner, 45 deg */ : V(0, 1, 0.35);
+  const sg = S.layout === 'Lr' ? -1 : 1, flat = kind === 'nice' && (S.layout === 'straight' || S.layout === 'U'), dir = kind === 'front' || flat ? V(0, 0, 1) : kind === 'iso' ? V(sg, 0.25, 1.1) : kind === 'nice' ? V(sg * 1, 0.14, 1) /* v13m/v13l: symmetric corner, 45 deg */ : V(0, 1, 0.35);
   dir.normalize();
   camera.fov = kind === 'top' ? 35 : LENSF(); const asp = camera.aspect, fov = camera.fov * Math.PI / 180;
   const span = Math.max(sz.x, sz.z * (kind === 'front' ? 0 : 1), 1), hgt = kind === 'top' ? Math.max(sz.z, 1) : sz.y;
@@ -1733,7 +1740,7 @@ fillGeneral(); setBg(); resize(); rebuild(); renderSec(); cardUI(); if (S._cam) 
 // iOS settles the canvas size late (toolbar, safe areas): refit once the final size is known
 { renderer.domElement.addEventListener('pointerdown', () => { window.__userCam = true; }, true); const late = () => { if (lastCam === 'card' || window.__userCam) return; try { resize(); fitView(); } catch (e) {} }; requestAnimationFrame(() => requestAnimationFrame(late)); setTimeout(late, 350); setTimeout(late, 900); addEventListener('load', late);
   if (window.visualViewport) { let vt = 0; visualViewport.addEventListener('resize', () => { clearTimeout(vt); vt = setTimeout(late, 150); }); } }
-const _x=0;window.__gs = { vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [0.05, 1.5]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
+const _x=0;window.__gs = { ratio: () => { const c2 = camera.clone(); c2.updateProjectionMatrix(); const T = orb.T, f = (cm) => { const p = q => q.clone().project(cm), a = p(T.clone().add(V(-0.45, 0, 0))), b = p(T.clone().add(V(0.45, 0, 0))), u = p(T.clone().add(V(0, -0.15, 0))), w = p(T.clone().add(V(0, 0.15, 0))); return Math.hypot(a.x - b.x, (a.y - b.y) / camera.aspect) / Math.hypot(u.x - w.x, (u.y - w.y) / camera.aspect); }; return +(f(camera) / f(c2)).toFixed(3); }, vlean: () => { camera.updateMatrixWorld(); const r = renderer.domElement.getBoundingClientRect(), o = []; [[0.2, 0.2], [1.5, 0.05], [0.05, 1.5]].forEach(([x, z]) => { const a = V(x, 0.1, z).project(camera), b = V(x, 2.2, z).project(camera); o.push(+(((a.x - b.x) / 2) * r.width).toFixed(2)); }); return o; }, proj: (wi, si, ii) => { let g = null; model.traverse(o => { const r = o.userData.ref; if (r && r.wi === wi && r.si === si && r.ii === ii) g = o; }); const b = new THREE.Box3().setFromObject(g), p = b.getCenter(new THREE.Vector3()); p.z = b.max.z - 0.02; p.y = b.max.y - 0.005; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; }, get cur() { return cur; }, get orb() { return orb; }, get model() { return model; }, get room() { return room; }, get S() { return S; }, set S(v) { S = v; }, rebuild, renderSec, fillGeneral, cardUI, makeCard, makeCardAsync: async () => { cardRead(); await fontsFor(S.card); return makeCard(); }, camTo, setOrb: (az, h, R, tx, ty, tz) => { orb.on = true; controls.enabled = false; orb.az = az; orb.h = h; orb.R = R; orb.T.set(tx, ty, tz); }, dimsG, projP: i => { const p = S.plants[i], v = V(p.x, 0.15, p.z).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setLayout: l => { $('layout').value = l; $('layout').onchange({ target: $('layout') }); }, setDims };
 document.fonts.ready.then(() => rebuild());
 // ---------- v4 extra controls ----------
 $('rS').oninput = e => { $('fS').value = e.target.value; S.walls[cur.w].sections.forEach(x => x.w = +e.target.value); clearTimeout(dimT); dimT = setTimeout(rebuild, 40); };
