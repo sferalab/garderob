@@ -347,6 +347,7 @@ function makeMats() {
   M.chrome = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.01, specularIntensity: 1, emissive: new THREE.Color(0x0c0d0f), envMap: chromeEnv(), envMapIntensity: 1.7, userData: { chrome: true } });
   M.rod = M.chrome; /* v13u: rods always chrome */ void 0 && S.rod === "white" ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.04, roughness: 0.3, clearcoat: 0.55, clearcoatRoughness: 0.3, specularIntensity: 0.5, sheen: 0.3, sheenRoughness: 0.35, sheenColor: new THREE.Color(0xffffff), emissive: new THREE.Color(0x50555f), envMapIntensity: 0.9 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) /* v13b: snow white rod */
     : S.rod === 'black' ? new THREE.MeshPhysicalMaterial({ color: 0x111111, metalness: 0.85, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.35, specularIntensity: 0.9, envMapIntensity: 1 * gm, normalMap: rep(G.nor, 8, 2), normalScale: new THREE.Vector2(0.2, 0.2) }) : M.chrome;
+  M.brk = new THREE.MeshPhysicalMaterial({ ...PB }); /* v13v: brackets follow system colour */
   M.plastic = new THREE.MeshStandardMaterial({ color: dark ? 0x2a2b2e : S.metal === 'silver' ? 0xb4b7ba : 0xf6f7f8, roughness: 0.5, metalness: 0 });
   M.rubber = new THREE.MeshStandardMaterial({ color: 0x3a3b3d, roughness: 0.85, metalness: 0 });
   M.ldsp = new THREE.MeshStandardMaterial({ color: dark ? 0x3b3836 : 0xf3f1ec, roughness: 0.6, metalness: 0 });
