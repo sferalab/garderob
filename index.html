@@ -12,7 +12,7 @@ d.querySelector('#errCp').onclick=function(){(navigator.clipboard?navigator.clip
 d.querySelector('#errClr').onclick=function(){localStorage.removeItem(K);d.remove();};d.querySelector('#errX').onclick=function(){d.remove();};};
 document.addEventListener('DOMContentLoaded',function(){var el=document.getElementById('verTxt'),tm;if(el){var st=function(){tm=setTimeout(window.__errlog,700);},en=function(){clearTimeout(tm);};el.addEventListener('pointerdown',st);el.addEventListener('pointerup',en);el.addEventListener('pointerleave',en);el.addEventListener('contextmenu',function(e){e.preventDefault();});}
 if(/[?&]debug=1/.test(location.search))setTimeout(window.__errlog,1500);});})();</script>
-<link rel="stylesheet" href="style.css?v=v13n">
+<link rel="stylesheet" href="style.css?v=v13o">
 <script type="importmap">{"imports":{"three":"./lib/three/build/three.module.js","three/addons/":"./lib/three/jsm/"}}</script>
 </head><body>
 <div id="topbar"><div class="seg" id="szV"></div><button id="mirrorBtn" title="Отзеркалить всю конструкцию">⇄<span class="mtx"> Зеркально</span></button><button id="fxBtn" class="snd" title="Эффект" aria-label="Эффект"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="2.6"/></svg></button><button id="lensBtn" class="snd" title="Камера: Обычная" aria-label="Камера"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><circle class="l2" cx="12" cy="12" r="4"/><path class="l3" d="M12 4v3M12 17v3M4 12h3M17 12h3"/></svg></button><button id="sndBtn" class="snd" title="Звук" aria-label="Звук"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="w1" d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="w2" d="M18.2 6.8a7.4 7.4 0 0 1 0 10.4"/><path class="mx" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button><button id="moreBtn" title="Сохранить, загрузить, ссылка, шаблоны, снимки">⋯</button>
@@ -111,5 +111,5 @@ if(/[?&]debug=1/.test(location.search))setTimeout(window.__errlog,1500);});})();
 </div>
 <p class="foot">Размеры элементов взяты из каталога ТИТАН GS 2024. Визуализация ориентировочная. <span id="verTxt" style="opacity:.5;user-select:none;-webkit-user-select:none">v11u</span></p>
 </div></div>
-<script type="module" src="app.js?v=v13n"></script>
+<script type="module" src="app.js?v=v13o"></script>
 </body></html>
