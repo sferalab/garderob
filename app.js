@@ -1052,14 +1052,15 @@ function syncFromCam(kind) {
   const T = controls.target.clone(), p = camera.position;
   orb.T.copy(T); orb.az = Math.atan2(p.x - T.x, p.z - T.z); orb.R = Math.max(0.5, Math.hypot(p.x - T.x, p.z - T.z)); orb.h = p.y; applyCam();
 }
-function applyCam(cam = camera) { /* v13i: camera ported 1:1 from v11i (c886c31): free spherical orbit, FOV 28, lens shift to 18 deg blending into real tilt 15-30 deg */
+function applyCam(cam = camera) { /* v13i: camera ported 1:1 from b87d7cf (22.10, first brick commit, = v9.3 6b6d53f before the long break): level camera + lens shift up to 24 deg, real tilt only beyond; height drag */
   const o = orb; if (o.snapTo != null) o.snapTo = null; if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.h = Math.max(o.T.y - o.R * 20, Math.min(o.T.y + o.R * 20, o.h)); // up to ~87 deg above/below
+  o.h = Math.max(0.05, Math.min(o.T.y + o.R * 4, Math.max(o.h, o.T.y - o.R * 3)));
   { const fr = 40 + 2 * Math.hypot(o.R, o.h - o.T.y); if (Math.abs(cam.far - fr) > 0.5) { cam.far = fr; cam.updateProjectionMatrix(); } }
   cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
-  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, bt = Math.max(0, Math.min(1, (ea - 15 * D2R) / (15 * D2R))), sh = Math.min(ea, 18 * D2R) * (1 - bt * bt * (3 - 2 * bt)), p = Math.sign(a) * (ea - sh);
+  const a = Math.atan2(o.h - o.T.y, o.R), p = Math.sign(a) * Math.max(0, Math.abs(a) - 0.42);
   cam.up.set(0, 1, 0); cam.lookAt(o.T.x, o.h - o.R * Math.tan(p), o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
-  if (sh > 1e-4) { const yN = -Math.tan(Math.sign(a) * sh) / Math.tan(cam.fov * Math.PI / 360), H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); }
+  const yN = -Math.tan(a - p) / Math.tan(cam.fov * Math.PI / 360);
+  const H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H);
 }
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
@@ -1078,7 +1079,7 @@ function applyCam(cam = camera) { /* v13i: camera ported 1:1 from v11i (c886c31)
       orb.T.addScaledVector(rt, -dx * unit / 2); orb.T.y += dy * unit / 2; return;
     }
     if (p.b === 2 || p.b === 1 || p.sh) { const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)); orb.T.addScaledVector(rt, -dx * unit); orb.T.y += dy * unit; return; }
-    orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-1.52, Math.min(1.52, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = Math.max(0.05, D * Math.cos(el)); orb.h = orb.T.y + D * Math.sin(el); } // true spherical orbit: straight-down view reachable
+    orb.az -= dx * 0.004; orb.h += dy * orb.R * Math.tan(camera.fov * Math.PI / 360) * 2 / (el.clientHeight || 600) * 1.2; // v13i: b87d7cf height drag
   });
   el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(0.25, Math.min(80, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
 }
