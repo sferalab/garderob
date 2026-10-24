@@ -737,6 +737,7 @@ function buildRoom() {
   if (ST) return;
   if (!ST) skirt(bk, left, right, doorCuts(bo.map(o => ({ ...o, x: o.c + cx })), 'x'), () => {});
   // ceiling: one solid plane over the whole room, seen only from below
+  { const cps = []; if (S.room.ceiling && !ST) [bk, room.children.filter(c => c.userData.occ && c !== bk)].flat().forEach(G => { const w = G.userData.occ; if (!w) return; w.updateWorldMatrix(true, false); const n = new THREE.Vector3(0, 0, 1).transformDirection(w.matrixWorld), p = new THREE.Vector3().setFromMatrixPosition(w.matrixWorld); cps.push(new THREE.Plane().setFromNormalAndCoplanarPoint(n, p).translate(n.clone().multiplyScalar(-0.03))); }); renderer.localClippingEnabled = true; room.children.forEach(c => { if (c.userData.floorM || c.userData.floorFill) { c.material.clippingPlanes = cps.length ? cps : null; c.material.needsUpdate = true; } }); } /* v13r: ceiling on - floor ends at the walls, so everything above/behind the walls is white from any angle */
   const cg = new THREE.Group(); cg.userData.occC = CH; room.add(cg);
   if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xfbfbf9, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
     if (S.room.cornice) cornice(right - left, g => g.position.x = cx, bk); }
@@ -1197,7 +1198,7 @@ const SS = (() => { const c = document.createElement('canvas'); c.id = 'ssStill'
   st.tick = () => { const m = camera.matrixWorld, p = camera.projectionMatrix; let d = 0; for (let i = 0; i < 16; i++) d += Math.abs(m.elements[i] - st.last.elements[i]) + Math.abs(p.elements[i] - st.lastP.elements[i]);
     st.last.copy(m); st.lastP.copy(p); if (d > 1e-6 || window.__rugDrag) st.hide();
     if (!st.shown && performance.now() - st.t > 300 && !document.hidden) st.capture(); };
-  st.capture = () => { const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return; const pr = renderer.getPixelRatio(), k = Math.min(2, 4096 / Math.max(w, h) / pr); if (k < 1.2) { st.shown = true; return; }
+  st.capture = () => { st.shown = true; return; /* v13r: no still-frame swap - the mesh looks identical during and after touch */ const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return; const pr = renderer.getPixelRatio(), k = Math.min(2, 4096 / Math.max(w, h) / pr); if (k < 1.2) { st.shown = true; return; }
     renderer.setPixelRatio(pr * k); renderer.setSize(w, h, false); renderer.render(scene, camera);
     c.width = Math.round(w * pr); c.height = Math.round(h * pr); c.style.width = w + 'px'; c.style.height = h + 'px'; const g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(renderer.domElement, 0, 0, c.width, c.height);
     renderer.setPixelRatio(pr); renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; renderer.render(scene, camera);
