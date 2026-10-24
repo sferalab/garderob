@@ -118,7 +118,7 @@ function load(k) { try { const v = JSON.parse(localStorage.getItem(k)); return v
 // ---------- renderer ----------
 const view = $('view');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: false });
-const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 2 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
+const PR_MAX = Math.min(devicePixelRatio, innerWidth < 800 ? 3 : 1.5), PR_MIN = innerWidth < 800 ? Math.min(devicePixelRatio, 2) : 1; let PR = PR_MAX;
 renderer.setPixelRatio(PR);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; renderer.shadowMap.autoUpdate = false; // shadow map only re-rendered after changes
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = CAMEXP();
@@ -136,7 +136,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minPolarAngle = 0.05; controls.maxPolarAngle = Math.PI - 0.05; controls.minDistance = 0.5; controls.maxDistance = 45;
 const hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc2, 0.6); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 6; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.01;
+sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); /* v13k: 4096, re-rendered only on scene change (autoUpdate off) */ sun.shadow.radius = 6; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.01;
 const sc = sun.shadow.camera; sc.left = -5; sc.right = 5; sc.top = 5; sc.bottom = -5; sc.near = 0.5; sc.far = 20;
 scene.add(sun, sun.target);
 const fill = new THREE.DirectionalLight(0xfff4e6, 0.35); fill.position.set(-3, 2, 4); scene.add(fill);
@@ -1054,7 +1054,7 @@ function syncFromCam(kind) {
 }
 function applyCam(cam = camera) {
   const o = orb; if (o.snapTo != null) { let d = o.snapTo - o.az; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; if (Math.abs(d) < 0.0005) { o.az = o.snapTo; o.snapTo = null; } else o.az += d * 0.2; } if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.h = Math.max(0.05, Math.min(o.T.y + o.R * 2.4, Math.max(o.h, o.T.y - o.R * 0.6))); // v13j: v11b/snapshot model - |elevation| up to 67 deg, fixed lens // v13h: top 40; v13d: elevation -20..35 deg (pure lens shift); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
+  o.h = Math.max(0.05, Math.min(o.T.y + o.R * Math.tan(40 * Math.PI / 180), Math.max(o.h, o.T.y - o.R * 0.6))); // v13k: cap 40 deg (stretch <= ~1.3) // v13j: v11b/snapshot model - |elevation| up to 67 deg, fixed lens // v13h: top 40; v13d: elevation -20..35 deg (pure lens shift); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
   /* v13d: longer lens at steep angles - FOV 30 -> 11 deg as |elevation| goes 10 deg -> cap, distance scaled so framing stays the same (flatter perspective, corner stays ~90 deg, less shift stretch) */
   { const el = Math.atan2(o.h - o.T.y, o.R), cap = (el >= 0 ? 35 : 12) * Math.PI / 180, u = Math.max(0, Math.min(1, (Math.abs(el) - (el >= 0 ? 10 : 2) * Math.PI / 180) / (cap - (el >= 0 ? 10 : 2) * Math.PI / 180))), sm = u * u * (3 - 2 * u), f0 = 28, f = f0; /* v13j: constant 28 deg lens like the 📷 snapshot and the 22 Oct live view (no long-lens flattening) */ /* down to 11 deg (near-orthographic) at the caps */
     const k = Math.tan(f0 * Math.PI / 360) / Math.tan(f * Math.PI / 360);
@@ -1129,7 +1129,7 @@ function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.
 function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
 let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
 // v13e: the LEFT wall is the main wall and is faced squarely (one-point look); L: left = side wall (az +90), Lr/straight/U: left = back wall (az 0)
-function frontAz() { return S.layout === 'L' ? Math.PI / 2 : 0; }
+function frontAz() { return S.layout === 'L' ? Math.PI / 4 : S.layout === 'Lr' ? -Math.PI / 4 : 0; } // v13k: symmetric corner view
 function snapAzs() { return S.layout === 'L' ? [Math.PI / 2, 0] : S.layout === 'Lr' ? [0, -Math.PI / 2] : [0]; }
 function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') fitView(); }
 function camTo0(kind) {
@@ -1149,11 +1149,24 @@ function camTo0(kind) {
 function resize() { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(view);
 let fpsT = performance.now(), fpsN = 0, lowCnt = 0, hiCnt = 0;
-function adapt() { return; /* v13g: fixed quality - no pixel-ratio / shadow-map switching that flickered on touch */ fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
+function adapt() { if (!window.__adaptOnce) { window.__adaptOnce = { t0: performance.now(), n: 0, done: false }; } { const A = window.__adaptOnce; if (!A.done) { A.n++; const dt = performance.now() - A.t0; if (dt > 4000) { A.done = true; const fps = A.n * 1000 / dt; if (fps < 28 && PR > 2) { PR = 2; renderer.setPixelRatio(PR); resize(); } } } } return; /* v13k: single one-way drop 3->2 in the first 4 s if slow; never switches back (no flicker) */ /* v13g: fixed quality - no pixel-ratio / shadow-map switching that flickered on touch */ fpsN++; const t = performance.now(); if (t - fpsT < 1500) return; const fps = fpsN * 1000 / (t - fpsT); fpsN = 0; fpsT = t; if (document.hidden) return;
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
 function aspectGuard() { const w = view.clientWidth, h = view.clientHeight; if (w && h && (Math.abs(camera.aspect - w / h) > 1e-3 || Math.abs(renderer.domElement.width - Math.round(w * renderer.getPixelRatio())) > 1)) { resize(); if (orb.on) applyCam(); } } // v13b (from v12e): canvas/camera aspect always match - no squeezed first frame
-renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+const SS = (() => { const c = document.createElement('canvas'); c.id = 'ssStill'; Object.assign(c.style, { position: 'absolute', left: 0, top: 0, pointerEvents: 'none', opacity: 0, transition: 'opacity .18s', zIndex: 1 }); view.style.position = view.style.position || 'relative'; view.appendChild(c);
+  const st = { c, last: new THREE.Matrix4(), lastP: new THREE.Matrix4(), still: 0, shown: false, dirty: true, t: performance.now() };
+  st.hide = () => { if (st.shown || c.style.opacity !== '0') { c.style.transition = 'none'; c.style.opacity = 0; st.shown = false; } st.t = performance.now(); };
+  ['pointerdown', 'wheel', 'touchstart', 'keydown', 'input', 'change', 'click'].forEach(ev => addEventListener(ev, () => { st.hide(); }, true)); addEventListener('pointermove', e => { if (e.buttons) st.hide(); }, true); addEventListener('touchmove', () => st.hide(), true);
+  st.tick = () => { const m = camera.matrixWorld, p = camera.projectionMatrix; let d = 0; for (let i = 0; i < 16; i++) d += Math.abs(m.elements[i] - st.last.elements[i]) + Math.abs(p.elements[i] - st.lastP.elements[i]);
+    st.last.copy(m); st.lastP.copy(p); if (d > 1e-6 || window.__rugDrag) st.hide();
+    if (!st.shown && performance.now() - st.t > 300 && !document.hidden) st.capture(); };
+  st.capture = () => { const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return; const pr = renderer.getPixelRatio(), k = Math.min(2, 4096 / Math.max(w, h) / pr); if (k < 1.2) { st.shown = true; return; }
+    renderer.setPixelRatio(pr * k); renderer.setSize(w, h, false); renderer.render(scene, camera);
+    c.width = Math.round(w * pr); c.height = Math.round(h * pr); c.style.width = w + 'px'; c.style.height = h + 'px'; const g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(renderer.domElement, 0, 0, c.width, c.height);
+    renderer.setPixelRatio(pr); renderer.setSize(w, h, false); renderer.domElement.style.width = w + 'px'; renderer.domElement.style.height = h + 'px'; renderer.render(scene, camera);
+    c.style.transition = 'opacity .18s'; c.style.opacity = 1; st.shown = true; window.__ssN = (window.__ssN || 0) + 1; };
+  return st; })(); window.__ss = SS;
+renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); SS.tick(); adapt(); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -1358,13 +1371,15 @@ function overall() {
   if (S.layout !== 'straight') { const w = [1, 2].filter(i => wallsActive().includes(i)).map(i => effGap(i) + wallWidth(i) / 10 + 2.5); D = Math.round(Math.max(D, ...w)); }
   return `${W} × ${D} × ${S.railTop} см`;
 }
+const ART = {"Рельс несущий 520 мм":{"white":"74010425","silver":"74010464","black":"74010465"},"Рельс несущий 700 мм":{"white":"74010057","silver":"74010329","black":"74010330"},"Рельс несущий 1000 мм":{"white":"74010058","silver":"74010333","black":"74010334"},"Рельс несущий 1260 мм":{"white":"74010078","silver":"74010460","black":"74010461"},"Рельс несущий 1560 мм":{"white":"74010059","silver":"74010337","black":"74010338"},"Стойка 512 мм":{"white":"74010065","silver":"74010142","black":"74010143"},"Стойка 1025 мм":{"white":"74010061","silver":"74010144","black":"74010145"},"Стойка 1156 мм":{"white":"74010062","silver":"74010149","black":"74010150"},"Стойка 1536 мм":{"white":"74010063","silver":"74010351","black":"74010352"},"Стойка 1920 мм":{"white":"74010064","silver":"74010356","black":"74010357"},"Стойка 2304 мм":{"white":"74010220","silver":"74010526","black":"74010527"},"Кронштейн 335 мм":{"white":"74010025","silver":"74010479","black":"74010275"},"Кронштейн 435 мм":{"white":"74010026","silver":"74010147","black":"74010148"},"Кронштейн 535 мм":{"white":"74010115","silver":"74010140","black":"74010141"},"Полка сетчатая 463x306":{"white":"74010042","silver":"74010189","black":"74010190"},"Полка сетчатая 463x406":{"white":"74010043","silver":"74010197","black":"74010198"},"Полка сетчатая 603x306":{"white":"74010044","silver":"74010191","black":"74010192"},"Полка сетчатая 603x406":{"white":"74010045","silver":"74010199","black":"74010200"},"Полка сетчатая 603x506":{"white":"74010046","silver":"74010205","black":"74010206"},"Полка сетчатая 903x306":{"white":"74010047","silver":"74010193","black":"74010194"},"Полка сетчатая 903x406":{"white":"74010048","silver":"74010201","black":"74010202"},"Полка сетчатая 903x506":{"white":"74010117","silver":"74010207","black":"74010208"},"Полка сетчатая 1203x306":{"white":"74010049","silver":"74010195","black":"74010196"},"Полка сетчатая 1203x406":{"white":"74010050","silver":"74010203","black":"74010204"},"Полка металлическая 597x327":{"white":"74010040","silver":"74010482","black":"74010305"},"Полка металлическая 597x427":{"white":"74010041","silver":"74010483","black":"74010306"},"Полка ЛДСП 446x330":{"white":"74010126","silver":"74010673","black":"74010674"},"Полка ЛДСП 446x430":{"white":"74010127","silver":"74010675","black":"74010676"},"Полка ЛДСП 587x330":{"white":"74010122","silver":"74010677","black":"74010678"},"Полка ЛДСП 587x430":{"white":"74010124","silver":"74010681","black":"74010682"},"Полка ЛДСП 887x330":{"white":"74010123","silver":"74010679","black":"74010680"},"Полка ЛДСП 887x430":{"white":"74010125","silver":"74010683","black":"74010684"},"Комплект крепления ЛДСП 330":{"white":"74010010","silver":"74010653","black":"74010654"},"Комплект крепления ЛДСП 430":{"white":"74010011","silver":"74010657","black":"74010658"},"Корзина сетчатая стационарная 603x340x85":{"white":"74010209","silver":"74010514","black":"74010515"},"Корзина сетчатая стационарная 603x440x85":{"white":"74010022","silver":"74010523","black":"74010266"},"Корзина сетчатая стационарная 903x340x85":{"white":"74010210","silver":"74010518","black":"74010519"},"Корзина сетчатая стационарная 903x440x85":{"white":"74010023","silver":"74010522","black":"74010269"},"Корзина сетчатая выдвижная 563x340x85":{"white":"74010119","silver":"74010453","black":"74010435"},"Корзина сетчатая выдвижная 563x340x181":{"white":"74010118","silver":"74010452","black":"74010434"},"Корзина сетчатая выдвижная 563x440x85":{"white":"74010015","silver":"74010449","black":"74010244"},"Корзина сетчатая выдвижная 563x440x181":{"white":"74010014","silver":"74010448","black":"74010239"},"Корзина сетчатая выдвижная 863x340x85":{"white":"74010121","silver":"74010455","black":"74010439"},"Корзина сетчатая выдвижная 863x340x181":{"white":"74010120","silver":"74010454","black":"74010438"},"Корзина сетчатая выдвижная 863x440x85":{"white":"74010017","silver":"74010451","black":"74010251"},"Корзина сетчатая выдвижная 863x440x181":{"white":"74010016","silver":"74010450","black":"74010248"},"Брючница выдвижная 603x440x45":{"white":"74010001","silver":"74010503","black":"74010241"},"Полка обувная сетчатая 603x406":{"white":"74010038","silver":"74010532","black":"74010300"},"Полка обувная сетчатая 903x406":{"white":"74010039","silver":"74010592","black":"74010303"},"Перекладина 520 мм":{"chrome":"74010219"},"Перекладина 640 мм":{"chrome":"74010029"},"Перекладина 940 мм":{"chrome":"74010030"},"Перекладина 1240 мм":{"chrome":"74010031"},"Перекладина 2000 мм":{"chrome":"74010032"},"Кронштейн для перекладины 30×30×100":{"white":"74010024","silver":"74010534","black":"74010272"},"Заглушки перекладины 17×25,5×17, комплект":{"black":"74010009"},"Соединитель перекладины":{"black":"74010060"},"Переходник для стойки":{"white":"74010033","silver":"74010510","black":"74010511"},"Накладка для кронштейна":{"white":"74010426","silver":"74010649","black":"74010650"}}; /* v11t: Titan-GS factory articles, catalog 2024 */
+function artOf(k) { const a = ART[k], c = /Заглушк|Соединитель/.test(k) ? 'black' : /^Перекладина/.test(k) ? ((S.rod || 'chrome') === 'chrome' ? 'chrome' : '') : S.metal; return (a && a[c]) || '<span class="tbd">нет в каталоге</span>'; } // v13k: Titan article numbers in BOM (from v11t/v11u)
 function summary() {
   const d = specData(), li = o => Object.entries(o).map(([k, v]) => `${k} — ${v} шт`).join('<br>');
   let total = 0; const row = ([k, v]) => { const p = +(S.prices[k] || 0); total += p * v; return `<tr><td>${k}</td><td>${v} шт</td><td><input type="number" min="0" step="1" data-price="${k}" value="${p || ''}" placeholder="цена"></td><td>${p ? (p * v).toLocaleString('ru-RU') + ' ₽' : ''}</td></tr>`; };
   const tb = o => `<table class="est">${Object.entries(o).map(row).join('')}</table>`;
   const fr = tb(d.frame), fi = tb(d.fill);
   const MC = { white: 'белый RAL 9016', black: 'черный RAL 9005', silver: 'серебристый RAL 9006' }[S.metal], RC = { chrome: 'хром', white: 'белый', black: 'черный' }[S.rod || 'chrome'];
-  const parts = [...Object.entries(d.frame), ...Object.entries(d.fill)].map(([k, v]) => `<tr><td><span class="tbd">—</span></td><td>${k}</td><td>${/Перекладина|Штанга/.test(k) ? RC : MC}</td><td>${v} шт</td></tr>`).join('');
+  const parts = [...Object.entries(d.frame), ...Object.entries(d.fill)].map(([k, v]) => `<tr><td>${artOf(k)}</td><td>${k}</td><td>${/Заглушк/.test(k) ? 'черный' : /Перекладина|Штанга/.test(k) ? RC : MC}</td><td>${v} шт</td></tr>`).join('');
   const W = [];
   wallsBuilt().forEach(wi => S.walls[wi].sections.forEach((sc, si) => {
     const nm = `${WALLNAMES[wi]}, секция ${si + 1}`;
@@ -2127,7 +2142,7 @@ function showShot(cv, name) { const url = cv.toDataURL('image/jpeg', 0.92), ov =
 
 // baked soft shadows: the sun shadow map (light from the upper front left) is rendered only after a configuration change
 // (debounced), not every frame; walls and floor receive it, so cast shadows of uprights/shelves/rails and the darker corner read at every angle
-var _bk = 0; function bakeShadows() { if (S.studio || (photo && !$('showRoom').checked)) { renderer.shadowMap.autoUpdate = true; return; }
+var _bk = 0; function bakeShadows() { window.__ss && __ss.hide(); if (S.studio || (photo && !$('showRoom').checked)) { renderer.shadowMap.autoUpdate = true; return; }
   const c = bbox.getCenter(new THREE.Vector3()); renderer.shadowMap.autoUpdate = false; sun.castShadow = true;
   const sg = S.layout === 'Lr' ? -1 : 1; sun.color.set(0xfff1e0); sun.position.set(c.x + sg * 2.4, c.y + 3.8, c.z + 3.6); sun.target.position.set(c.x - sg * 0.6, c.y * 0.6, 0.3); sun.target.updateMatrixWorld();
   Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 0.3, far: 20 }); sun.shadow.camera.updateProjectionMatrix(); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02; sun.shadow.radius = 7; sun.shadow.blurSamples = 12;
