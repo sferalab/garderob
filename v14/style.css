@@ -194,3 +194,6 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 .secrow{flex-wrap:wrap}
 #formC button.on,.colrow button.on,#secRow button.on{background:#2b2b2b!important;color:#fff!important;border-color:#2b2b2b!important}
 .colrow{gap:4px}.colrow button{padding:5px 7px;font-size:12px}.vdiv{margin:0 2px}.rlab{font-size:11px}
+.colrow{gap:3px}.colrow button{padding:4px 6px;font-size:11px;min-width:0}.colrow .chips{gap:3px}.vdiv{margin:0 1px}.rlab{font-size:10px}
+#formC button.on{color:#fff!important;opacity:1!important}
+.colrow button{padding:3px 5px;font-size:10.5px;letter-spacing:-.2px}.colrow{overflow:hidden}

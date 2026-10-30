@@ -67,9 +67,10 @@ function setTemplate(t) {
   if (t === 'p3') { S.layout = 'straight'; S.walls[0].sections = [A(), B(), D()]; }
   if (t === 'p6') { S.layout = 'straight'; S.walls[0].sections = [A(), B(), C(), C(), B(), D()]; }
   if (t === 'l23') { S.layout = 'L'; S.walls[0].sections = [A(), B()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[1].sections = [B(), D()]; }
+  if (t === 'zero') { S.layout = 'straight'; S.walls[0].sections = [{ w: 90, items: [] }, { w: 90, items: [] }]; }
   if (t === 'u3') { S.layout = 'U'; S.walls[0].sections = [A(), B(), D()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[2].gap = Math.max(S.walls[2].gap || 0, 46); S.walls[1].sections = [B(), D()]; S.walls[2].sections = [D(), B()]; }
   cur = { w: mainWi(), s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); // templates never move the camera (only Сброс / Ракурс)
-  formS(); if (['p2', 'p3', 'p6', 'u3', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? frontAz() : 0; orb.snapAz = false; orb.snapTo = null; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) centerCorner(); applyCam(); } // straight templates: frontal view
+  formS(); if (['p2', 'p3', 'p6', 'zero', 'u3', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? frontAz() : 0; orb.snapAz = false; orb.snapTo = null; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) { orb.R *= 1.12; orb.h = orb.T.y + (orb.h - orb.T.y) * 1.12; } applyCam(); } // straight templates: frontal view
 }
 function cardPreset() {
   const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
@@ -131,14 +132,7 @@ scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 import('three/addons/loaders/RGBELoader.js').then(({ RGBELoader }) => new RGBELoader().load('tex/studio_small_09_1k.hdr', t => { t.mapping = THREE.EquirectangularReflectionMapping; window.HDR_ENV = pm.fromEquirectangular(t).texture; t.dispose(); try { applyGlareShadow(); } catch (e) {} })).catch(() => {});
 // SSAO only for the 📷 snapshot (loaded in the background, never used in the live view)
 let POST = null; Promise.all(['postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/SAOPass.js', 'postprocessing/OutputPass.js'].map(f => import('three/addons/' + f))).then(m => { POST = Object.assign({}, ...m); }).catch(() => {});
-const camera = new THREE.PerspectiveCamera(35, 1, 0.08, 200);
-/* v14: orthographic projection; the visible height equals what a 30 deg lens sees at the target distance, so all fit/zoom code keeps working */
-camera.isPerspectiveCamera = false; camera.isOrthographicCamera = true;
-camera.updateProjectionMatrix = function () { let tg = null; try { tg = orb.on ? orb.T : controls.target; } catch (e) {} const d = tg ? Math.max(0.05, this.position.distanceTo(tg)) : 4;
-  const h = d * Math.tan(this.fov * Math.PI / 360) / (this.zoom || 1), w = h * this.aspect; let l = -w, t = h; const W = 2 * w, H = 2 * h;
-  if (this.view && this.view.enabled) { const sx = W / this.view.fullWidth, sy = H / this.view.fullHeight; l += sx * this.view.offsetX; t -= sy * this.view.offsetY; this.left = l; this.right = l + sx * this.view.width; this.top = t; this.bottom = t - sy * this.view.height; }
-  else { this.left = -w; this.right = w; this.top = h; this.bottom = -h; }
-  this.projectionMatrix.makeOrthographic(this.left, this.right, this.top, this.bottom, this.near, this.far); this.projectionMatrixInverse.copy(this.projectionMatrix).invert(); };
+const camera = new THREE.PerspectiveCamera(35, 1, 0.08, 40);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minPolarAngle = 0.05; controls.maxPolarAngle = Math.PI - 0.05; controls.minDistance = 0.5; controls.maxDistance = 45;
 const hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc2, 0.6); scene.add(hemi);
@@ -1062,11 +1056,18 @@ function syncFromCam(kind) {
 }
 function applyCam(cam = camera) {
   const o = orb; if (o.snapTo != null) { let d = o.snapTo - o.az; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; if (Math.abs(d) < 0.0005) { o.az = o.snapTo; o.snapTo = null; } else o.az += d * 0.2; } if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  /* v14: orthographic view (no perspective): real pitch, verticals stay vertical and parallel at every angle, the 90 deg corner never narrows, sizes fixed */
-  o.h = Math.max(o.T.y - o.R * Math.tan(30 * Math.PI / 180), Math.min(o.T.y + o.R * Math.tan(78 * Math.PI / 180), o.h));
-  if (cam.fov !== 30 || cam.far < 150) { cam.fov = 30; cam.far = 200; }
-  cam.position.set(o.T.x + o.R * Math.sin(o.az), o.h, o.T.z + o.R * Math.cos(o.az));
-  cam.up.set(0, 1, 0); cam.lookAt(o.T); cam.clearViewOffset(); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+  o.h = Math.max(o.T.y - o.R * Math.tan(22 * Math.PI / 180), Math.min(o.T.y + o.R * Math.tan(40 * Math.PI / 180), o.h)); // v13h: top 40; v13d: elevation -20..35 deg (pure lens shift); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
+  /* v13d: longer lens at steep angles - FOV 30 -> 11 deg as |elevation| goes 10 deg -> cap, distance scaled so framing stays the same (flatter perspective, corner stays ~90 deg, less shift stretch) */
+  { const el = Math.atan2(o.h - o.T.y, o.R), cap = (el >= 0 ? 35 : 22) * Math.PI / 180, u = Math.max(0, Math.min(1, (Math.abs(el) - (el >= 0 ? 10 : 2) * Math.PI / 180) / (cap - (el >= 0 ? 10 : 2) * Math.PI / 180))), sm = u * u * (3 - 2 * u), f0 = 30, f = window.__noFovK ? f0 : f0 - 19 * sm; /* down to 11 deg (near-orthographic) at the caps */
+    const k = Math.tan(f0 * Math.PI / 360) / Math.tan(f * Math.PI / 360);
+    { const fr = (40 + 2 * Math.hypot(o.R, o.h - o.T.y)) * k; if (Math.abs(cam.fov - f) > 1e-6 || Math.abs(cam.far - fr) > 0.5) { cam.fov = f; cam.far = fr; cam.updateProjectionMatrix(); } }
+    cam.position.set(o.T.x + k * o.R * Math.sin(o.az), o.T.y + k * (o.h - o.T.y), o.T.z + k * o.R * Math.cos(o.az)); }
+  // plain perspective: true tilt at every angle, no lens shift, free orbit all around (walls facing the camera hide via tickOcc) // lens shift keeps uprights vertical up to ~35 deg, real pitch only beyond
+  // two-point perspective: level camera + vertical lens shift keeps verticals straight at normal angles;
+  // the shift is capped (30°) so the image never stretches, and from 40° to 65° it hands over smoothly to a real tilt
+  const a = Math.atan2(o.h - o.T.y, o.R), ea = Math.abs(a), D2R = Math.PI / 180, sh = ea, p = 0; /* v13b: pure lens shift at all elevations - pitch always 0, verticals stay vertical */
+  cam.up.set(0, 1, 0); cam.lookAt(o.T.x, cam.position.y, o.T.z); cam.clearViewOffset(); cam.updateMatrixWorld();
+  if (sh > 1e-4) { const yN = -Math.tan(Math.sign(a) * sh) / Math.tan(cam.fov * Math.PI / 360), H = 1000, W = 1000 * cam.aspect; cam.setViewOffset(W, H, 0, -yN * H / 2, W, H); }
 }
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
@@ -1130,21 +1131,10 @@ function hlOn(g) { g.traverse(m => { if (!m.isMesh || !m.material || m.userData.
 function hlOff(g) { g.traverse(m => { if (m.userData.hlOrig) { m.material.dispose(); m.material = m.userData.hlOrig; delete m.userData.hlOrig; } }); }
 let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g || null; if (g) hlOn(g); }
 // v13e: the LEFT wall is the main wall and is faced squarely (one-point look); L: left = side wall (az +90), Lr/straight/U: left = back wall (az 0)
-function frontAz() { return S.layout === 'L' ? Math.PI / 4 : S.layout === 'Lr' ? -Math.PI / 4 : 0; } /* v14: corner layouts face the corner diagonally, corner line in the middle */
+function frontAz() { return S.layout === 'L' ? Math.PI / 2 : 0; }
 function formS() { const f = S.layout === 'straight' ? 'p3' : S.layout === 'U' ? 'u3' : 'l23'; document.querySelectorAll('#formC [data-start]').forEach(b => b.classList.toggle('on', b.dataset.start === f)); }
-// v14: put the vertical corner line in the middle of the screen, whole system visible with air on both sides
-function centerCorner() { if (!orb.on || !(S.layout === 'L' || S.layout === 'Lr') || !WG.length) return; const F = frame(), cx = S.layout === 'L' ? F.xL : F.xR, b = meshBox(); if (b.isEmpty()) return;
-  const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? b.max.x : b.min.x, i & 2 ? b.max.y : b.min.y, i & 4 ? b.max.z : b.min.z));
-  const sf = safeNdc(), q = new THREE.Vector3(), ym = (sf.y0 + sf.y1) / 2, yh = (sf.y1 - sf.y0) / 2 * 1.12;
-  for (let it = 0; it < 14; it++) { applyCam(); camera.updateMatrixWorld(); const d = camera.position.distanceTo(orb.T), t = Math.tan(camera.fov * Math.PI / 360), rt = V(1, 0, 0).applyQuaternion(camera.quaternion); rt.y = 0; rt.normalize();
-    q.set(cx, orb.T.y, 0).project(camera); const dx = q.x * d * t * camera.aspect; orb.T.addScaledVector(rt, dx);
-    let ex = 0, y0 = 9, y1 = -9; applyCam(); camera.updateMatrixWorld(); pts.forEach(p => { q.copy(p).project(camera); ex = Math.max(ex, Math.abs(q.x)); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); });
-    const dy = ((y0 + y1) / 2 - ym) * d * t; orb.T.y += dy; orb.h += dy;
-    const k = Math.max(0.6, Math.min(1.6, Math.max(ex / 0.84, (y1 - y0) / 2 / yh))); orb.h = orb.T.y + (orb.h - orb.T.y) * k; orb.R *= k;
-    if (Math.abs(k - 1) < 0.01 && Math.abs(dx) < 0.003 && Math.abs(dy) < 0.003) break; }
-  applyCam(); if (WG.length) rebuildDims(); }
-function snapAzs() { return S.layout === 'L' ? [Math.PI / 2, Math.PI / 4, 0] : S.layout === 'Lr' ? [0, -Math.PI / 4, -Math.PI / 2] : [0]; }
-function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') { fitView(); if (kind === 'nice') centerCorner(); } }
+function snapAzs() { return S.layout === 'L' ? [Math.PI / 2, 0] : S.layout === 'Lr' ? [0, -Math.PI / 2] : [0]; }
+function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') fitView(); }
 function camTo0(kind) {
   if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
@@ -1166,7 +1156,7 @@ function adapt() { return; /* v13g: fixed quality - no pixel-ratio / shadow-map 
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
 function aspectGuard() { const w = view.clientWidth, h = view.clientHeight; if (w && h && (Math.abs(camera.aspect - w / h) > 1e-3 || Math.abs(renderer.domElement.width - Math.round(w * renderer.getPixelRatio())) > 1)) { resize(); if (orb.on) applyCam(); } } // v13b (from v12e): canvas/camera aspect always match - no squeezed first frame
-renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); camera.updateProjectionMatrix(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
 
 // ---------- photo ----------
 let photo = null, photoImg = null;
@@ -2154,4 +2144,3 @@ var _bk = 0; function bakeShadows() { if (S.studio || (photo && !$('showRoom').c
   Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 0.3, far: 20 }); sun.shadow.camera.updateProjectionMatrix(); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02; sun.shadow.radius = 7; sun.shadow.blurSamples = 12;
   clearTimeout(_bk); renderer.shadowMap.needsUpdate = true; _bk = setTimeout(() => { sun.castShadow = true; sun.color.set(0xfff1e0); sun.position.set(c.x + sg * 2.4, c.y + 3.8, c.z + 3.6); let n = 12; const f = () => { renderer.shadowMap.needsUpdate = true; if (--n > 0) requestAnimationFrame(f); }; f(); }, 180); }
 setInterval(() => { if (!renderer.shadowMap.autoUpdate && sun.castShadow && !sun.shadow.map) renderer.shadowMap.needsUpdate = true; }, 250);
-window.__gs.view = (az, el) => { orb.on = true; orb.az = az; const d = Math.hypot(orb.R, orb.h - orb.T.y); orb.R = d * Math.cos(el); orb.h = orb.T.y + d * Math.sin(el); applyCam(); };
