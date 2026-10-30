@@ -1463,10 +1463,7 @@ function linkAct(k) { const sc = S.walls[cur.w].sections[cur.s], o = sc.items[cu
 function removeItem(sec, i) { const o = sec.items[i]; sec.items.splice(i, 1); if (o && o.g) sec.items = sec.items.filter(p => p.lk !== o.g); }
 function secHint(wi) { const sc = S.walls[wi].sections, g = {}; sc.forEach(x => g[x.w] = (g[x.w] || 0) + 1); const word = n => n % 10 === 1 && n % 100 !== 11 ? 'секция' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'секции' : 'секций'; return Object.entries(g).map(([w, n]) => `${n} ${word(n)} по ${w} см`).join(' + ') + ` = ${Math.round(wallWidth(wi) / 10)} см`; }
 // v14: change one section width; the neighbours give or take the difference so the wall width stays
-function setSecW(W, i, v) { const sc = W.sections, n = sc.length; v = Math.max(20, Math.min(200, Math.round(v))); if (n < 2) { sc[0].w = v; return; }
-  let d = v - sc[i].w; const order = []; for (let k = 1; k < n; k++) { if (i + k < n) order.push(i + k); if (i - k >= 0) order.push(i - k); }
-  for (const j of order) { if (!d) break; const nw = Math.max(20, Math.min(200, sc[j].w - d)); d -= sc[j].w - nw; sc[j].w = nw; }
-  sc[i].w = v - d; }
+function setSecW(W, i, v) { const sc = W.sections; v = Math.max(20, Math.min(200, Math.round(v))); if (sc[i]) sc[i].w = v; } /* v14: only the selected section changes */
 function renderSizes() { formS();
   const W = S.walls[cur.w], tot = Math.round(wallWidth(cur.w) / 10), n = W.sections.length, sw = W.sections[0] ? W.sections[0].w : 90, same = W.sections.every(x => x.w === sw);
   const btn = (v, on, attr, label) => `<button ${attr}="${v}" class="${on ? 'on' : ''}">${label ?? v}</button>`;
