@@ -19,23 +19,25 @@
 <div id="floatBar"><button id="delBtn" class="rnd hide" title="Удалить выбранный элемент">🗑</button><button id="undoBtn" class="rnd" title="Отменить (Ctrl+Z)">↶</button><button id="redoBtn" class="rnd" title="Повторить (Ctrl+Y)">↷</button><button id="niceBtn" class="acc">✨ Ракурс</button><button id="dimBtn">Размеры ▾</button><button id="wallsBtn">Стены ▾</button><button id="resetBtn" class="danger">Сброс</button><button id="camBtn" class="rnd" title="Снимок 3:4, 1800 × 2400" aria-label="Снимок"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 8h3l1.6-2.2h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.3" r="3.6"/></svg></button></div>
 </div>
 <div id="panel">
-<div class="grp"><h3>1. Каркас</h3>
-<div class="colrow"><div class="chips" id="sysC"><button data-sc="white">Белый</button><button data-sc="silver">Металлик</button><button data-sc="black">Черный</button></div><span class="vdiv"></span><span class="rlab">Штанга</span><div class="chips" id="rodCC"><button data-rc="chrome">Хром</button><button data-rc="white">Белый</button><button data-rc="black">Черный</button></div></div>
-<div class="szlab">Форма</div><div class="chips" id="formC"><button data-start="l23">Угловая</button><button data-start="p3">Прямая</button><button data-start="u3">П-образная</button><button data-start="zero">С нуля</button></div>
-<select id="layout"></select>
+<div class="grp"><h3 class="hide">1. Каркас</h3>
+<div class="szlab">Каркас</div><div class="chips colrow" id="sysC"><button data-sc="white">Белый</button><button data-sc="black">Черный</button><button data-sc="silver">Металлик</button></div>
+<div class="szlab">Штанга</div><div class="chips colrow" id="rodCC"><button data-rc="chrome">Хром</button><button data-rc="white">Белый</button><button data-rc="black">Черный</button></div>
+<div class="szlab">Форма</div><div class="chips" id="formC"><button data-start="l23">Угловая</button><button data-start="p3">Прямая</button><button data-start="u3">П-образная</button></div>
+<select id="layout" class="hide"></select>
 <div class="blk"><h4>Размеры</h4>
 <div id="wallSz"></div><div class="hide"><input type="range" id="rW" min="40" max="720"><input type="number" id="fW"><div id="szW"></div><div id="szN"></div><span id="szWnote"></span><div id="ownW"></div></div>
-<div class="szlab">Секции стены, нажмите секцию и задайте ее ширину</div><div class="sz secrow" id="secRow"></div>
+<div class="szlab">Глубина полок и корзин, см</div><div class="sz" id="szD"></div>
+<div class="szlab">Секция</div><div class="sz secrow" id="secRow"></div>
 <div class="szlab">Ширина секции <b id="secNo"></b>, см <span class="foot">(полки 463 / 603 / 903 / 1203 мм)</span></div><div class="sz" id="szS"></div>
 <div class="own hide" id="ownS"><input type="range" id="rS" min="20" max="200" step="1"><input type="number" id="fS" min="20" max="200" step="1"></div>
-<div class="szlab">Глубина полок и корзин, см</div><div class="sz" id="szD"></div>
 <div class="szlab">Высота стоек, см</div><div class="sz" id="szH"></div>
 <div class="own hide" id="ownH"><input type="range" id="rH" min="50" max="300" step="1"><input type="number" id="fH" min="50" max="300" step="1"></div>
 </div>
 <div class="blk"><h4>Расположение</h4>
+<div class="szlab gapT">Поднять секции от пола (низ стоек): <b id="liftV"></b> см</div><span class="rng"><input type="range" id="lift" min="0" max="150" step="1"><i class="mark" style="left:calc(20 / 150 * (100% - 18px) + 9px)"></i></span><p class="foot"><i class="mark inl"></i> 20 см - стандарт: снизу помещается обувная полка</p>
+
 <div id="angBox1" class="angbox"></div>
 <div id="posGap"></div>
-<div class="szlab gapT">Поднять секции от пола (низ стоек): <b id="liftV"></b> см</div><span class="rng"><input type="range" id="lift" min="0" max="150" step="1"><i class="mark" style="left:calc(20 / 150 * (100% - 18px) + 9px)"></i></span><p class="foot"><i class="mark inl"></i> 20 см - стандарт: снизу помещается обувная полка</p>
 </div>
 <div class="hide"><input id="nSec" type="number"><select id="allW"><option value="">—</option></select><select id="setTpl"><option value=""></option></select><select id="postH"><option>512</option><option>1025</option><option>1156</option><option>1536</option><option>1920</option><option>2304</option><option value="custom">custom</option></select><input type="number" id="postHc"><input type="number" id="railTop"><select id="viewMode"><option value="all">Все</option><option value="frame">frame</option><option value="fill">fill</option></select><input type="number" id="fD"><input type="range" id="rD" min="30" max="50" step="10"><select id="bStyle"><option value="mesh">mesh</option><option value="plastic">plastic</option></select><select id="preset"><option value="warm">warm</option><option value="none">none</option></select><input type="checkbox" id="decor"><input type="checkbox" id="sunT"></div>
 </div>

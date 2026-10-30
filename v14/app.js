@@ -1472,9 +1472,9 @@ function renderSizes() { formS();
   const WS = [60, 90, 120, 150, 180, 240, 270, 300, 360];
   const AW = wallsActive(), tabs = AW.length > 1 ? '<div class="wtabs">' + (S.layout === 'L' ? [1, 0] : S.layout === 'U' ? [1, 0, 2] : AW).map((wi, j) => `<button data-wt="${wi}" class="${wi === cur.w ? 'on' : ''}">Стена ${j + 1}</button>`).join('') + '</div>' : '';
   $('wallSz').innerHTML = tabs + [cur.w].map(wi => { const t = Math.round(wallWidth(wi) / 10), nn = S.walls[wi].sections.length, nm = AW.length > 1 ? '' : 'Стена';
-    return `<div class="wallblk"><div class="szlab">Ширина стены (верхний рельс), см</div><div class="sz">${WS.map(v => `<button data-ww="${wi}:${v}" class="${v === t ? 'on' : ''}">${v}</button>`).join('')}<button data-wown="${wi}" class="${WS.includes(t) ? '' : 'on'}">Свой размер${WS.includes(t) ? '' : ': ' + t}</button></div>
+    return `<div class="wallblk"><div class="szlab">Количество секций</div><div class="sz cnt6">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div><div class="szlab">Ширина стены (верхний рельс), см</div><div class="sz">${WS.map(v => `<button data-ww="${wi}:${v}" class="${v === t ? 'on' : ''}">${v}</button>`).join('')}<button data-wown="${wi}" class="${WS.includes(t) ? '' : 'on'}">Свой размер${WS.includes(t) ? '' : ': ' + t}</button></div>
     <div class="own hide" id="wown${wi}"><input type="range" data-wr="${wi}" min="40" max="720" step="1" value="${t}"><input type="number" data-wf="${wi}" min="40" max="720" step="1" value="${t}"></div>
-    <div class="szlab">Количество секций</div><div class="sz cnt6">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div><p class="foot">${secHint(wi)}</p></div>`; }).join('');
+    <p class="foot">${secHint(wi)}</p></div>`; }).join('');
   const setW = (wi, v, live) => { const sc = S.walls[wi].sections, n = sc.length || 1, w = Math.max(20, Math.min(200, Math.round(v / n))), ws = live ? w : nearest([45, 60, 90, 120], w); sc.forEach(x => x.w = ws); clearTimeout(dimT); dimT = setTimeout(() => { rebuild(); if (!live) renderSec(); }, live ? 40 : 0); };
   const setN = (wi, n) => { const sc = S.walls[wi].sections, tot = wallWidth(wi) / 10, base = sc[sc.length - 1] || { w: 90, items: [] }; while (sc.length < n) sc.push(JSON.parse(JSON.stringify(base))); sc.length = n; const w = nearest([45, 60, 90, 120], tot / n); sc.forEach(x => x.w = w); cur.w = wi; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); };
   document.querySelectorAll('[data-ww]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.ww.split(':').map(Number); setW(wi, v); });
@@ -1493,8 +1493,8 @@ function renderSizes() { formS();
   $('szV').innerHTML = [['all', 'Все'], ['frame', 'Каркас'], ['fill', 'Наполнение']].map(([k, t]) => btn(k, (S.view || 'all') === k, 'data-zv', t)).join('');
   $('rS').value = $('fS').value = cw;
   const Q = (sel, f) => document.querySelectorAll(sel).forEach(b => b.onclick = () => f(b));
-  Q('[data-zs]', b => { setSecW(W, cur.s, +b.dataset.zs); rebuild(); renderSec(); });
-  Q('[data-sr]', b => { cur.s = +b.dataset.sr; cur.it = -1; renderSec(); rebuild(); });
+  Q('[data-zs]', b => { setSecW(W, cur.s, +b.dataset.zs); rebuild(); renderSec(); flashSec(cur.w, cur.s); });
+  Q('[data-sr]', b => { cur.s = +b.dataset.sr; cur.it = -1; renderSec(); rebuild(); flashSec(cur.w, cur.s); });
   Q('[data-zh]', b => { const lift = liftCm(), t0 = S.railTop; S.walls.forEach(w => delete w.postL); S.postH = +b.dataset.zh; S.railTop = Math.round(lift + S.postH / 10 + 1); shiftFill(t0, S.railTop); fix(); });
   Q('[data-zd]', b => setDepth(+b.dataset.zd));
   Q('[data-zv]', b => { S.view = b.dataset.zv; $('viewMode').value = S.view; rebuild(); renderSizes(); });
@@ -1811,17 +1811,19 @@ function cleanShot(fn) {
 }
 // wall outline flash (never in snapshots: cleanShot hides it)
 const flashG = new THREE.Group(); scene.add(flashG); let flashT0 = 0, flashMat = null;
-function flashWall(wi) {
+let flashHold = false; /* v14: selected section stays outlined */
+function flashSec(wi, si) { flashWall(wi, si); flashHold = true; }
+function flashWall(wi, si) { flashHold = false;
   const g = WG[wi]; if (!g) return; flashG.clear(); g.updateMatrixWorld(true);
   const tot = wallWidth(wi) * MM, top = S.railTop * 10 * MM + 0.035, xs = [0]; S.walls[wi].sections.forEach(s => xs.push(xs[xs.length - 1] + s.w / 100));
-  const bot = Math.min(...xs.map((x, i) => (S.railTop * 10 - 10 - postLen(wi, i)) * MM)) - 0.035, x0 = -0.05, x1 = tot + 0.05, th = 0.007, z = 0.012;
+  const bot = Math.min(...xs.map((x, i) => (S.railTop * 10 - 10 - postLen(wi, i)) * MM)) - 0.035, mir = false, x0 = si == null ? -0.05 : (mir ? xs[xs.length - 1] - xs[si + 1] : xs[si]) - 0.01, x1 = si == null ? tot + 0.05 : (mir ? xs[xs.length - 1] - xs[si] : xs[si + 1]) + 0.01, th = 0.007, z = 0.012;
   flashMat = new THREE.MeshBasicMaterial({ color: 0x2f7bff, transparent: true, opacity: 0, depthTest: false, toneMapped: false });
   const h = new THREE.Group(); h.matrixAutoUpdate = false; h.matrix.copy(g.matrixWorld); flashG.add(h);
   [[x1 - x0, th, (x0 + x1) / 2, top], [x1 - x0, th, (x0 + x1) / 2, bot], [th, top - bot, x0, (top + bot) / 2], [th, top - bot, x1, (top + bot) / 2]].forEach(([w, hh, x, y]) => { const m = new THREE.Mesh(BOX, flashMat); m.scale.set(w, hh, th); m.position.set(x, y, z); m.renderOrder = 30; h.add(m); });
   const fm = new THREE.MeshBasicMaterial({ color: 0x8cc4ff, transparent: true, opacity: 0, depthTest: false, depthWrite: false, toneMapped: false }); fm.userData.fill = true; const fp = new THREE.Mesh(BOX, fm); fp.scale.set(x1 - x0, top - bot, 0.002); fp.position.set((x0 + x1) / 2, (top + bot) / 2, 0.006); fp.renderOrder = 29; h.add(fp); window.__flashFill = fm;
   flashT0 = performance.now();
 }
-function tickFlash() { if (!flashMat) return; const t = (performance.now() - flashT0) / 1000; if (window.__flashFill) window.__flashFill.opacity = t < 1.1 ? 0.5 * Math.min(1, t * 6) * (t < 0.8 ? 1 : (1.1 - t) / 0.3) : 0; if (t > 1.3) { flashG.clear(); flashMat = null; return; } flashMat.opacity = 0.9 * Math.abs(Math.sin(t * Math.PI * 1.55)) * (1 - t / 1.3); }
+function tickFlash() { if (!flashMat) return; if (flashHold) { flashMat.opacity = 0.85; return; } const t = (performance.now() - flashT0) / 1000; if (window.__flashFill) window.__flashFill.opacity = t < 1.1 ? 0.5 * Math.min(1, t * 6) * (t < 0.8 ? 1 : (1.1 - t) / 0.3) : 0; if (t > 1.3) { flashG.clear(); flashMat = null; return; } flashMat.opacity = 0.9 * Math.abs(Math.sin(t * Math.PI * 1.55)) * (1 - t / 1.3); }
 // raise-from-floor: standard mark at 20 cm with haptic tick
 { let prev = liftCm(); $('lift').addEventListener('input', e => { const v = +e.target.value; if (v !== prev && (v === 20 || Math.sign(prev - 20) * Math.sign(v - 20) < 0)) haptic(); prev = v; }); }
 // delete selected item from the bottom strip
