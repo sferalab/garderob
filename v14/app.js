@@ -58,6 +58,7 @@ function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.
   if (!S.v9) { S.v9 = 1; S.room.ceilH = Math.max(285, S.room.ceilH || 0); if (S.room.glareM === 'bright') S.room.glareM = 'soft'; }
   if (!S.v91) { S.v91 = 1; S.room.ceilH = Math.max(300, S.room.ceilH || 0); S.__gapFix = true; }
   if (!S.v12e) { S.v12e = 1; S.room.ceiling = true; } S.room.extra = 400; /* v12e: ceiling follows the Потолок toggle */ S.room.ceilH = Math.max(230, Math.min(400, S.room.ceilH || 300));
+  if (!S.v14b) { S.v14b = 1; const lf = Math.round(S.railTop - 1 - S.postH / 10); if (lf < 20) S.railTop = 21 + S.postH / 10; } /* v14: default lift 20 cm (marked point) */
   S.walls.forEach(w => { if (w.gap == null) w.gap = 0; }); if (S.walls[0].gapR == null) S.walls[0].gapR = 0; return S; }
 function setTemplate(t) {
   const m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y: y + 2 }), sh = y => ({ t: 'shoe', d: 40, y }), pu = (y, h) => ({ t: 'pull', d: 40, y, h });
@@ -1472,16 +1473,17 @@ function renderSizes() { formS();
   const WS = [60, 90, 120, 150, 180, 240, 270, 300, 360];
   const AW = wallsActive(), tabs = AW.length > 1 ? '<div class="wtabs">' + (S.layout === 'L' ? [1, 0] : S.layout === 'U' ? [1, 0, 2] : AW).map((wi, j) => `<button data-wt="${wi}" class="${wi === cur.w ? 'on' : ''}">Стена ${j + 1}</button>`).join('') + '</div>' : '';
   $('wallSz').innerHTML = tabs + [cur.w].map(wi => { const t = Math.round(wallWidth(wi) / 10), nn = S.walls[wi].sections.length, nm = AW.length > 1 ? '' : 'Стена';
-    return `<div class="wallblk"><div class="szlab">Количество секций</div><div class="sz cnt6">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div><div class="szlab">Ширина стены (верхний рельс), см</div><div class="sz">${WS.map(v => `<button data-ww="${wi}:${v}" class="${v === t ? 'on' : ''}">${v}</button>`).join('')}<button data-wown="${wi}" class="${WS.includes(t) ? '' : 'on'}">Свой размер${WS.includes(t) ? '' : ': ' + t}</button></div>
-    <div class="own hide" id="wown${wi}"><input type="range" data-wr="${wi}" min="40" max="720" step="1" value="${t}"><input type="number" data-wf="${wi}" min="40" max="720" step="1" value="${t}"></div>
+    return `<div class="wallblk"><div class="szlab">Количество секций</div><div class="sz cnt6">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div><div class="szlab">Ширина стены</div><div class="wwrow"><button data-wm="${wi}:-1">−</button><b class="wwv" id="wwv${wi}">${t} см</b><button data-wm="${wi}:1">+</button></div>
+    <input class="wwr" type="range" data-wr="${wi}" min="40" max="720" step="1" value="${t}"><input type="number" class="hide" data-wf="${wi}" value="${t}">
     <p class="foot">${secHint(wi)}</p></div>`; }).join('');
   const setW = (wi, v, live) => { const sc = S.walls[wi].sections, n = sc.length || 1, w = Math.max(20, Math.min(200, Math.round(v / n))), ws = live ? w : nearest([45, 60, 90, 120], w); sc.forEach(x => x.w = ws); clearTimeout(dimT); dimT = setTimeout(() => { rebuild(); if (!live) renderSec(); }, live ? 40 : 0); };
-  const setN = (wi, n) => { const sc = S.walls[wi].sections, tot = wallWidth(wi) / 10, base = sc[sc.length - 1] || { w: 90, items: [] }; while (sc.length < n) sc.push(JSON.parse(JSON.stringify(base))); sc.length = n; const w = nearest([45, 60, 90, 120], tot / n); sc.forEach(x => x.w = w); cur.w = wi; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); };
+  const setN = (wi, n) => { const sc = S.walls[wi].sections, tot = wallWidth(wi) / 10, mk = () => ({ w: 90, items: [{ t: 'mesh', d: 40, y: LV.top }, { t: 'rail', d: 30, y: LV.rod }, { t: 'mesh', d: 40, y: LV.sh[4] }] }); while (sc.length < n) sc.push(mk()); sc.length = n; /* v14: corner end fixed, sections added/removed at the outer end, widths kept */ const keepCam = orb.on ? { T: orb.T.clone(), R: orb.R, h: orb.h, az: orb.az } : null; void tot; cur.w = wi; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); if (keepCam) { orb.T.copy(keepCam.T); orb.R = keepCam.R; orb.h = keepCam.h; orb.az = keepCam.az; applyCam(); } };
   document.querySelectorAll('[data-ww]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.ww.split(':').map(Number); setW(wi, v); });
   document.querySelectorAll('[data-wn]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.wn.split(':').map(Number); setN(wi, v); });
   document.querySelectorAll('[data-wt]').forEach(b => b.onclick = () => { cur = { w: +b.dataset.wt, s: 0, it: -1 }; renderSec(); rebuild(); flashWall(cur.w); });
   document.querySelectorAll('[data-wown]').forEach(b => b.onclick = () => $('wown' + b.dataset.wown).classList.toggle('hide'));
-  document.querySelectorAll('[data-wr]').forEach(el => { el.oninput = () => { el.nextElementSibling.value = el.value; setW(+el.dataset.wr, +el.value, true); }; el.onchange = () => setW(+el.dataset.wr, +el.value); });
+  document.querySelectorAll('[data-wr]').forEach(el => { el.oninput = () => { el.nextElementSibling.value = el.value; const lb = $('wwv' + el.dataset.wr); if (lb) lb.textContent = el.value + ' см'; setW(+el.dataset.wr, +el.value, true); }; el.onchange = () => setW(+el.dataset.wr, +el.value); });
+  document.querySelectorAll('[data-wm]').forEach(b => b.onclick = () => { const [wi, d] = b.dataset.wm.split(':').map(Number), L4 = [45, 60, 90, 120], sc = S.walls[wi].sections; sc.forEach(x => { const k = L4.indexOf(nearest(L4, x.w)); x.w = L4[Math.max(0, Math.min(3, k + d))]; }); rebuild(); renderSec(); });
   document.querySelectorAll('[data-wf]').forEach(el => el.onchange = () => setW(+el.dataset.wf, +el.value || 90));
   const SS = [[45, '463'], [60, '603'], [90, '903'], [120, '1203']];
   if (cur.s >= W.sections.length) cur.s = 0; const cs = W.sections[cur.s] || W.sections[0], cw = cs ? cs.w : 90;
@@ -1816,14 +1818,14 @@ function flashSec(wi, si) { flashWall(wi, si); flashHold = true; }
 function flashWall(wi, si) { flashHold = false;
   const g = WG[wi]; if (!g) return; flashG.clear(); g.updateMatrixWorld(true);
   const tot = wallWidth(wi) * MM, top = S.railTop * 10 * MM + 0.035, xs = [0]; S.walls[wi].sections.forEach(s => xs.push(xs[xs.length - 1] + s.w / 100));
-  const bot = Math.min(...xs.map((x, i) => (S.railTop * 10 - 10 - postLen(wi, i)) * MM)) - 0.035, mir = false, x0 = si == null ? -0.05 : (mir ? xs[xs.length - 1] - xs[si + 1] : xs[si]) - 0.01, x1 = si == null ? tot + 0.05 : (mir ? xs[xs.length - 1] - xs[si] : xs[si + 1]) + 0.01, th = 0.007, z = 0.012;
-  flashMat = new THREE.MeshBasicMaterial({ color: 0x2f7bff, transparent: true, opacity: 0, depthTest: false, toneMapped: false });
+  const bot = Math.min(...xs.map((x, i) => (S.railTop * 10 - 10 - postLen(wi, i)) * MM)) - 0.035, mir = false, x0 = si == null ? -0.05 : (mir ? xs[xs.length - 1] - xs[si + 1] : xs[si]) - 0.01, x1 = si == null ? tot + 0.05 : (mir ? xs[xs.length - 1] - xs[si] : xs[si + 1]) + 0.01, th = si == null ? 0.007 : 0.02, z = 0.012;
+  flashMat = new THREE.MeshBasicMaterial({ color: si == null ? 0x2f7bff : 0xc8962e, transparent: true, opacity: 0, depthTest: false, toneMapped: false });
   const h = new THREE.Group(); h.matrixAutoUpdate = false; h.matrix.copy(g.matrixWorld); flashG.add(h);
   [[x1 - x0, th, (x0 + x1) / 2, top], [x1 - x0, th, (x0 + x1) / 2, bot], [th, top - bot, x0, (top + bot) / 2], [th, top - bot, x1, (top + bot) / 2]].forEach(([w, hh, x, y]) => { const m = new THREE.Mesh(BOX, flashMat); m.scale.set(w, hh, th); m.position.set(x, y, z); m.renderOrder = 30; h.add(m); });
-  const fm = new THREE.MeshBasicMaterial({ color: 0x8cc4ff, transparent: true, opacity: 0, depthTest: false, depthWrite: false, toneMapped: false }); fm.userData.fill = true; const fp = new THREE.Mesh(BOX, fm); fp.scale.set(x1 - x0, top - bot, 0.002); fp.position.set((x0 + x1) / 2, (top + bot) / 2, 0.006); fp.renderOrder = 29; h.add(fp); window.__flashFill = fm;
+  const fm = new THREE.MeshBasicMaterial({ color: si == null ? 0x8cc4ff : 0xe0b050, transparent: true, opacity: 0, depthTest: false, depthWrite: false, toneMapped: false }); fm.userData.fill = true; const fp = new THREE.Mesh(BOX, fm); fp.scale.set(x1 - x0, top - bot, 0.002); fp.position.set((x0 + x1) / 2, (top + bot) / 2, 0.006); fp.renderOrder = 29; h.add(fp); window.__flashFill = fm;
   flashT0 = performance.now();
 }
-function tickFlash() { if (!flashMat) return; if (flashHold) { flashMat.opacity = 0.85; return; } const t = (performance.now() - flashT0) / 1000; if (window.__flashFill) window.__flashFill.opacity = t < 1.1 ? 0.5 * Math.min(1, t * 6) * (t < 0.8 ? 1 : (1.1 - t) / 0.3) : 0; if (t > 1.3) { flashG.clear(); flashMat = null; return; } flashMat.opacity = 0.9 * Math.abs(Math.sin(t * Math.PI * 1.55)) * (1 - t / 1.3); }
+function tickFlash() { if (!flashMat) return; if (flashHold) { flashMat.opacity = 0.95; if (window.__flashFill) window.__flashFill.opacity = 0.32; return; } const t = (performance.now() - flashT0) / 1000; if (window.__flashFill) window.__flashFill.opacity = t < 1.1 ? 0.5 * Math.min(1, t * 6) * (t < 0.8 ? 1 : (1.1 - t) / 0.3) : 0; if (t > 1.3) { flashG.clear(); flashMat = null; return; } flashMat.opacity = 0.9 * Math.abs(Math.sin(t * Math.PI * 1.55)) * (1 - t / 1.3); }
 // raise-from-floor: standard mark at 20 cm with haptic tick
 { let prev = liftCm(); $('lift').addEventListener('input', e => { const v = +e.target.value; if (v !== prev && (v === 20 || Math.sign(prev - 20) * Math.sign(v - 20) < 0)) haptic(); prev = v; }); }
 // delete selected item from the bottom strip
