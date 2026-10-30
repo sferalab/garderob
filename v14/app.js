@@ -67,11 +67,11 @@ function setTemplate(t) {
   if (t === 'p2') { S.layout = 'straight'; S.walls[0].sections = [A(), B()]; }
   if (t === 'p3') { S.layout = 'straight'; S.walls[0].sections = [A(), B(), D()]; }
   if (t === 'p6') { S.layout = 'straight'; S.walls[0].sections = [A(), B(), C(), C(), B(), D()]; }
-  if (t === 'l23') { const D0 = defaults(); S.layout = 'L'; S.q = D0.q; D0.walls.forEach((w, i) => { if (S.walls[i]) { S.walls[i].sections = w.sections; S.walls[i].gap = w.gap; } }); } /* v14: same as start view */
+  if (t === 'l23') { const D0 = migrate(defaults()); S.layout = D0.layout; S.q = D0.q; S.walls = D0.walls; S.railTop = D0.railTop; S.postH = D0.postH; S.room.angle = D0.room.angle; S.__fresh = true; /* same auto gaps as Сброс */ } /* v14: same as start view */
   if (t === 'zero') { S.layout = 'straight'; S.walls[0].sections = [{ w: 90, items: [] }, { w: 90, items: [] }]; }
   if (t === 'u3') { S.layout = 'U'; S.walls[0].sections = [A(), B(), D()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[2].gap = Math.max(S.walls[2].gap || 0, 46); S.walls[1].sections = [B(), D()]; S.walls[2].sections = [D(), B()]; }
   cur = { w: mainWi(), s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); // templates never move the camera (only Сброс / Ракурс)
-  formS(); if (['p2', 'p3', 'p6', 'zero', 'u3', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? (S.layout === 'Lr' ? -1 : 1) * Math.PI / 4 : 0; orb.snapAz = false; orb.snapTo = null; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) { camTo('nice'); } applyCam(); } // straight templates: frontal view
+  formS(); if (t === 'l23') { lastCam = 'nice'; orb.T.set(0, 1, 0); orb.az = 0; orb.R = 4; orb.h = 1.5; orb.snapAz = false; orb.snapTo = null; camera.fov = 30; camera.updateProjectionMatrix(); camTo('nice'); fitView(); applyCam(); } /* v14: same camera path as page load */ /* v14: exactly the start view */ else if (['p2', 'p3', 'p6', 'zero', 'u3'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? (S.layout === 'Lr' ? -1 : 1) * Math.PI / 4 : 0; orb.snapAz = false; orb.snapTo = null; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) { camTo('nice'); } applyCam(); } // straight templates: frontal view
 }
 function cardPreset() {
   const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
