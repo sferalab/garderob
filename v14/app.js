@@ -70,7 +70,7 @@ function setTemplate(t) {
   if (t === 'zero') { S.layout = 'straight'; S.walls[0].sections = [{ w: 90, items: [] }, { w: 90, items: [] }]; }
   if (t === 'u3') { S.layout = 'U'; S.walls[0].sections = [A(), B(), D()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[2].gap = Math.max(S.walls[2].gap || 0, 46); S.walls[1].sections = [B(), D()]; S.walls[2].sections = [D(), B()]; }
   cur = { w: mainWi(), s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); // templates never move the camera (only Сброс / Ракурс)
-  formS(); if (['p2', 'p3', 'p6', 'zero', 'u3', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? frontAz() : 0; orb.snapAz = false; orb.snapTo = null; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) { orb.R *= 1.12; orb.h = orb.T.y + (orb.h - orb.T.y) * 1.12; } applyCam(); } // straight templates: frontal view
+  formS(); if (['p2', 'p3', 'p6', 'zero', 'u3', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? (S.layout === 'Lr' ? -1 : 1) * Math.PI / 4 : 0; orb.snapAz = false; orb.snapTo = null; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) centerC(); applyCam(); } // straight templates: frontal view
 }
 function cardPreset() {
   const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
@@ -1056,9 +1056,9 @@ function syncFromCam(kind) {
 }
 function applyCam(cam = camera) {
   const o = orb; if (o.snapTo != null) { let d = o.snapTo - o.az; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; if (Math.abs(d) < 0.0005) { o.az = o.snapTo; o.snapTo = null; } else o.az += d * 0.2; } if (o.snapAz) { o.az *= 0.8; if (Math.abs(o.az) < 0.0005) { o.az = 0; o.snapAz = false; } }
-  o.h = Math.max(o.T.y - o.R * Math.tan(22 * Math.PI / 180), Math.min(o.T.y + o.R * Math.tan(40 * Math.PI / 180), o.h)); // v13h: top 40; v13d: elevation -20..35 deg (pure lens shift); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
+  o.h = Math.max(o.T.y - o.R * Math.tan(18 * Math.PI / 180), Math.min(o.T.y + o.R * Math.tan(28 * Math.PI / 180), o.h)); // v13h: top 40; v13d: elevation -20..35 deg (pure lens shift); lower limit as v11o // up to ~87 deg above/below: straight-down view possible
   /* v13d: longer lens at steep angles - FOV 30 -> 11 deg as |elevation| goes 10 deg -> cap, distance scaled so framing stays the same (flatter perspective, corner stays ~90 deg, less shift stretch) */
-  { const el = Math.atan2(o.h - o.T.y, o.R), cap = (el >= 0 ? 35 : 22) * Math.PI / 180, u = Math.max(0, Math.min(1, (Math.abs(el) - (el >= 0 ? 10 : 2) * Math.PI / 180) / (cap - (el >= 0 ? 10 : 2) * Math.PI / 180))), sm = u * u * (3 - 2 * u), f0 = 30, f = window.__noFovK ? f0 : f0 - 19 * sm; /* down to 11 deg (near-orthographic) at the caps */
+  { const el = Math.atan2(o.h - o.T.y, o.R), cap = (el >= 0 ? 28 : 18) * Math.PI / 180, u = Math.max(0, Math.min(1, (Math.abs(el) - (el >= 0 ? 10 : 2) * Math.PI / 180) / (cap - (el >= 0 ? 10 : 2) * Math.PI / 180))), sm = u * u * (3 - 2 * u), f0 = 30, f = window.__noFovK ? f0 : f0 - 19 * sm; /* down to 11 deg (near-orthographic) at the caps */
     const k = Math.tan(f0 * Math.PI / 360) / Math.tan(f * Math.PI / 360);
     { const fr = (40 + 2 * Math.hypot(o.R, o.h - o.T.y)) * k; if (Math.abs(cam.fov - f) > 1e-6 || Math.abs(cam.far - fr) > 0.5) { cam.fov = f; cam.far = fr; cam.updateProjectionMatrix(); } }
     cam.position.set(o.T.x + k * o.R * Math.sin(o.az), o.T.y + k * (o.h - o.T.y), o.T.z + k * o.R * Math.cos(o.az)); }
@@ -1099,7 +1099,7 @@ function CAMEXP() { return { int: 1.1, por: 1.03 }[camK()] || 1.0; }
 // interior-photographer cameras: own lens, height and viewpoint; verticals stay vertical (level camera + lens shift)
 function camPhoto(k) {
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3()), sg = S.layout === 'Lr' ? -1 : 1, corner = S.layout === 'L' || S.layout === 'Lr', asp = camera.aspect;
-  const P = { int: { fov: 30, az: corner ? frontAz() : 0, h: 1.45, k: 0.8 }, por: { fov: 13, az: corner ? 0.5 : 0, h: c.y + 0.05, k: 1.04 }, top3: { fov: 32, az: corner ? 0.68 : 0.35, el: 0.5, k: 1.1 } }[k];
+  const P = { int: { fov: 30, az: corner ? Math.PI / 4 : 0, h: 1.45, k: 0.8 }, por: { fov: 13, az: corner ? 0.5 : 0, h: c.y + 0.05, k: 1.04 }, top3: { fov: 32, az: corner ? 0.68 : 0.35, el: 0.5, k: 1.1 } }[k];
   camera.fov = P.fov; camera.updateProjectionMatrix(); const f = P.fov * Math.PI / 180, t = Math.tan(f / 2);
   const span = Math.max(sz.x, 1) * Math.cos(P.az * 0.6) + sz.z * Math.sin(P.az), dist = Math.max(sz.y * 1.12 / (2 * t), (span * 1.1 + 0.2) / (2 * t * asp)) * P.k + sz.z * 0.4;
   const dir = V(sg * Math.sin(P.az), 0, Math.cos(P.az)); camera.position.copy(c).addScaledVector(dir, dist); camera.position.y = P.el ? c.y + dist * Math.sin(P.el) : P.h;
@@ -1134,7 +1134,10 @@ let HLG = null; function hlOnly(g) { if (HLG && HLG !== g) hlOff(HLG); HLG = g |
 function frontAz() { return S.layout === 'L' ? Math.PI / 2 : 0; }
 function formS() { const f = S.layout === 'straight' ? 'p3' : S.layout === 'U' ? 'u3' : 'l23'; document.querySelectorAll('#formC [data-start]').forEach(b => b.classList.toggle('on', b.dataset.start === f)); }
 function snapAzs() { return S.layout === 'L' ? [Math.PI / 2, 0] : S.layout === 'Lr' ? [0, -Math.PI / 2] : [0]; }
-function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') fitView(); }
+function camTo(kind) { camTo0(kind); if (kind !== 'card' && kind !== 'top') { fitView(); if (kind === 'nice') centerC(); } }
+/* v14: corner line exactly in the horizontal middle, extra air for the side that grows */
+function centerC() { if (!orb.on || !(S.layout === 'L' || S.layout === 'Lr')) return; const F = frame(), cx = S.layout === 'L' ? F.xL : F.xR, rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)), off = (cx - orb.T.x) * rt.x + (0 - orb.T.z) * rt.z;
+  orb.T.addScaledVector(rt, off); const k = 1 + Math.min(0.5, Math.abs(off) * 0.35) + 0.08; orb.R *= k; orb.h = orb.T.y + (orb.h - orb.T.y) * k; applyCam(); }
 function camTo0(kind) {
   if (kind === 'nice' && camK() !== 'std') { camPhoto(camK()); document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === kind)); if (WG.length) rebuildDims(); return; }
   const c = bbox.getCenter(new THREE.Vector3()), sz = bbox.getSize(new THREE.Vector3());
