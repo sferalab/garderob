@@ -203,3 +203,5 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 .wwrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0}.wwrow button{width:52px;height:44px;font-size:24px;border-radius:12px}.wwv{font-size:26px;font-weight:700}
 .wwr{width:100%;height:34px}
 #secRow button.on{background:#c8962e!important;border-color:#a87818!important;color:#fff!important;box-shadow:0 0 0 3px #c8962e55}
+
+.sysblk{margin-top:14px;padding:12px;border-radius:14px;background:#f7f5f0}.sysblk h4{margin:0 0 6px}.sz.rails{flex-wrap:wrap}#rlOwn input{width:90px}

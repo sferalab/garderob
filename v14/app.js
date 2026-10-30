@@ -62,16 +62,16 @@ function migrate(S) { S.room = Object.assign({}, ROOMDEF, S.room || {}); if (!S.
   S.walls.forEach(w => { if (w.gap == null) w.gap = 0; }); if (S.walls[0].gapR == null) S.walls[0].gapR = 0; return S; }
 function setTemplate(t) {
   const m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y: y + 2 }), sh = y => ({ t: 'shoe', d: 40, y }), pu = (y, h) => ({ t: 'pull', d: 40, y, h });
-  const A = () => ({ w: 90, items: [m(LV.top), rl(LV.rod - 2), m(LV.sh[4])] }), B = () => ({ w: 90, items: LV.sh.map(m) }), C = () => ({ w: 60, items: [m(LV.sh[0]), m(LV.sh[1]), pu(LV.bk[0], 181), pu(LV.bk[1], 181), sh(LV.shoe[1])] }), D = () => ({ w: 90, items: [m(LV.top), rl(LV.rod - 2), rl(LV.mid - 12)] });
+  const A = () => ({ w: 90, items: [m(LV.top), rl(LV.rod - 2), m(LV.sh[4])] }), B = () => ({ w: 90, items: LV.sh.map(m) }), C = () => ({ w: 60, items: [m(LV.sh[0]), m(LV.sh[1]), pu(LV.bk[0], 181), pu(LV.bk[1], 181), sh(LV.shoe[1])] }), D = () => ({ w: 90, items: [m(LV.top), rl(LV.rod - 2), m(LV.sh[4])] });
   S.walls[0].gap = S.walls[0].gap || 0;
   if (t === 'p2') { S.layout = 'straight'; S.walls[0].sections = [A(), B()]; }
   if (t === 'p3') { S.layout = 'straight'; S.walls[0].sections = [A(), B(), D()]; }
   if (t === 'p6') { S.layout = 'straight'; S.walls[0].sections = [A(), B(), C(), C(), B(), D()]; }
-  if (t === 'l23') { S.layout = 'L'; S.walls[0].sections = [A(), B()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[1].sections = [B(), D()]; }
+  if (t === 'l23') { const D0 = defaults(); S.layout = 'L'; S.q = D0.q; D0.walls.forEach((w, i) => { if (S.walls[i]) { S.walls[i].sections = w.sections; S.walls[i].gap = w.gap; } }); } /* v14: same as start view */
   if (t === 'zero') { S.layout = 'straight'; S.walls[0].sections = [{ w: 90, items: [] }, { w: 90, items: [] }]; }
   if (t === 'u3') { S.layout = 'U'; S.walls[0].sections = [A(), B(), D()]; S.walls[1].gap = Math.max(S.walls[1].gap || 0, 46); S.walls[2].gap = Math.max(S.walls[2].gap || 0, 46); S.walls[1].sections = [B(), D()]; S.walls[2].sections = [D(), B()]; }
   cur = { w: mainWi(), s: 0, it: -1 }; fillGeneral(); rebuild(); renderSec(); // templates never move the camera (only Сброс / Ракурс)
-  formS(); if (['p2', 'p3', 'p6', 'zero', 'u3', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? (S.layout === 'Lr' ? -1 : 1) * Math.PI / 4 : 0; orb.snapAz = false; orb.snapTo = null; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) centerC(); applyCam(); } // straight templates: frontal view
+  formS(); if (['p2', 'p3', 'p6', 'zero', 'u3', 'l23'].includes(t) && orb.on) { const c = bbox.getCenter(new THREE.Vector3()), corner = t === 'l23', e = (corner ? 10 : 8) * Math.PI / 180; orb.T.copy(c); orb.az = corner ? (S.layout === 'Lr' ? -1 : 1) * Math.PI / 4 : 0; orb.snapAz = false; orb.snapTo = null; orb.R = 6 * Math.cos(e); orb.h = c.y + 6 * Math.sin(e); camera.fov = LENSF(); camera.updateProjectionMatrix(); fitView(); if (corner) { camTo('nice'); } applyCam(); } // straight templates: frontal view
 }
 function cardPreset() {
   const S = defaults(), m = y => ({ t: 'mesh', d: 40, y }), rl = y => ({ t: 'rail', d: 30, y });
@@ -722,13 +722,13 @@ function buildRoom() {
     if (S.room.cornice) cornice(sideLen, g => g.position.x = sideLen / 2, fr);
     aoStrip(fr, CH, 0.5, k, m => { m.position.set(0.25, CH / 2, 0.002); });
     { const cm = new THREE.Mesh(new THREE.PlaneGeometry(0.006, CH), new THREE.MeshBasicMaterial({ color: 0x8f8a83, transparent: true, opacity: 0.55, toneMapped: false, depthWrite: false })); cm.position.set(0.003, CH / 2, 0.003); cm.renderOrder = 3; fr.add(cm); } // v13h: crisp corner seam - a true vertical anchor line in the wall corner
-    aoStrip(fr, sideLen, 0.35, k, m => { m.rotation.z = Math.PI / 2; m.position.set(sideLen / 2, 0.175, 0.002); });
+    if (false) aoStrip(fr, sideLen, 0.35, k, m => { m.rotation.z = Math.PI / 2; m.position.set(sideLen / 2, 0.175, 0.002); });
     // corner shade on the back wall next to this side wall
     aoStrip(bk, CH, 0.5, k, m => { m.position.set(L ? x + 0.25 : x - 0.25, CH / 2, 0.002); if (!L) m.scale.x = -1; });
   };
   if (cl) side(true); if (cr) side(false);
   if (!ST) { const W = right - left;
-    aoStrip(bk, W, 0.35, k, m => { m.position.set(cx, 0.175, 0.002); m.rotation.z = Math.PI / 2; });
+    if (false) aoStrip(bk, W, 0.35, k, m => { m.position.set(cx, 0.175, 0.002); m.rotation.z = Math.PI / 2; });
     if (false) { aoStrip(room, W, 0.3, k * 0.7, m => { m.rotation.z = -Math.PI / 2; m.position.set(cx, CH - 0.15, 0.002); }); aoStrip(room, W, 0.4, k * 0.55, m => { m.rotation.x = Math.PI / 2; m.rotation.z = Math.PI / 2; m.scale.x = -1; m.position.set(cx, CH - 0.002, 0.2); }); } }
   if (ST) return;
   if (!ST && S.room.skirting !== false) skirt(bk, left, right, doorCuts(bo.map(o => ({ ...o, x: o.c + cx })), 'x'), () => {});
@@ -1473,9 +1473,7 @@ function renderSizes() { formS();
   const WS = [60, 90, 120, 150, 180, 240, 270, 300, 360];
   const AW = wallsActive(), tabs = AW.length > 1 ? '<div class="wtabs">' + (S.layout === 'L' ? [1, 0] : S.layout === 'U' ? [1, 0, 2] : AW).map((wi, j) => `<button data-wt="${wi}" class="${wi === cur.w ? 'on' : ''}">Стена ${j + 1}</button>`).join('') + '</div>' : '';
   $('wallSz').innerHTML = tabs + [cur.w].map(wi => { const t = Math.round(wallWidth(wi) / 10), nn = S.walls[wi].sections.length, nm = AW.length > 1 ? '' : 'Стена';
-    return `<div class="wallblk"><div class="szlab">Количество секций</div><div class="sz cnt6">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div><div class="szlab">Ширина стены</div><div class="wwrow"><button data-wm="${wi}:-1">−</button><b class="wwv" id="wwv${wi}">${t} см</b><button data-wm="${wi}:1">+</button></div>
-    <input class="wwr" type="range" data-wr="${wi}" min="40" max="720" step="1" value="${t}"><input type="number" class="hide" data-wf="${wi}" value="${t}">
-    <p class="foot">${secHint(wi)}</p></div>`; }).join('');
+    return `<div class="wallblk"><div class="szlab">Количество секций</div><div class="sz cnt6">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div></div>`; }).join(''); { const wi = cur.w, sw = Math.round(wallWidth(wi) / 10), RL = [52, 70, 100, 126, 156], rv = RL.find(v => v >= sw - 3), own = !rv; $('railSz').innerHTML = `<div class="sz rails">${RL.map(v => `<button data-rl="${wi}:${v}" class="${v === rv ? 'on' : ''}">${v}</button>`).join('')}<button data-rlo class="${own ? 'on' : ''}">Свой размер</button></div><div class="own ${own ? '' : 'hide'}" id="rlOwn"><input type="number" data-wf="${wi}" min="40" max="720" value="${sw}"> см</div><p class="foot">${secHint(wi)}</p>`; }
   const setW = (wi, v, live) => { const sc = S.walls[wi].sections, n = sc.length || 1, w = Math.max(20, Math.min(200, Math.round(v / n))), ws = live ? w : nearest([45, 60, 90, 120], w); sc.forEach(x => x.w = ws); clearTimeout(dimT); dimT = setTimeout(() => { rebuild(); if (!live) renderSec(); }, live ? 40 : 0); };
   const setN = (wi, n) => { const sc = S.walls[wi].sections, tot = wallWidth(wi) / 10, mk = () => ({ w: 90, items: [{ t: 'mesh', d: 40, y: LV.top }, { t: 'rail', d: 30, y: LV.rod }, { t: 'mesh', d: 40, y: LV.sh[4] }] }); while (sc.length < n) sc.push(mk()); sc.length = n; /* v14: corner end fixed, sections added/removed at the outer end, widths kept */ const keepCam = orb.on ? { T: orb.T.clone(), R: orb.R, h: orb.h, az: orb.az } : null; void tot; cur.w = wi; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); if (keepCam) { orb.T.copy(keepCam.T); orb.R = keepCam.R; orb.h = keepCam.h; orb.az = keepCam.az; applyCam(); } };
   document.querySelectorAll('[data-ww]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.ww.split(':').map(Number); setW(wi, v); });
@@ -1484,10 +1482,12 @@ function renderSizes() { formS();
   document.querySelectorAll('[data-wown]').forEach(b => b.onclick = () => $('wown' + b.dataset.wown).classList.toggle('hide'));
   document.querySelectorAll('[data-wr]').forEach(el => { el.oninput = () => { el.nextElementSibling.value = el.value; const lb = $('wwv' + el.dataset.wr); if (lb) lb.textContent = el.value + ' см'; setW(+el.dataset.wr, +el.value, true); }; el.onchange = () => setW(+el.dataset.wr, +el.value); });
   document.querySelectorAll('[data-wm]').forEach(b => b.onclick = () => { const [wi, d] = b.dataset.wm.split(':').map(Number), L4 = [45, 60, 90, 120], sc = S.walls[wi].sections; sc.forEach(x => { const k = L4.indexOf(nearest(L4, x.w)); x.w = L4[Math.max(0, Math.min(3, k + d))]; }); rebuild(); renderSec(); });
-  document.querySelectorAll('[data-wf]').forEach(el => el.onchange = () => setW(+el.dataset.wf, +el.value || 90));
+  document.querySelectorAll('[data-rl]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.rl.split(':').map(Number), sc = S.walls[wi].sections, ex = Math.round(wallWidth(wi) / 10) - sc.reduce((a, x) => a + x.w, 0); sc.forEach(x => x.w = Math.max(20, Math.round((v - ex) / sc.length))); rebuild(); renderSec(); });
+  document.querySelectorAll('[data-rlo]').forEach(b => b.onclick = () => $('rlOwn').classList.toggle('hide'));
+  document.querySelectorAll('[data-wf]').forEach(el => el.onchange = () => { const sc = S.walls[+el.dataset.wf].sections, v = Math.max(40, Math.min(720, +el.value || 90)), ex = Math.round(wallWidth(+el.dataset.wf) / 10) - sc.reduce((a, x) => a + x.w, 0); sc.forEach(x => x.w = Math.max(20, Math.round((v - ex) / sc.length))); rebuild(); renderSec(); });
   const SS = [[45, '463'], [60, '603'], [90, '903'], [120, '1203']];
   if (cur.s >= W.sections.length) cur.s = 0; const cs = W.sections[cur.s] || W.sections[0], cw = cs ? cs.w : 90;
-  $('secRow').innerHTML = W.sections.map((x, i) => `<button data-sr="${i}" class="${i === cur.s ? 'on' : ''}">${i + 1}<small>${x.w} см</small></button>`).join(''); $('secNo').textContent = cur.s + 1;
+  $('secRow').innerHTML = W.sections.map((x, i) => `<button data-sr="${i}" class="${i === cur.s ? 'on' : ''}">Секция ${i + 1}<small>${x.w} см</small></button>`).join(''); $('secNo').textContent = cur.s + 1;
   $('szS').innerHTML = SS.map(([v, m]) => btn(v, v === cw, 'data-zs', `${v}<small>${m} мм</small>`)).join('') + `<button data-own="ownS" class="${SS.some(p => p[0] === cw) ? '' : 'on'}">Свой размер</button>`;
   const HS = [512, 1025, 1156, 1536, 1920, 2304];
   $('szH').innerHTML = HS.map(v => btn(v, v === S.postH, 'data-zh', `${cm(v)}<small>${v} мм</small>`)).join('') + `<button data-own="ownH" class="${HS.includes(S.postH) ? '' : 'on'}">Свой размер</button>`;
@@ -1495,7 +1495,7 @@ function renderSizes() { formS();
   $('szV').innerHTML = [['all', 'Все'], ['frame', 'Каркас'], ['fill', 'Наполнение']].map(([k, t]) => btn(k, (S.view || 'all') === k, 'data-zv', t)).join('');
   $('rS').value = $('fS').value = cw;
   const Q = (sel, f) => document.querySelectorAll(sel).forEach(b => b.onclick = () => f(b));
-  Q('[data-zs]', b => { setSecW(W, cur.s, +b.dataset.zs); rebuild(); renderSec(); flashSec(cur.w, cur.s); });
+  Q('[data-zs]', b => { setSecW(W, cur.s, +b.dataset.zs); rebuild(); renderSec(); });
   Q('[data-sr]', b => { cur.s = +b.dataset.sr; cur.it = -1; renderSec(); rebuild(); flashSec(cur.w, cur.s); });
   Q('[data-zh]', b => { const lift = liftCm(), t0 = S.railTop; S.walls.forEach(w => delete w.postL); S.postH = +b.dataset.zh; S.railTop = Math.round(lift + S.postH / 10 + 1); shiftFill(t0, S.railTop); fix(); });
   Q('[data-zd]', b => setDepth(+b.dataset.zd));
@@ -1814,7 +1814,7 @@ function cleanShot(fn) {
 // wall outline flash (never in snapshots: cleanShot hides it)
 const flashG = new THREE.Group(); scene.add(flashG); let flashT0 = 0, flashMat = null;
 let flashHold = false; /* v14: selected section stays outlined */
-function flashSec(wi, si) { flashWall(wi, si); flashHold = true; }
+function flashSec(wi, si) { flashWall(wi, si); }
 function flashWall(wi, si) { flashHold = false;
   const g = WG[wi]; if (!g) return; flashG.clear(); g.updateMatrixWorld(true);
   const tot = wallWidth(wi) * MM, top = S.railTop * 10 * MM + 0.035, xs = [0]; S.walls[wi].sections.forEach(s => xs.push(xs[xs.length - 1] + s.w / 100));
