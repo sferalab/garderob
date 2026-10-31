@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s10';
+import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s11';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
@@ -271,9 +271,9 @@ function normalTex(v, str) {
 function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).multiplyScalar(m.userData.kd); m.emissive.copy(col).multiplyScalar(m.userData.ke); }
 const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
 const PHW = { brick: ['painted_brick', 1.04, 1.6], beige: ['beige_wall_001', 2.4, 1, 1.1], lime: ['white_plaster_02', 2.2, 1] };
-function wallMat() { const IN = S.interior != null, v = IN ? 'intp' : finVar(), ph = IN ? ['int_paper', 1.3, 0.3, 1.05] : PHW[v];
+function wallMat(sd) { const IN = S.interior != null, v = IN ? 'intp' : finVar(), ph = IN ? [sd ? 'int_side' : 'int_paper', 1.3, 0.3, 1.05] : PHW[v];
   if (ph) { const rp = (1 / ph[1]).toFixed(4), sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: tex(ph[0] + '_diff', true, rp), emissiveMap: tex(ph[0] + '_diff', true, rp), normalMap: tex(ph[0] + '_nor_gl', false, rp), normalScale: new THREE.Vector2(ph[2], ph[2]), roughnessMap: tex(ph[0] + '_rough', false, rp), roughness: 1, metalness: 0, envMapIntensity: 0.35, toneMapped: false });
-    const gn = ph[3] || 1, lf = v === 'brick'; m.userData = lf ? { wall: true, kd: 0.52, ke: 0.52 } : { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; if (lf) m.roughness = 0.85; setWallCol(m, IN ? '#ffffff' : S.wall); return m; }
+    const gn = ph[3] || 1, lf = v === 'brick'; m.userData = lf ? { wall: true, kd: 0.52, ke: 0.52 } : { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; if (lf) m.roughness = 0.85; setWallCol(m, IN ? '#f2f9ff' : S.wall); return m; }
   const t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
   const sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, normalMap: n, roughness: 0.93, metalness: 0, envMapIntensity: 0.25, toneMapped: false });
   m.userData = { wall: true, kd: sunM ? 0.55 : 0.62, ke: sunM ? 0.4 : 0.42 }; /* lit PBR wall: relief reads in the light, emissive keeps the color clean */ setWallCol(m, S.wall); return m; }
@@ -696,13 +696,13 @@ function buildRoom() {
     const sh = new THREE.Shape(); sh.moveTo(-w / 2, -WH / 2); sh.lineTo(w / 2, -WH / 2); sh.lineTo(w / 2, WH / 2); sh.lineTo(-w / 2, WH / 2); sh.lineTo(-w / 2, -WH / 2);
     holes.forEach(o => { const x0 = o.c - o.w / 2, y0 = Math.max(o.b, 0.002) - WH / 2, p = new THREE.Path(); p.moveTo(x0, y0); p.lineTo(x0 + o.w, y0); p.lineTo(x0 + o.w, o.b + o.h - WH / 2); p.lineTo(x0, o.b + o.h - WH / 2); p.lineTo(x0, y0); sh.holes.push(p); });
     const geo = new THREE.ShapeGeometry(sh), grp = new THREE.Group(); grp.position.set(x, WH / 2, z); grp.rotation.y = ry; parent.add(grp);
-    if (!ST) { const wm = new THREE.Mesh(geo, wallMat()); wm.receiveShadow = S.room.shP === 'sun'; grp.add(wm); }
+    if (!ST) { const wm = new THREE.Mesh(geo, wallMat(parent !== bk)); wm.receiveShadow = S.room.shP === 'sun'; grp.add(wm); }
     const q = new THREE.Mesh(geo, wallShadowMat()); q.receiveShadow = true; grp.add(q);
     holes.forEach(o => buildOpening(grp, o, WH)); grp.userData.wallG = true; return grp;
   };
   const bo = ops.filter(o => o.wall === 'B').map(o => ({ ...o, c: o.x - cx }));
   bk.userData.occ = wallPlane(right - left, cx, 0, 0, bk, bo);
-  const skM = new THREE.MeshBasicMaterial({ color: S.room.skirtColor || '#f6f5f2', toneMapped: false }); skM.userData.flat = true; /* v13b: unlit plinth - same colour at any rotation, no shading/shadow/AO */
+  const skM = S.interior != null ? new THREE.MeshBasicMaterial({ map: tex('int_skirt_diff', true, 1), toneMapped: false }) : new THREE.MeshBasicMaterial({ color: S.room.skirtColor || '#f6f5f2', toneMapped: false }); skM.userData.flat = true; /* v13b: unlit plinth - same colour at any rotation, no shading/shadow/AO */
   // skirting runs along u (local x of a wall frame), cut at doors
   const skirt = (parent, u0, u1, cuts, place) => { let segs = [[u0, u1]]; cuts.forEach(([a, b]) => { segs = segs.flatMap(([s, e]) => b <= s || a >= e ? [[s, e]] : [[s, a], [b, e]].filter(([p, q]) => q - p > 0.01)); });
     segs.forEach(([s, e]) => { const g = new THREE.Group(); place(g); [[0.016, 0.08, 0.04, 0.008], [0.022, 0.012, 0.074, 0.011]].forEach(([d, h, y, z]) => { const m = box(e - s, h, d, (s + e) / 2, y, z, skM); m.castShadow = false; m.receiveShadow = false; m.renderOrder = 2; g.add(m); }); parent.add(g); }); };
@@ -735,7 +735,7 @@ function buildRoom() {
   // ceiling: one solid plane over the whole room, seen only from below
   const cg = new THREE.Group(); cg.userData.occC = CH; room.add(cg);
   if (S.interior != null) { const sp = new THREE.Mesh(new THREE.CircleGeometry(0.035, 24), new THREE.MeshBasicMaterial({ color: 0xfffaf0, toneMapped: false })); sp.rotation.x = Math.PI / 2; sp.position.set(cx, CH - 0.002, 1.2); cg.add(sp); }
-  if (S.room.ceiling || S.interior != null) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
+  if (S.room.ceiling || S.interior != null) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: S.interior != null ? 0xf1e9df : 0xffffff, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
   }
   if (S.room.cornice) cornice(right - left, g => g.position.x = cx, bk);
   if (S.room.lamps) { const n = Math.max(2, Math.round((right - left) / 1.2)); for (let i = 0; i < n; i++) { const x = left + (right - left) * (i + 0.5) / n; const d = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.006, 24), new THREE.MeshBasicMaterial({ color: 0xfff6e6, toneMapped: false })); d.position.set(x, CH - 0.007, 0.9); cg.add(d); const rg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.012, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d1e20, roughness: 0.35, metalness: 0.4, side: THREE.DoubleSide })); rg.position.set(x, CH - 0.006, 0.9); cg.add(rg); const rd = new THREE.Mesh(new THREE.RingGeometry(0.035, 0.05, 32), new THREE.MeshStandardMaterial({ color: 0x1d1e20, roughness: 0.35, metalness: 0.4 })); rd.rotation.x = Math.PI / 2; rd.position.set(x, CH - 0.0121, 0.9); cg.add(rd); const pl = new THREE.PointLight(0xffe9cc, 1.0, 0, 2); pl.position.set(x, CH - 0.12, 0.9); cg.add(pl); } }
