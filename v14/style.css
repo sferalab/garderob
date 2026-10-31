@@ -205,3 +205,5 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 #secRow button.on{background:#c8962e!important;border-color:#a87818!important;color:#fff!important;box-shadow:0 0 0 3px #c8962e55}
 
 .sysblk{margin-top:14px;padding:12px;border-radius:14px;background:#f7f5f0}.sysblk h4{margin:0 0 6px}.sz.rails{flex-wrap:wrap}#rlOwn input{width:90px}
+
+#intHint{position:absolute;left:50%;top:8px;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:12px;padding:4px 10px;border-radius:12px;pointer-events:none;z-index:5}

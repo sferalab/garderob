@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s7';
+import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s8';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
@@ -109,7 +109,7 @@ function safeMigrate(v) { try { const s = validState(v); return s ? migrate(s) :
 function clearSaved() { try { Object.keys(localStorage).filter(k => k.startsWith('gs14_') && k !== 'gs14_snd').forEach(k => localStorage.removeItem(k)); } catch (e) {} }
 const QS = new URLSearchParams(location.search);
 if (QS.get('reset') === '1') { clearSaved(); QS.delete('reset'); try { history.replaceState(null, '', location.pathname + (QS.toString() ? '?' + QS : '') + location.hash); } catch (e) {} }
-let S = (() => { const v = load('gs14_auto'); return v && v.v5 ? safeMigrate(v) : migrate(defaults()); })();
+let S = (() => { const v = load('gs14_auto'); return v && v.v5 ? safeMigrate(v) : migrate(defaults()); })(); delete S.interior;
 try {
   if (QS.get('preset') === 'card') S = migrate(cardPreset());
   else if (QS.get('cfg')) { const v = JSON.parse(decodeURIComponent(escape(atob(QS.get('cfg').replace(/-/g, '+').replace(/_/g, '/'))))); if (v && v.walls) S = safeMigrate(v); }
@@ -687,7 +687,7 @@ function buildRoom() {
   const act = wallsActive(), sideLen = Math.max(5, ...[1, 2].filter(w => act.includes(w)).map(w => effGap(w) / 100 + wallWidth(w) * MM + Mg));
   const floorM = ST ? new THREE.ShadowMaterial({ opacity: 0 }) : (fm0 => fm0.isMeshStandardMaterial ? new THREE.MeshLambertMaterial({ color: fm0.color, map: fm0.map, normalMap: fm0.normalMap, normalScale: fm0.normalScale, userData: { floor: true } }) : fm0)(floorMat()); // matte floor: no glare
   // floor laid from the corner: tiles and parquet at 45 deg, laminate along the main wall (real scale, see FLOORS)
-  const fc = cl ? left : cr ? right : F.x0, FD = FLOORS[S.floor] || FLOORS.oak, fRot = FD[4] ? Math.PI / 4 : 0;
+  window.__IC = cl ? left : cr ? right : F.x0; const fc = cl ? left : cr ? right : F.x0, FD = FLOORS[S.floor] || FLOORS.oak, fRot = FD[4] ? Math.PI / 4 : 0;
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorM); fl.rotation.set(-Math.PI / 2, 0, fRot); fl.position.set(fc, 0, 0); fl.receiveShadow = !ST; fl.userData.floorM = true; room.add(fl);
   const FJ = FLOORS[S.floor] && FLOORS[S.floor][3];
   if (!ST && FJ) { const jt = jointTex(S.floor).clone(); jt.needsUpdate = true; jt.repeat.set(60 / FJ[0], 60 / FJ[1]); const j = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshBasicMaterial({ map: jt, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); j.rotation.set(-Math.PI / 2, 0, fRot); j.position.set(fc, 0.0005, 0); room.add(j); }
@@ -1073,7 +1073,7 @@ function applyCam(cam = camera) {
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
   el.addEventListener('contextmenu', e => e.preventDefault());
-  el.addEventListener('pointerdown', e => { if (!orb.on) return; orb.snapAz = false; orb.snapTo = null; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
+  el.addEventListener('pointerdown', e => { if (!orb.on || S.interior != null) return; orb.snapAz = false; orb.snapTo = null; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
   // straight and U: a near-frontal view settles exactly frontal, so the ceiling and floor edges read level
   const end = e => { P.delete(e.pointerId); last = null; pinch = null; if (!P.size) { let best = null, bd = 15 * Math.PI / 180; snapAzs().forEach(t => { let d = t - orb.az; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; if (Math.abs(d) < bd) { bd = Math.abs(d); best = t; } }); if (best != null) orb.snapTo = best; } }; // v13e: ease to the nearest frontal wall within 15 deg, any elevation
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
@@ -1089,7 +1089,7 @@ function applyCam(cam = camera) {
     if (p.b === 2 || p.b === 1 || p.sh) { const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)); orb.T.addScaledVector(rt, -dx * unit); orb.T.y += dy * unit; return; }
     orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-1.05, Math.min(1.52, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = Math.max(0.05, D * Math.cos(el)); orb.h = orb.T.y + D * Math.sin(el); } // true spherical orbit: straight-down view reachable
   });
-  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(0.25, Math.min(45, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
+  el.addEventListener('wheel', e => { if (!orb.on || S.interior != null) { if (S.interior != null) e.preventDefault(); return; } e.preventDefault(); orb.R = Math.max(0.25, Math.min(45, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
@@ -1160,8 +1160,14 @@ function adapt() { return; /* v13g: fixed quality - no pixel-ratio / shadow-map 
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
 function aspectGuard() { const w = view.clientWidth, h = view.clientHeight; if (w && h && (Math.abs(camera.aspect - w / h) > 1e-3 || Math.abs(renderer.domElement.width - Math.round(w * renderer.getPixelRatio())) > 1)) { resize(); if (orb.on) applyCam(); } } // v13b (from v12e): canvas/camera aspect always match - no squeezed first frame
-renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
+renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); alignInt(); renderer.render(scene, camera); adapt(); });
 
+// ---------- interiors (v14): room photos; corner = photo point (cx, fy) in 0..1 ----------
+const INTERIORS = [{ src: 'interiors/room1.jpg', cx: 0.5, fy: 0.73 }];
+function alignInt() { const I = INTERIORS[S.interior]; if (!I || !photoImg) return; const bg = $('photoBg'), vw = $('view').getBoundingClientRect(), p = new THREE.Vector3(window.__IC || 0, 0, 0).project(camera), sx = (p.x + 1) / 2 * vw.width, sy = (1 - p.y) / 2 * vw.height, k = 1.25, s = Math.max(vw.width / photoImg.width, vw.height / photoImg.height) * k, iw = photoImg.width * s, ih = photoImg.height * s;
+  bg.style.cssText = `left:${sx - I.cx * iw}px;top:${sy - I.fy * ih}px;width:${iw}px;height:${ih}px;right:auto;transform:none;aspect-ratio:auto;background-size:100% 100%;background-image:url(${I.src})`; }
+function setInterior(i) { if (i == null) { if (S.interior != null) { S.interior = null; $('photoBg').style.cssText = ''; $('intHint').classList.add('hide'); $('photoOff').onclick(); } return; }
+  const I = INTERIORS[i]; S.interior = i; S.studio = false; S.studioL = false; photo = I.src; photoImg = new Image(); photoImg.src = I.src; $('photoBg').style.backgroundImage = `url(${I.src})`; $('showRoom').checked = false; scene.background = null; $('intHint').classList.remove('hide'); window.__userCam = false; camTo('nice'); rebuild(); }
 // ---------- photo ----------
 let photo = null, photoImg = null;
 $('photo').onchange = e => {
@@ -1887,7 +1893,7 @@ const BGT = ['#ffffff', '#f6f4f0', '#efece7', '#e9e6e0', '#e4e7ea', '#ddd8cf', '
 const drawBgPick = colorPicker($('bgPick'), () => S.bg || '#e2ded7', (c, fin) => { S.bg = c; setBg(); if (fin) { localStorage.setItem('gs14_auto', JSON.stringify(S)); pushHist(); } }, BGT);
 function renderDeco() {
   const st = !!S.studio, R = S.room; $('dRoom').classList.toggle('hide', st); $('dStudio').classList.toggle('hide', !st);
-  document.querySelectorAll('[data-dt]').forEach(b => b.classList.toggle('on', (b.dataset.dt === 'studio') === (st || !!S.studioL)));
+  document.querySelectorAll('[data-dt]').forEach(b => b.classList.toggle('on', b.dataset.dt === 'interior' ? S.interior != null : S.interior == null && (b.dataset.dt === 'studio') === (st || !!S.studioL)));
   const fin = S.wallFin || 'paint', fv = finVar();
   $('finVars').style.gridTemplateColumns = `repeat(${evenCols(FINS[fin].length)},1fr)`; $('finBtns').innerHTML = [['paint', 'Краска'], ['plaster', 'Штукатурка'], ['relief', 'Рельеф'], ['paper', 'Обои']].map(([k, t]) => `<button data-fin="${k}" class="${fin === k ? 'on' : ''}">${t}</button>`).join('');
   $('finVars').innerHTML = FINS[fin].map(([k, t]) => `<button data-fv="${k}" class="${fv === k ? 'on' : ''}"><i style="background-image:url(${finSwatch(k)})"></i><span>${t}</span></button>`).join('');
@@ -1968,7 +1974,7 @@ function renderGaps() {
   document.querySelectorAll('[data-gr]').forEach(el => { el.oninput = () => set(el.dataset.gr, +el.value, true, el); el.onchange = () => set(el.dataset.gr, +el.value, false, el); });
   document.querySelectorAll('[data-gf]').forEach(el => el.onchange = () => set(el.dataset.gf, +el.value || 0, false, el));
 }
-document.querySelectorAll('[data-dt]').forEach(b => b.onclick = () => { S.studio = b.dataset.dt === 'studio'; S.studioL = false; setBg(); rebuild(); renderDeco(); });
+document.querySelectorAll('[data-dt]').forEach(b => b.onclick = () => { if (b.dataset.dt === 'interior') { setInterior(0); renderDeco(); return; } setInterior(null); S.studio = b.dataset.dt === 'studio'; S.studioL = false; setBg(); rebuild(); renderDeco(); });
 $('cornC').oninput = $('cornC').onchange = e => { S.room.cornColor = e.target.value; S.room.cornice = true; $('cornT').checked = true; rebuild(); localStorage.setItem('gs14_auto', JSON.stringify(S)); };
 { let t; $('ceilH2').oninput = e => { S.room.ceilH = +e.target.value; $('ceilV2').textContent = S.room.ceilH; if ($('ceilH')) { $('ceilH').value = S.room.ceilH; } if ($('ceilV')) $('ceilV').textContent = S.room.ceilH; clearTimeout(t); t = setTimeout(rebuild, 40); }; }
 { const o = $('ceilT').onchange; $('ceilT').onchange = e => { o(e); renderDeco(); }; }
