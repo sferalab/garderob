@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CATALOG, RULES } from './catalog.js';
+import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s7';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
@@ -1332,13 +1332,16 @@ function makeCard() {
 // ---------- spec / summary ----------
 function nearest(arr, v) { return arr.reduce((a, b) => Math.abs(b - v) < Math.abs(a - v) ? b : a); }
 function railCombo(len) { const L = [1560, 1260, 1000, 700, 520], res = []; let rest = len; while (rest > 0) { const fit = L.slice().reverse().find(l => l >= rest); if (fit) { res.push(fit); break; } res.push(1560); rest -= 1560; } return res; }
+const ART_K = [[/^Рельс несущий/, 'rail'], [/^Стойка/, 'post'], [/^Кронштейн для перекладины/, 'rodbrk'], [/^Кронштейн/, 'brk'], [/^Заглушка перекладины/, 'rodcap'], [/^Перекладина/, 'rod'], [/^Полка сетчатая/, 'mesh'], [/^Полка металлическая/, 'metal'], [/^Полка ЛДСП/, 'ldsp'], [/^Корзина сетчатая стационарная/, 'basket'], [/^Корзина сетчатая выдвижная/, 'pull'], [/^Брючница выдвижная 603/, 'trouser'], [/^Полка обувная сетчатая/, 'shoe']];
+function artOf(k) { const t = (ART_K.find(([re]) => re.test(k)) || [])[1]; if (!t) return ''; const ral = { white: '9016', silver: '9006', black: '9005' }[S.metal] || '9016'; let n = (k.replace(/30×30×100|15×23×23/, '').match(/\d+/g) || []).map(Number); if (t === 'shoe') n = n.map(v => v === 604 ? 603 : v === 904 ? 903 : v); if (t === 'trouser') n = [600]; if (t === 'post' || t === 'rail' || t === 'brk' || t === 'rod') n = n.slice(0, 1); const r = ARTS.find(a => a[0] === t && (!/^\d{4}$/.test(a[2]) || a[2] === ral) && n.every(v => a[1].split(/x/).map(x => parseFloat(x)).includes(v))); return r ? r[3] : ''; }
+function railCut(wi) { const [ra, rb] = railSpan(wi), rl = S.walls[wi].railLen, L = rl ? rl * 10 : Math.round((rb - ra) / MM) + 10, c = railCombo(L); return { c, cut: rl ? c.reduce((a, x) => a + x, 0) - L : 0 }; }
 function specData() {
   const frame = {}, fill = {}, card = {}, brk = new Set();
   const add = (o, k, n = 1) => o[k] = (o[k] || 0) + n;
   const walls = [];
   wallsBuilt().forEach(wi => {
-    const W = S.walls[wi], tot = wallWidth(wi), [ra, rb] = railSpan(wi), rails = railCombo(Math.round((rb - ra) / MM) + 10);
-    rails.forEach(r => add(frame, `Рельс несущий ${r} мм`)); for (let i = 0; i <= W.sections.length; i++) add(frame, `Стойка ${postLen(wi, i)} мм`);
+    const W = S.walls[wi], tot = wallWidth(wi), [ra, rb] = railSpan(wi), rc = railCut(wi), rails = rc.c;
+    rails.forEach(r => add(frame, `Рельс несущий ${r} мм`)); if (rc.cut) add(frame, `${WALLNAMES[wi]}: отпилить от рельса ${rc.cut} мм`); for (let i = 0; i <= W.sections.length; i++) add(frame, `Стойка ${postLen(wi, i)} мм`);
     W.sections.forEach((s, si) => s.items.forEach(o => {
       const w = s.w * 10, d = REAL_DEPTH[o.t][o.d], br = { 306: 335, 327: 335, 330: 335, 340: 335, 406: 435, 427: 435, 430: 435, 440: 435, 506: 535 }[d] || 435;
       const nom = `${s.w}×${o.d} см`;
@@ -1353,7 +1356,7 @@ function specData() {
       if (o.t === 'rail') { add(fill, `Перекладина ${nearest([520, 640, 940, 1240, 2000], w)} мм`); add(fill, 'Кронштейн для перекладины 30×30×100', 2); add(fill, 'Заглушка перекладины 15×23×23', 2); add(card, 'Штанга'); const ry = s.items.some(p => p !== o && p.t !== 'rail' && p.t !== 'shoe' && p.y > o.y && p.y - o.y <= 25) ? null : o.y + 9; if (ry != null) [si, si + 1].forEach(p => { const k = `${wi}:${p}:${ry}`; if (!brk.has(k)) { brk.add(k); add(fill, 'Кронштейн 335 мм'); add(card, 'Кронштейн для полки'); } }); }
       else [si, si + 1].forEach(p => { const k = `${wi}:${p}:${o.y}`; if (!brk.has(k)) { brk.add(k); add(fill, `Кронштейн ${br} мм`); add(card, 'Кронштейн для полки'); } });
     }));
-    walls.push(`<b>${WALLNAMES[wi]}:</b> ${cm(tot)} см, секций ${W.sections.length}, рельс ${rails.join(' + ')} мм`);
+    walls.push(`<b>${WALLNAMES[wi]}:</b> ${cm(tot)} см, секций ${W.sections.length}, рельс ${rails.join(' + ')} мм${rc.cut ? `, отпилить ${rc.cut} мм` : ''}`);
   });
   const ck = Object.keys(card).sort((a, b) => (a.startsWith('Кронштейн') - b.startsWith('Кронштейн')) || (a.startsWith('Штанга') - b.startsWith('Штанга')) || b.localeCompare(a));
   return { frame, fill, walls, cardLines: ck.map(k => `${k} — ${card[k]} шт`) };
@@ -1367,11 +1370,11 @@ function overall() {
 }
 function summary() {
   const d = specData(), li = o => Object.entries(o).map(([k, v]) => `${k} — ${v} шт`).join('<br>');
-  let total = 0; const row = ([k, v]) => { const p = +(S.prices[k] || 0); total += p * v; return `<tr><td>${k}</td><td>${v} шт</td><td><input type="number" min="0" step="1" data-price="${k}" value="${p || ''}" placeholder="цена"></td><td>${p ? (p * v).toLocaleString('ru-RU') + ' ₽' : ''}</td></tr>`; };
+  let total = 0; const row = ([k, v]) => { const p = +(S.prices[k] || 0); total += p * v; return `<tr><td>${artOf(k) ? '<small>' + artOf(k) + '</small> ' : ''}${k}</td><td>${v} шт</td><td><input type="number" min="0" step="1" data-price="${k}" value="${p || ''}" placeholder="цена"></td><td>${p ? (p * v).toLocaleString('ru-RU') + ' ₽' : ''}</td></tr>`; };
   const tb = o => `<table class="est">${Object.entries(o).map(row).join('')}</table>`;
   const fr = tb(d.frame), fi = tb(d.fill);
   const MC = { white: 'белый RAL 9016', black: 'черный RAL 9005', silver: 'серебристый RAL 9006' }[S.metal], RC = { chrome: 'хром', white: 'белый', black: 'черный' }[S.rod || 'chrome'];
-  const parts = [...Object.entries(d.frame), ...Object.entries(d.fill)].map(([k, v]) => `<tr><td><span class="tbd">—</span></td><td>${k}</td><td>${/Перекладина|Штанга/.test(k) ? RC : MC}</td><td>${v} шт</td></tr>`).join('');
+  const parts = [...Object.entries(d.frame), ...Object.entries(d.fill)].map(([k, v]) => `<tr><td>${artOf(k) || '<span class="tbd">—</span>'}</td><td>${k}</td><td>${/Перекладина|Штанга/.test(k) ? RC : MC}</td><td>${v} шт</td></tr>`).join('');
   const W = [];
   wallsBuilt().forEach(wi => S.walls[wi].sections.forEach((sc, si) => {
     const nm = `${WALLNAMES[wi]}, секция ${si + 1}`;
@@ -1382,7 +1385,7 @@ function summary() {
   if (S.walls.some(w => w.sections.some(sc => sc.items.some(o => o.t === 'pull' && (o.h || 85) === 285)))) W.push('Выдвижной корзины высотой 285 мм нет в крупной сетке (есть 85 и 181); 285 мм бывает у мелкосетчатой 535');
   if (S.room.ceiling && S.railTop > (S.room.ceilH || 275)) W.push(`Гардеробная (${S.railTop} см) выше потолка (${S.room.ceilH} см)`);
   if (!['512', '1025', '1156', '1536', '1920', '2304'].includes(String(S.postH))) W.push(`Стоек ${S.postH} мм нет в каталоге. Стандартные: 512, 1025, 1156, 1536, 1920, 2304 мм`);
-  wallsBuilt().forEach(wi => { const [ra, rb] = railSpan(wi), L = Math.round((rb - ra) / MM) + 10, c = railCombo(L); if (c.length > 1) W.push(`${WALLNAMES[wi]}: рельс ${L} мм собирается из ${c.length} частей (${c.join(' + ')} мм), нужен стык`); });
+  wallsBuilt().forEach(wi => { const rc = railCut(wi), c = rc.c, L = c.reduce((a, x) => a + x, 0) - rc.cut; if (c.length > 1) W.push(`${WALLNAMES[wi]}: рельс ${L} мм собирается из ${c.length} частей (${c.join(' + ')} мм), нужен стык`); });
   $('summary').innerHTML = (W.length ? `<div class="warnbox"><b>Проверьте конфигурацию:</b><br>${W.join('<br>')}</div>` : '<div class="okbox">Конфигурация собирается из каталога</div>') + d.walls.join('<br>') + `<br>Габарит: ${overall()}<details><summary>Комплектность (все детали)</summary><div class="catwrap"><table class="cat"><thead><tr><th>Артикул</th><th>Наименование и размер</th><th>Цвет</th><th>Кол-во</th></tr></thead><tbody>${parts}</tbody></table></div></details><details><summary>Каркас</summary>${fr}</details><details><summary>Наполнение</summary>${fi}</details><details${total ? ' open' : ''}><summary>Смета</summary>Итого: <b>${total.toLocaleString('ru-RU')} ₽</b><br><span class="foot">Цены за штуку вводятся в списках выше и сохраняются.</span></details>`;
   $('summary').querySelectorAll('[data-price]').forEach(el => el.onchange = () => { S.prices[el.dataset.price] = +el.value || 0; const open = [...$('summary').querySelectorAll('details')].map(x => x.open); summary(); [...$('summary').querySelectorAll('details')].forEach((x, i) => x.open = open[i] || x.open); localStorage.setItem('gs14_auto', JSON.stringify(S)); pushHist(); });
 }
@@ -1470,7 +1473,7 @@ function renderSizes() { formS();
   const WS = [60, 90, 120, 150, 180, 240, 270, 300, 360];
   const AW = wallsActive(), tabs = AW.length > 1 ? '<div class="wtabs">' + (S.layout === 'L' ? [1, 0] : S.layout === 'U' ? [1, 0, 2] : AW).map((wi, j) => `<button data-wt="${wi}" class="${wi === cur.w ? 'on' : ''}">Стена ${j + 1}</button>`).join('') + '</div>' : '';
   $('wallSz').innerHTML = tabs + [cur.w].map(wi => { const t = Math.round(wallWidth(wi) / 10), nn = S.walls[wi].sections.length, nm = AW.length > 1 ? '' : 'Стена';
-    return `<div class="wallblk"><div class="szlab">Количество секций</div><div class="sz cnt6">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div></div>`; }).join(''); { const wi = cur.w, sw = Math.round(wallWidth(wi) / 10), RL = [52, 70, 100, 126, 156], rv = RL.find(v => v >= sw - 3), own = !rv; $('railSz').innerHTML = `<div class="sz rails">${RL.map(v => `<button data-rl="${wi}:${v}" class="${v === rv ? 'on' : ''}">${v}</button>`).join('')}<button data-rlo class="${own ? 'on' : ''}">Свой размер</button></div><div class="own ${own ? '' : 'hide'}" id="rlOwn"><input type="number" data-wf="${wi}" min="40" max="720" value="${sw}"> см</div><p class="foot">${secHint(wi)}</p>`; }
+    return `<div class="wallblk"><div class="szlab">Количество секций</div><div class="sz cnt6">${[1, 2, 3, 4, 5, 6].map(v => `<button data-wn="${wi}:${v}" class="${v === nn ? 'on' : ''}">${v}</button>`).join('')}</div></div>`; }).join(''); $('railSz').innerHTML = `<div class="foot">${wallsBuilt().map(wi => { const rc = railCut(wi), rl = S.walls[wi].railLen, sw = Math.round(wallWidth(wi) / 10), d = rl ? rl - sw : 0; return `${wallsBuilt().length > 1 ? WALLNAMES[wi] + ': ' : ''}Направляющая: ${rc.c.map(x => x / 10).join(' + ')} см${rc.cut ? `, отпилить ${rc.cut} мм` : ''}${rl ? ` (свой размер ${rl} см; ${d > 0 ? 'остаток ' + d + ' см' : d < 0 ? '<b>секции не помещаются на ' + (-d) + ' см</b>' : 'секции точно по размеру'})` : ''}`; }).join('<br>')}</div><div class="sz rails"><button data-rlo class="${S.walls[cur.w].railLen ? 'on' : ''}">Свой размер</button></div><div class="own ${S.walls[cur.w].railLen ? '' : 'hide'}" id="rlOwn"><input type="number" data-wf="${cur.w}" min="40" max="720" placeholder="см" value="${S.walls[cur.w].railLen || ''}"> см</div><p class="foot">${secHint(cur.w)}</p>`;
   const setW = (wi, v, live) => { const sc = S.walls[wi].sections, n = sc.length || 1, w = Math.max(20, Math.min(200, Math.round(v / n))), ws = live ? w : nearest([45, 60, 90, 120], w); sc.forEach(x => x.w = ws); clearTimeout(dimT); dimT = setTimeout(() => { rebuild(); if (!live) renderSec(); }, live ? 40 : 0); };
   const setN = (wi, n) => { const sc = S.walls[wi].sections, tot = wallWidth(wi) / 10, mk = () => ({ w: 90, items: [{ t: 'mesh', d: 40, y: LV.top }, { t: 'rail', d: 30, y: LV.rod }, { t: 'mesh', d: 40, y: LV.sh[4] }] }); while (sc.length < n) sc.push(mk()); sc.length = n; /* v14: corner end fixed, sections added/removed at the outer end, widths kept */ const keepCam = orb.on ? { T: orb.T.clone(), R: orb.R, h: orb.h, az: orb.az } : null; void tot; cur.w = wi; cur.s = Math.min(cur.s, n - 1); rebuild(); renderSec(); if (keepCam) { orb.T.copy(keepCam.T); orb.R = keepCam.R; orb.h = keepCam.h; orb.az = keepCam.az; applyCam(); } };
   document.querySelectorAll('[data-ww]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.ww.split(':').map(Number); setW(wi, v); });
@@ -1479,9 +1482,8 @@ function renderSizes() { formS();
   document.querySelectorAll('[data-wown]').forEach(b => b.onclick = () => $('wown' + b.dataset.wown).classList.toggle('hide'));
   document.querySelectorAll('[data-wr]').forEach(el => { el.oninput = () => { el.nextElementSibling.value = el.value; const lb = $('wwv' + el.dataset.wr); if (lb) lb.textContent = el.value + ' см'; setW(+el.dataset.wr, +el.value, true); }; el.onchange = () => setW(+el.dataset.wr, +el.value); });
   document.querySelectorAll('[data-wm]').forEach(b => b.onclick = () => { const [wi, d] = b.dataset.wm.split(':').map(Number), L4 = [45, 60, 90, 120], sc = S.walls[wi].sections; sc.forEach(x => { const k = L4.indexOf(nearest(L4, x.w)); x.w = L4[Math.max(0, Math.min(3, k + d))]; }); rebuild(); renderSec(); });
-  document.querySelectorAll('[data-rl]').forEach(b => b.onclick = () => { const [wi, v] = b.dataset.rl.split(':').map(Number), sc = S.walls[wi].sections, ex = Math.round(wallWidth(wi) / 10) - sc.reduce((a, x) => a + x.w, 0); sc.forEach(x => x.w = Math.max(20, Math.round((v - ex) / sc.length))); rebuild(); renderSec(); });
-  document.querySelectorAll('[data-rlo]').forEach(b => b.onclick = () => $('rlOwn').classList.toggle('hide'));
-  document.querySelectorAll('[data-wf]').forEach(el => el.onchange = () => { const sc = S.walls[+el.dataset.wf].sections, v = Math.max(40, Math.min(720, +el.value || 90)), ex = Math.round(wallWidth(+el.dataset.wf) / 10) - sc.reduce((a, x) => a + x.w, 0); sc.forEach(x => x.w = Math.max(20, Math.round((v - ex) / sc.length))); rebuild(); renderSec(); });
+  document.querySelectorAll('[data-rlo]').forEach(b => b.onclick = () => { const W = S.walls[cur.w]; if (W.railLen) { delete W.railLen; rebuild(); renderSec(); } else $('rlOwn').classList.toggle('hide'); });
+  document.querySelectorAll('[data-wf]').forEach(el => el.onchange = () => { const W = S.walls[+el.dataset.wf], sc = W.sections, v = +el.value; if (!v) { delete W.railLen; } else { W.railLen = Math.max(40, Math.min(720, Math.round(v))); const ex = Math.round(wallWidth(+el.dataset.wf) / 10) - sc.reduce((a, x) => a + x.w, 0); sc.forEach(x => x.w = Math.max(20, Math.floor((W.railLen - ex) / sc.length))); } rebuild(); renderSec(); });
   const SS = [[45, '463'], [60, '603'], [90, '903'], [120, '1203']];
   if (cur.s >= W.sections.length) cur.s = 0; const cs = W.sections[cur.s] || W.sections[0], cw = cs ? cs.w : 90;
   $('secRow').innerHTML = W.sections.map((x, i) => `<button data-sr="${i}" class="${i === cur.s ? 'on' : ''}">Секция ${i + 1}<small>${x.w} см</small></button>`).join(''); $('secNo').textContent = cur.s + 1;
