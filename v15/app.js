@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CATALOG, RULES, ARTS } from './catalog.js?v=v15s3';
+import { CATALOG, RULES, ARTS } from './catalog.js?v=v15s4';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
@@ -1115,8 +1115,8 @@ function applyCam(cam = camera) {
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
-function camK() { const k = localStorage.getItem('gs14_cam'); return ['std', 'int', 'por', 'top3'].includes(k) ? k : 'int'; } // default: «Интерьер» photo preset, closest to the client renders
-var CAMS = [['std', 'Стандарт'], ['int', 'Интерьер'], ['por', 'Портрет'], ['top3', 'Сверху 3/4']];
+function camK() { const k = localStorage.getItem('gs14_cam'); return ['std', 'int', 'por', 'top3', 'plan'].includes(k) ? k : 'int'; } // default: «Интерьер» photo preset, closest to the client renders
+var CAMS = [['std', 'Стандарт'], ['int', 'Интерьер'], ['por', 'Портрет'], ['top3', 'Сверху 3/4'], ['plan', 'Сверху']];
 const LENSF = () => 24; /* v15s3: narrower lens from farther back - less edge stretch */
 function CAMEXP() { return { int: 1.1, por: 1.03 }[camK()] || 1.0; }
 // interior-photographer cameras: own lens, height and viewpoint; verticals stay vertical (level camera + lens shift)
@@ -1800,7 +1800,7 @@ function wbShot() {
   renderer.setPixelRatio(sv.pr); resize(); camera.position.copy(sv.pos); camera.quaternion.copy(sv.q);
 };
 
-window.__niceGo = () => { lastCam = 'nice'; if (!orb.on) { camTo('nice'); rebuildDims(); return; } /* v15s2: smooth fly-to the full ideal shot (angle, distance, height, target) */ const a0 = { az: orb.az, R: orb.R, h: orb.h }, T0 = orb.T.clone();
+window.__niceGo = () => { if (camK() === 'plan') { window.__niceId = -1; lastCam = 'top'; camTo('top'); const T = controls.target, d = camera.position.distanceTo(T); camera.position.set(T.x, T.y + d, T.z + 0.001); camera.up.set(0, 1, 0); controls.update(); rebuildDims(); return; } /* v15s4: strict top-down plan */ lastCam = 'nice'; if (!orb.on) { camTo('nice'); rebuildDims(); return; } /* v15s2: smooth fly-to the full ideal shot (angle, distance, height, target) */ const a0 = { az: orb.az, R: orb.R, h: orb.h }, T0 = orb.T.clone();
   camTo('nice'); const a1 = { az: orb.az, R: orb.R, h: orb.h }, T1 = orb.T.clone(); let da = a1.az - a0.az; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI; const t0 = performance.now(), id = (window.__niceId = (window.__niceId || 0) + 1);
   const st = () => { if (id !== window.__niceId) return; const k = Math.min(1, (performance.now() - t0) / 650), e = k * k * (3 - 2 * k); orb.az = a0.az + da * e; orb.R = a0.R + (a1.R - a0.R) * e; orb.h = a0.h + (a1.h - a0.h) * e; orb.T.lerpVectors(T0, T1, e); if (k < 1) requestAnimationFrame(st); else rebuildDims(); }; st(); };
 /* v15s3: each Ракурс press = next ideal shot of the camera menu (same function as the lens popup) */
@@ -2108,7 +2108,7 @@ try { renderDeco(); setBg(); rebuild(); renderSec(); } catch (e) { console.warn(
   document.addEventListener('pointerdown', e => { if (!pop.contains(e.target) && e.target !== $('lensBtn') && !$('lensBtn').contains(e.target)) pop.classList.add('hide'); }); }
 lensUI();
 // «Эффект»: a per-camera photo look (no blur); live as CSS filter + overlays, baked into 📷 by pixels
-const FXP = { std: { b: 1.02, c: 1.03, s: 1.04, w: 0.03, l: 0, v: 0.2 }, int: { b: 1.08, c: 0.92, s: 1.03, w: 0.035, l: 0.04, v: 0 }, por: { b: 1.0, c: 1.16, s: 1.06, w: 0, l: 0, v: 0.32 }, top3: { b: 1.04, c: 1.03, s: 0.9, w: -0.035, l: 0, v: 0.06 } };
+const FXP = { std: { b: 1.02, c: 1.03, s: 1.04, w: 0.03, l: 0, v: 0.2 }, int: { b: 1.08, c: 0.92, s: 1.03, w: 0.035, l: 0.04, v: 0 }, por: { b: 1.0, c: 1.16, s: 1.06, w: 0, l: 0, v: 0.32 }, plan: { b: 1.02, c: 1.03, s: 1.0, w: 0, l: 0, v: 0.1 }, top3: { b: 1.04, c: 1.03, s: 0.9, w: -0.035, l: 0, v: 0.06 } };
 const fxOn = () => localStorage.getItem('gs14_fx') === '1';
 function fxUI() { const on = fxOn(), p = FXP[camK()] || FXP.std, el = renderer.domElement; $('fxBtn').classList.toggle('on', on);
   el.style.filter = on ? `brightness(${p.b + p.l}) contrast(${p.c}) saturate(${p.s})` : '';
