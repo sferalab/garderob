@@ -211,3 +211,7 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 .gtk{position:absolute;bottom:-3px;width:2px;height:6px;margin-left:-1px;background:#8a8a8a;border-radius:1px;pointer-events:none}
 .gud{display:inline-flex;flex-direction:column;gap:1px;margin:0 4px;vertical-align:middle}.gud>button{width:26px;height:16px;padding:0;font-size:9px;line-height:1;border:1px solid #ccc;border-radius:4px;background:#fff;color:#444}
 #posGap3 .rng{flex:1}#posGap3 label{display:flex;flex-wrap:wrap;align-items:center;gap:2px}
+#rstDlg{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}#rstDlg.hide{display:none}
+#rstDlg .rbox{background:#fff;border-radius:14px;padding:18px 18px 14px;width:min(300px,86vw);box-shadow:0 8px 30px rgba(0,0,0,.25);text-align:center}#rstDlg p{font-size:13px;color:#666;margin:6px 0 14px}
+#rstDlg .rbt{display:flex;gap:10px}#rstDlg .rbt button{flex:1;padding:10px;border-radius:10px;border:1px solid #ccc;background:#fff;font:inherit;font-size:15px}#rstDlg .rbt .danger{background:#c0392b;color:#fff;border-color:#c0392b}
+#posGap3 .gr2{display:block}#posGap3 label{display:flex;flex-wrap:nowrap;width:100%;gap:6px;margin:4px 0}#posGap3 label b{min-width:26px}#posGap3 .rng{flex:1;min-width:0}
