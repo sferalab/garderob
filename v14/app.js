@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s8';
+import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s9';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
@@ -109,7 +109,7 @@ function safeMigrate(v) { try { const s = validState(v); return s ? migrate(s) :
 function clearSaved() { try { Object.keys(localStorage).filter(k => k.startsWith('gs14_') && k !== 'gs14_snd').forEach(k => localStorage.removeItem(k)); } catch (e) {} }
 const QS = new URLSearchParams(location.search);
 if (QS.get('reset') === '1') { clearSaved(); QS.delete('reset'); try { history.replaceState(null, '', location.pathname + (QS.toString() ? '?' + QS : '') + location.hash); } catch (e) {} }
-let S = (() => { const v = load('gs14_auto'); return v && v.v5 ? safeMigrate(v) : migrate(defaults()); })(); delete S.interior;
+let S = (() => { const v = load('gs14_auto'); return v && v.v5 ? safeMigrate(v) : migrate(defaults()); })(); if (S.interior != null && S.__intPrev) { S.room.shP = S.__intPrev.shP; S.preset = S.__intPrev.preset; } delete S.interior; delete S.__intPrev;
 try {
   if (QS.get('preset') === 'card') S = migrate(cardPreset());
   else if (QS.get('cfg')) { const v = JSON.parse(decodeURIComponent(escape(atob(QS.get('cfg').replace(/-/g, '+').replace(/_/g, '/'))))); if (v && v.walls) S = safeMigrate(v); }
@@ -177,7 +177,7 @@ function carpetTex() {
   return CARPET;
 }
 function floorMat() {
-  const [n, mx, tint, , , my] = FLOORS[S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
+  const [n, mx, tint, , , my] = FLOORS[S.interior != null ? 'lam' : S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
   if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2, userData: { floor: true } }); }
   return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: 0, envMapIntensity: 0.15, specularIntensity: 0.06 }); /* v13g: no floor glare */
 }
@@ -271,9 +271,9 @@ function normalTex(v, str) {
 function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).multiplyScalar(m.userData.kd); m.emissive.copy(col).multiplyScalar(m.userData.ke); }
 const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
 const PHW = { brick: ['painted_brick', 1.04, 1.6], beige: ['beige_wall_001', 2.4, 1, 1.1], lime: ['white_plaster_02', 2.2, 1] };
-function wallMat() { const v = finVar(), ph = PHW[v];
+function wallMat() { const IN = S.interior != null, v = IN ? 'intp' : finVar(), ph = IN ? ['int_paper', 1.3, 0.3, 1.05] : PHW[v];
   if (ph) { const rp = (1 / ph[1]).toFixed(4), sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: tex(ph[0] + '_diff', true, rp), emissiveMap: tex(ph[0] + '_diff', true, rp), normalMap: tex(ph[0] + '_nor_gl', false, rp), normalScale: new THREE.Vector2(ph[2], ph[2]), roughnessMap: tex(ph[0] + '_rough', false, rp), roughness: 1, metalness: 0, envMapIntensity: 0.35, toneMapped: false });
-    const gn = ph[3] || 1, lf = v === 'brick'; m.userData = lf ? { wall: true, kd: 0.52, ke: 0.52 } : { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; if (lf) m.roughness = 0.85; setWallCol(m, S.wall); return m; }
+    const gn = ph[3] || 1, lf = v === 'brick'; m.userData = lf ? { wall: true, kd: 0.52, ke: 0.52 } : { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; if (lf) m.roughness = 0.85; setWallCol(m, IN ? '#ffffff' : S.wall); return m; }
   const t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
   const sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, normalMap: n, roughness: 0.93, metalness: 0, envMapIntensity: 0.25, toneMapped: false });
   m.userData = { wall: true, kd: sunM ? 0.55 : 0.62, ke: sunM ? 0.4 : 0.42 }; /* lit PBR wall: relief reads in the light, emissive keeps the color clean */ setWallCol(m, S.wall); return m; }
@@ -687,7 +687,7 @@ function buildRoom() {
   const act = wallsActive(), sideLen = Math.max(5, ...[1, 2].filter(w => act.includes(w)).map(w => effGap(w) / 100 + wallWidth(w) * MM + Mg));
   const floorM = ST ? new THREE.ShadowMaterial({ opacity: 0 }) : (fm0 => fm0.isMeshStandardMaterial ? new THREE.MeshLambertMaterial({ color: fm0.color, map: fm0.map, normalMap: fm0.normalMap, normalScale: fm0.normalScale, userData: { floor: true } }) : fm0)(floorMat()); // matte floor: no glare
   // floor laid from the corner: tiles and parquet at 45 deg, laminate along the main wall (real scale, see FLOORS)
-  window.__IC = cl ? left : cr ? right : F.x0; const fc = cl ? left : cr ? right : F.x0, FD = FLOORS[S.floor] || FLOORS.oak, fRot = FD[4] ? Math.PI / 4 : 0;
+  window.__IC = cl ? left : cr ? right : F.x0; window.__BC = F.x0 + backW / 2; const fc = cl ? left : cr ? right : F.x0, FD = FLOORS[S.floor] || FLOORS.oak, fRot = FD[4] ? Math.PI / 4 : 0;
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorM); fl.rotation.set(-Math.PI / 2, 0, fRot); fl.position.set(fc, 0, 0); fl.receiveShadow = !ST; fl.userData.floorM = true; room.add(fl);
   const FJ = FLOORS[S.floor] && FLOORS[S.floor][3];
   if (!ST && FJ) { const jt = jointTex(S.floor).clone(); jt.needsUpdate = true; jt.repeat.set(60 / FJ[0], 60 / FJ[1]); const j = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshBasicMaterial({ map: jt, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); j.rotation.set(-Math.PI / 2, 0, fRot); j.position.set(fc, 0.0005, 0); room.add(j); }
@@ -734,7 +734,8 @@ function buildRoom() {
   if (!ST && S.room.skirting !== false) skirt(bk, left, right, doorCuts(bo.map(o => ({ ...o, x: o.c + cx })), 'x'), () => {});
   // ceiling: one solid plane over the whole room, seen only from below
   const cg = new THREE.Group(); cg.userData.occC = CH; room.add(cg);
-  if (S.room.ceiling) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
+  if (S.interior != null) { const sp = new THREE.Mesh(new THREE.CircleGeometry(0.035, 24), new THREE.MeshBasicMaterial({ color: 0xfffaf0, toneMapped: false })); sp.rotation.x = Math.PI / 2; sp.position.set(cx, CH - 0.002, 1.2); cg.add(sp); }
+  if (S.room.ceiling || S.interior != null) { const ce = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })); ce.rotation.x = Math.PI / 2; ce.position.set(cx, CH, 0); ce.renderOrder = -1; cg.add(ce);
   }
   if (S.room.cornice) cornice(right - left, g => g.position.x = cx, bk);
   if (S.room.lamps) { const n = Math.max(2, Math.round((right - left) / 1.2)); for (let i = 0; i < n; i++) { const x = left + (right - left) * (i + 0.5) / n; const d = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.006, 24), new THREE.MeshBasicMaterial({ color: 0xfff6e6, toneMapped: false })); d.position.set(x, CH - 0.007, 0.9); cg.add(d); const rg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.012, 32, 1, true), new THREE.MeshStandardMaterial({ color: 0x1d1e20, roughness: 0.35, metalness: 0.4, side: THREE.DoubleSide })); rg.position.set(x, CH - 0.006, 0.9); cg.add(rg); const rd = new THREE.Mesh(new THREE.RingGeometry(0.035, 0.05, 32), new THREE.MeshStandardMaterial({ color: 0x1d1e20, roughness: 0.35, metalness: 0.4 })); rd.rotation.x = Math.PI / 2; rd.position.set(x, CH - 0.0121, 0.9); cg.add(rd); const pl = new THREE.PointLight(0xffe9cc, 1.0, 0, 2); pl.position.set(x, CH - 0.12, 0.9); cg.add(pl); } }
@@ -1073,7 +1074,7 @@ function applyCam(cam = camera) {
 {
   const el = renderer.domElement, P = new Map(); let last = null, pinch = null;
   el.addEventListener('contextmenu', e => e.preventDefault());
-  el.addEventListener('pointerdown', e => { if (!orb.on || S.interior != null) return; orb.snapAz = false; orb.snapTo = null; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
+  el.addEventListener('pointerdown', e => { if (!orb.on) return; orb.snapAz = false; orb.snapTo = null; el.setPointerCapture(e.pointerId); P.set(e.pointerId, { x: e.clientX, y: e.clientY, b: e.button, sh: e.shiftKey }); last = null; pinch = null; });
   // straight and U: a near-frontal view settles exactly frontal, so the ceiling and floor edges read level
   const end = e => { P.delete(e.pointerId); last = null; pinch = null; if (!P.size) { let best = null, bd = 15 * Math.PI / 180; snapAzs().forEach(t => { let d = t - orb.az; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; if (Math.abs(d) < bd) { bd = Math.abs(d); best = t; } }); if (best != null) orb.snapTo = best; } }; // v13e: ease to the nearest frontal wall within 15 deg, any elevation
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
@@ -1089,7 +1090,7 @@ function applyCam(cam = camera) {
     if (p.b === 2 || p.b === 1 || p.sh) { const rt = V(Math.cos(orb.az), 0, -Math.sin(orb.az)); orb.T.addScaledVector(rt, -dx * unit); orb.T.y += dy * unit; return; }
     orb.az -= dx * 0.004; { const D = Math.hypot(orb.R, orb.h - orb.T.y), el = Math.max(-1.05, Math.min(1.52, Math.atan2(orb.h - orb.T.y, orb.R) + dy * 0.005)); orb.R = Math.max(0.05, D * Math.cos(el)); orb.h = orb.T.y + D * Math.sin(el); } // true spherical orbit: straight-down view reachable
   });
-  el.addEventListener('wheel', e => { if (!orb.on || S.interior != null) { if (S.interior != null) e.preventDefault(); return; } e.preventDefault(); orb.R = Math.max(0.25, Math.min(45, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
+  el.addEventListener('wheel', e => { if (!orb.on) return; e.preventDefault(); orb.R = Math.max(0.25, Math.min(45, orb.R * Math.exp(e.deltaY * 0.001))); }, { passive: false });
 }
 
 // camera lens: «Обычная» (28 deg) or «Крупная» (~50 mm look, 17 deg, farther back); remembered
@@ -1163,11 +1164,12 @@ function aspectGuard() { const w = view.clientWidth, h = view.clientHeight; if (
 renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); alignInt(); renderer.render(scene, camera); adapt(); });
 
 // ---------- interiors (v14): room photos; corner = photo point (cx, fy) in 0..1 ----------
-const INTERIORS = [{ src: 'interiors/room1.jpg', cx: 0.5, fy: 0.73 }];
-function alignInt() { const I = INTERIORS[S.interior]; if (!I || !photoImg) return; const bg = $('photoBg'), vw = $('view').getBoundingClientRect(), p = new THREE.Vector3(window.__IC || 0, 0, 0).project(camera), sx = (p.x + 1) / 2 * vw.width, sy = (1 - p.y) / 2 * vw.height, k = 1.25, s = Math.max(vw.width / photoImg.width, vw.height / photoImg.height) * k, iw = photoImg.width * s, ih = photoImg.height * s;
+const INTERIORS = [{ src: 'interiors/room1.jpg', cx: 0.5, fy: 0.73, straight: { src: 'interiors/room1_front.jpg', cx: 0.5, fy: 0.77 }, U: { src: 'interiors/room1_u.jpg', cx: 0.5, fy: 0.75 } }];
+const intOf = i => { const R = INTERIORS[i]; return R && (R[S.layout] || R); }, intFlat = () => S.layout === 'straight' || S.layout === 'U';
+function alignInt() { return; const I = intOf(S.interior); if (!I || !photoImg) return; if (photo !== I.src) { photo = I.src; photoImg = new Image(); photoImg.src = I.src; camTo(intFlat() ? 'front' : 'nice'); } const bg = $('photoBg'), vw = $('view').getBoundingClientRect(), p = new THREE.Vector3((intFlat() ? window.__BC : window.__IC) || 0, 0, 0).project(camera), sx = (p.x + 1) / 2 * vw.width, sy = (1 - p.y) / 2 * vw.height, k = 1.25, s = Math.max(vw.width / photoImg.width, vw.height / photoImg.height) * k, iw = photoImg.width * s, ih = photoImg.height * s;
   bg.style.cssText = `left:${sx - I.cx * iw}px;top:${sy - I.fy * ih}px;width:${iw}px;height:${ih}px;right:auto;transform:none;aspect-ratio:auto;background-size:100% 100%;background-image:url(${I.src})`; }
-function setInterior(i) { if (i == null) { if (S.interior != null) { S.interior = null; $('photoBg').style.cssText = ''; $('intHint').classList.add('hide'); $('photoOff').onclick(); } return; }
-  const I = INTERIORS[i]; S.interior = i; S.studio = false; S.studioL = false; photo = I.src; photoImg = new Image(); photoImg.src = I.src; $('photoBg').style.backgroundImage = `url(${I.src})`; $('showRoom').checked = false; scene.background = null; $('intHint').classList.remove('hide'); window.__userCam = false; camTo('nice'); rebuild(); }
+function setInterior(i) { const R = S.room; if (i == null) { if (S.interior != null) { const P = S.__intPrev || {}; R.shP = P.shP; S.preset = P.preset; delete S.__intPrev; S.interior = null; } return; }
+  if (S.interior == null) S.__intPrev = { shP: R.shP, preset: S.preset }; S.interior = i; S.studio = false; S.studioL = false; R.shP = 'sun'; S.preset = 'warm'; if (photo) $('photoOff').onclick(); setBg(); rebuild(); }
 // ---------- photo ----------
 let photo = null, photoImg = null;
 $('photo').onchange = e => {
