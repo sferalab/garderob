@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s16';
+import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s17';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
@@ -504,7 +504,7 @@ function buildItem(g, item, x0, x1, sec) {
     [[x0 + 0.003, aa], [x1 - 0.003, bb]].forEach(([xa, xb]) => g.add(box(Math.abs(xb - xa) + 0.006, 0.022, dep, (xa + xb) / 2, y - 0.011, z0 + dep / 2, M.metal)));
     [aa, bb].forEach(x => g.add(box(0.012, 0.024, dep - 0.02, x, y - 0.02, z0 + dep / 2, M.metal)));
     g.add(box(bb - aa + 0.012, 0.03, 0.012, (aa + bb) / 2, y - 0.022, z0 + 0.012, M.metal));
-    /* v14s16: open front end - bars stick out freely (Titan), no front cap */
+    /* v14s17: open front end - bars stick out freely (Titan), no front cap */
     const r = [], rings = [];
     for (let k = 0; k < n; k++) { const x = aa + 0.03 + (bb - aa - 0.06) * k / (n - 1); r.push([V(x, yb, z0 + 0.018), V(x, yb, zf - 0.016), 0.0055]); for (let zz = z0 + 0.05; zz < zf - 0.05; zz += 0.05) rings.push([V(x, yb, zz), V(x, yb, zz + 0.008), 0.0078]); }
     g.add(rods(r, M.metal)); g.add(rods(rings, M.rubber));
@@ -717,7 +717,7 @@ function buildRoom() {
     pv.userData.occ = wallPlane(sideLen, 0, sideLen / 2, L ? Math.PI / 2 : -Math.PI / 2, pv, so);
     if (ST) return;
     // v13b: floor fill under this side wall, shaped each frame to the folded-floor wedge (no white gap from below)
-    { const fm = S.interior != null && !ST ? new THREE.MeshBasicMaterial({ color: 0xc4a583, toneMapped: false }) : floorM; /* v14s16: plain tone, no stretched stripes */ fm.side = THREE.DoubleSide; /* v13b: same material as the main floor */ const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(new Array(9).fill(0), 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(6).fill(0), 2)); const f = new THREE.Mesh(fg, fm); f.frustumCulled = false; f.visible = false; f.userData.floorFill = { L, len: 60 }; f.receiveShadow = !ST; pv.add(f); FILLS.push(f); }
+    { const fm = S.interior != null && !ST ? new THREE.MeshBasicMaterial({ color: 0xc4a583, toneMapped: false }) : floorM; /* v14s17: plain tone, no stretched stripes */ fm.side = THREE.DoubleSide; /* v13b: same material as the main floor */ const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(new Array(9).fill(0), 3)); fg.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(6).fill(0), 2)); const f = new THREE.Mesh(fg, fm); f.frustumCulled = false; f.visible = false; f.userData.floorFill = { L, len: 60 }; f.receiveShadow = !ST; pv.add(f); FILLS.push(f); }
     const fr = new THREE.Group(); fr.rotation.y = L ? Math.PI / 2 : -Math.PI / 2; if (L) fr.scale.x = -1; pv.add(fr); // local x = u (z in room), local z into the room
     if (!ST && S.room.skirting !== false) skirt(fr, 0, sideLen, doorCuts(ops.filter(o => o.wall === (L ? 'L' : 'R')), 'z'), () => {});
     if (S.room.cornice) cornice(sideLen, g => g.position.x = sideLen / 2, fr);
@@ -1198,7 +1198,7 @@ function goboTex() {
 const gobo = new THREE.SpotLight(0xffd9a8, 0); gobo.map = goboTex(); gobo.castShadow = true; gobo.shadow.mapSize.set(1024, 1024); gobo.shadow.radius = 4;
 gobo.angle = 0.62; gobo.penumbra = 0.15; gobo.shadow.bias = -0.0005; gobo.decay = 0; scene.add(gobo, gobo.target);
 // «Солнечный свет»: warm low sun from the window side, long soft shadows of the shelves and mesh on the wall and floor
-function sunMode() { return; /* v14s16: no long sun throw */ if (!S.room || S.room.shP !== 'sun' || S.studio) return; { const c = bbox.getCenter(new THREE.Vector3()), sg = S.layout === 'Lr' ? -1 : 1, dd = S.room.sunD ?? 0; sun.position.set(c.x + sg * 1.4 + dd * 2.2, c.y + 4.6, c.z + 2.2); sun.target.position.set(c.x, c.y * 0.5, 0); sun.target.updateMatrixWorld(); Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 0.3, far: 20 }); sun.shadow.camera.updateProjectionMatrix(); } const big = innerWidth < 800 ? 2048 : 4096;
+function sunMode() { return; /* v14s17: no long sun throw */ if (!S.room || S.room.shP !== 'sun' || S.studio) return; { const c = bbox.getCenter(new THREE.Vector3()), sg = S.layout === 'Lr' ? -1 : 1, dd = S.room.sunD ?? 0; sun.position.set(c.x + sg * 1.4 + dd * 2.2, c.y + 4.6, c.z + 2.2); sun.target.position.set(c.x, c.y * 0.5, 0); sun.target.updateMatrixWorld(); Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 0.3, far: 20 }); sun.shadow.camera.updateProjectionMatrix(); } const big = innerWidth < 800 ? 2048 : 4096;
   if (sun.shadow.mapSize.x !== big) { sun.shadow.mapSize.set(big, big); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); }
   sun.color.set(0xffd6a6); sun.intensity = 2.6 * (S.room.sunK ?? 1); sun.shadow.radius = 5; sun.shadow.blurSamples = 16; hemi.intensity *= 0.78; fill.intensity *= 0.6; gobo.intensity = 0; }
 function applyLights() {
@@ -1237,10 +1237,10 @@ function applyGlareShadow() {
   const R = S.room || {}, c = bbox.getCenter(new THREE.Vector3()), P = SHP[R.shP] || SHP.soft, ST = !!S.studio && !photo, gmode = R.glareM || 'soft';
   if (R.glow === 'left' || R.glow === 'right') { const sx = R.glow === 'left' ? -1 : 1; glow.intensity = 1.6; glow.position.set(c.x + sx * 3, 2.4, 2.6); glow.target.position.set(c.x + sx * 0.6, 1.5, 0); } else glow.intensity = 0;
   const on = R.shP !== 'none' && !S.sun;
-  sun.castShadow = (!!photo && !$('showRoom').checked) || (!!R.shUser && R.shP !== 'none' && !ST); /* v14s16: no cast wall shadows until the user picks a shadow preset/slider */ gobo.castShadow = gobo.intensity > 0 && sun.castShadow; // shelf shadows are baked on the wall (SHB)
+  sun.castShadow = (!!photo && !$('showRoom').checked) || (!!R.shUser && R.shP !== 'none' && !ST); /* v14s17: no cast wall shadows until the user picks a shadow preset/slider */ gobo.castShadow = gobo.intensity > 0 && sun.castShadow; // shelf shadows are baked on the wall (SHB)
   if (P.el != null && !S.sun) {
-    const sd = R.shDist ?? 0.5, az = (P.az + (R.shAng || 0)) * Math.PI / 180, el = Math.max(12, Math.min(85, P.el + (0.5 - sd) * 70)) * Math.PI / 180, D = 7; /* v14s16: distance slider 0 = light from above (tight contact shadow) .. 1 = low light (long diagonal) */
-    if (false) sun.position.set(c.x + D * Math.sin(az) * Math.cos(el), c.y + D * Math.sin(el), c.z + D * Math.cos(az) * Math.cos(el)); else { /* v14s16: wall-mounted object, offset = depth * tan(angle): ~3 cm at 0 .. ~30 cm at 1, side + down */ const t = 0.02 + 0.18 * sd, sx = (P.az < -3 ? -1 : P.az > 3 ? 1 : 0.7) * t * (P.az === 0 ? 0.25 : 1), dv = V(sx, t, 1).normalize(); sun.position.set(c.x + D * dv.x, c.y + D * dv.y, c.z + D * dv.z); } sun.target.position.copy(c);
+    const sd = R.shDist ?? 0.5, az = (P.az + (R.shAng || 0)) * Math.PI / 180, el = Math.max(12, Math.min(85, P.el + (0.5 - sd) * 70)) * Math.PI / 180, D = 7; /* v14s17: distance slider 0 = light from above (tight contact shadow) .. 1 = low light (long diagonal) */
+    if (false) sun.position.set(c.x + D * Math.sin(az) * Math.cos(el), c.y + D * Math.sin(el), c.z + D * Math.cos(az) * Math.cos(el)); else { /* v14s17: wall-mounted object, offset = depth * tan(angle): ~3 cm at 0 .. ~30 cm at 1, side + down */ const t = 0.02 + 0.18 * sd, sx = (P.az < -3 ? -1 : P.az > 3 ? 1 : 0.7) * t * (P.az === 0 ? 0.25 : 1), dv = V(sx, t, 1).normalize(); sun.position.set(c.x + D * dv.x, c.y + D * dv.y, c.z + D * dv.z); } sun.target.position.copy(c);
     // tight light-space frustum around the construction and plants: crisp, attached shadows without acne
     const b = bbox.clone(); decor.children.forEach(o => { if (o.userData.plant != null) b.expandByObject(o); }); b.expandByScalar(0.2); b.min.y = 0; b.min.z = Math.min(b.min.z, 0);
     _sc.position.copy(sun.position); _sc.lookAt(sun.target.position); _sc.updateMatrixWorld(true); const inv = _sc.matrixWorldInverse;
@@ -1673,10 +1673,15 @@ function itemGroups(wi, si, idxs) { const out = []; model.traverse(o => { const 
   el.addEventListener('pointerdown', e => {
     if (!orb.on || e.button !== 0 || cur.it < 0) return;
     // the selected item can be grabbed even if another item overlaps it
-    const hit = pickHits(e).find(h => { const g = findRef(h.object); if (!g) return false; const { wi, si, ii } = g.userData.ref; return wi === cur.w && si === cur.s && mainIdx(wi, si, ii) === cur.it; });
-    if (!hit) return; const sc = S.walls[cur.w].sections[cur.s], o = sc.items[cur.it]; if (!o) return;
+    const hit = pickHits(e).find(h => { const g = findRef(h.object); if (!g) return false; const { wi, si, ii } = g.userData.ref; return wi === cur.w && si === cur.s && mainIdx(wi, si, ii) === cur.it; }) || null;
+    let hit0 = hit; if (!hit0) { /* v14s17: generous touch zone (~40 px) around the selected item: it owns the drag, not the camera */
+      const bb = new THREE.Box3(); itemGroups(cur.w, cur.s, [cur.it]).forEach(g => bb.expandByObject(g)); if (bb.isEmpty()) return; const r0 = el.getBoundingClientRect(); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+      for (let i = 0; i < 8; i++) { const q = V(i & 1 ? bb.max.x : bb.min.x, i & 2 ? bb.max.y : bb.min.y, i & 4 ? bb.max.z : bb.min.z).project(camera); const sx = r0.left + (q.x + 1) / 2 * r0.width, sy = r0.top + (1 - q.y) / 2 * r0.height; x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy); }
+      const M = e.pointerType === 'mouse' ? 12 : 40; if (e.clientX < x0 - M || e.clientX > x1 + M || e.clientY < y0 - M || e.clientY > y1 + M) return;
+      hit0 = { distance: camera.position.distanceTo(bb.getCenter(new THREE.Vector3())) }; }
+    const hitU = hit0; const sc = S.walls[cur.w].sections[cur.s], o = sc.items[cur.it]; if (!o) return;
     const linked = sc.items.map((p, i) => [p, i]).filter(([p]) => o.g && p.lk === o.g), r = el.getBoundingClientRect();
-    drag = { cx: e.clientX, cy: e.clientY, t0: performance.now(), drop: o.y - itemBot(o) * 100, o, linked: linked.map(p => p[0]), gs: itemGroups(cur.w, cur.s, [cur.it, ...linked.map(p => p[1])]), y0: o.y, ly0: linked.map(p => p[0].y), py: e.clientY, unit: hit.distance * Math.tan(camera.fov * Math.PI / 360) * 2 / (el.clientHeight || 600) * 100, wi: cur.w, si: cur.s };
+    drag = { cx: e.clientX, cy: e.clientY, t0: performance.now(), drop: o.y - itemBot(o) * 100, o, linked: linked.map(p => p[0]), gs: itemGroups(cur.w, cur.s, [cur.it, ...linked.map(p => p[1])]), y0: o.y, ly0: linked.map(p => p[0].y), py: e.clientY, unit: hitU.distance * Math.tan(camera.fov * Math.PI / 360) * 2 / (el.clientHeight || 600) * 100, wi: cur.w, si: cur.s };
     e.stopImmediatePropagation(); el.setPointerCapture(e.pointerId);
     tip.classList.remove('hide'); tip.textContent = `от пола ${o.y} см`; tip.style.left = (e.clientX - r.left + 14) + 'px'; tip.style.top = (e.clientY - r.top - 34) + 'px';
   }, true);
