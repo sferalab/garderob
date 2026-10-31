@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s11';
+import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s12';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
@@ -272,6 +272,7 @@ function setWallCol(m, c) { const col = new THREE.Color(c); m.color.copy(col).mu
 const NSTR = { brick: 7, stone: 7, slats: 6, woodp: 3, conc2: 2.2, beige: 2.6, koroed: 3, trav: 2 };
 const PHW = { brick: ['painted_brick', 1.04, 1.6], beige: ['beige_wall_001', 2.4, 1, 1.1], lime: ['white_plaster_02', 2.2, 1] };
 function wallMat(sd) { const IN = S.interior != null, v = IN ? 'intp' : finVar(), ph = IN ? [sd ? 'int_side' : 'int_paper', 1.3, 0.3, 1.05] : PHW[v];
+  if (IN) { const m = new THREE.MeshBasicMaterial({ map: tex(ph[0] + '_diff', true, (1 / ph[1]).toFixed(4)), toneMapped: false }); m.userData = { flat: true }; return m; }
   if (ph) { const rp = (1 / ph[1]).toFixed(4), sunM = S.room.shP === 'sun', m = new THREE.MeshStandardMaterial({ map: tex(ph[0] + '_diff', true, rp), emissiveMap: tex(ph[0] + '_diff', true, rp), normalMap: tex(ph[0] + '_nor_gl', false, rp), normalScale: new THREE.Vector2(ph[2], ph[2]), roughnessMap: tex(ph[0] + '_rough', false, rp), roughness: 1, metalness: 0, envMapIntensity: 0.35, toneMapped: false });
     const gn = ph[3] || 1, lf = v === 'brick'; m.userData = lf ? { wall: true, kd: 0.52, ke: 0.52 } : { wall: true, kd: (sunM ? 0.6 : 0.66) * gn, ke: (sunM ? 0.36 : 0.38) * gn }; if (lf) m.roughness = 0.85; setWallCol(m, IN ? '#f2f9ff' : S.wall); return m; }
   const t = finishTex(v).clone(); t.needsUpdate = true; const k = FINK[v] || 0.9; t.repeat.set(1 / k, 1 / k); const n = normalTex(v, NSTR[v] || 1.4).clone(); n.needsUpdate = true; n.repeat.copy(t.repeat);
@@ -688,7 +689,7 @@ function buildRoom() {
   const floorM = ST ? new THREE.ShadowMaterial({ opacity: 0 }) : (fm0 => fm0.isMeshStandardMaterial ? new THREE.MeshLambertMaterial({ color: fm0.color, map: fm0.map, normalMap: fm0.normalMap, normalScale: fm0.normalScale, userData: { floor: true } }) : fm0)(floorMat()); // matte floor: no glare
   // floor laid from the corner: tiles and parquet at 45 deg, laminate along the main wall (real scale, see FLOORS)
   window.__IC = cl ? left : cr ? right : F.x0; window.__BC = F.x0 + backW / 2; const fc = cl ? left : cr ? right : F.x0, FD = FLOORS[S.floor] || FLOORS.oak, fRot = FD[4] ? Math.PI / 4 : 0;
-  const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorM); fl.rotation.set(-Math.PI / 2, 0, fRot); fl.position.set(fc, 0, 0); fl.receiveShadow = !ST; fl.userData.floorM = true; room.add(fl);
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorM); fl.rotation.set(-Math.PI / 2, 0, fRot); fl.position.set(fc, 0, 0); fl.receiveShadow = !ST; fl.userData.floorM = true; room.add(fl); if (S.interior != null && !ST) { fl.material = new THREE.MeshBasicMaterial({ map: floorM.map, toneMapped: false }); const fs = new THREE.Mesh(fl.geometry, new THREE.ShadowMaterial({ opacity: 0.18 })); fs.rotation.copy(fl.rotation); fs.position.set(fc, 0.0008, 0); fs.receiveShadow = true; room.add(fs); }
   const FJ = FLOORS[S.floor] && FLOORS[S.floor][3];
   if (!ST && FJ) { const jt = jointTex(S.floor).clone(); jt.needsUpdate = true; jt.repeat.set(60 / FJ[0], 60 / FJ[1]); const j = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshBasicMaterial({ map: jt, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); j.rotation.set(-Math.PI / 2, 0, fRot); j.position.set(fc, 0.0005, 0); room.add(j); }
   const ops = ST ? [] : openingsList(F, CH), WH = CH + 0.03, bk = new THREE.Group(); room.add(bk);
@@ -1165,7 +1166,7 @@ renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { 
 
 // ---------- interiors (v14): room photos; corner = photo point (cx, fy) in 0..1 ----------
 function setInterior(i) { const R = S.room; if (i == null) { if (S.interior != null) { const P = S.__intPrev || {}; R.shP = P.shP; S.preset = P.preset; delete S.__intPrev; S.interior = null; } return; }
-  if (S.interior == null) S.__intPrev = { shP: R.shP, preset: S.preset }; S.interior = i; S.studio = false; S.studioL = false; R.shP = 'sun'; S.preset = 'warm'; if (photo) $('photoOff').onclick(); setBg(); rebuild(); }
+  if (S.interior == null) S.__intPrev = { shP: R.shP, preset: S.preset }; S.interior = i; S.studio = false; S.studioL = false; R.shP = 'soft'; S.preset = 'neutral'; if (photo) $('photoOff').onclick(); setBg(); rebuild(); }
 // ---------- photo ----------
 let photo = null, photoImg = null;
 $('photo').onchange = e => {
@@ -1890,7 +1891,7 @@ const drawWallPick = colorPicker($('wallPick'), () => S.wall, liveWall, TONES);
 const BGT = ['#ffffff', '#f6f4f0', '#efece7', '#e9e6e0', '#e4e7ea', '#ddd8cf', '#d4d9d2', '#cfd6de', '#e8ded3', '#c9c6c0', '#8f8b86', '#2b2b2b'];
 const drawBgPick = colorPicker($('bgPick'), () => S.bg || '#e2ded7', (c, fin) => { S.bg = c; setBg(); if (fin) { localStorage.setItem('gs14_auto', JSON.stringify(S)); pushHist(); } }, BGT);
 function renderDeco() {
-  const st = !!S.studio, R = S.room; $('dRoom').classList.toggle('hide', st); $('dStudio').classList.toggle('hide', !st);
+  const st = !!S.studio, R = S.room; $('dRoom').classList.toggle('hide', st); $('dWallF').classList.toggle('hide', S.interior != null); $('dStudio').classList.toggle('hide', !st);
   document.querySelectorAll('[data-dt]').forEach(b => b.classList.toggle('on', b.dataset.dt === 'interior' ? S.interior != null : S.interior == null && (b.dataset.dt === 'studio') === (st || !!S.studioL)));
   const fin = S.wallFin || 'paint', fv = finVar();
   $('finVars').style.gridTemplateColumns = `repeat(${evenCols(FINS[fin].length)},1fr)`; $('finBtns').innerHTML = [['paint', 'Краска'], ['plaster', 'Штукатурка'], ['relief', 'Рельеф'], ['paper', 'Обои']].map(([k, t]) => `<button data-fin="${k}" class="${fin === k ? 'on' : ''}">${t}</button>`).join('');
