@@ -208,3 +208,4 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 
 .rnd.lki{width:40px;min-width:40px;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .tabs.wsame{display:flex}.tabs.wsame>button{flex:1 1 0;min-width:0}
+.gtk{position:absolute;bottom:-3px;width:2px;height:6px;margin-left:-1px;background:#8a8a8a;border-radius:1px;pointer-events:none}
