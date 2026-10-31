@@ -206,3 +206,5 @@ html,body{display:flex;flex-direction:column}#app{flex:1;min-height:0;height:aut
 
 .sysblk{margin-top:14px;padding:12px;border-radius:14px;background:#f7f5f0}.sysblk h4{margin:0 0 6px}.sz.rails{flex-wrap:wrap}#rlOwn input{width:90px}
 
+.rnd.lki{width:40px;min-width:40px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.tabs.wsame{display:flex}.tabs.wsame>button{flex:1 1 0;min-width:0}
