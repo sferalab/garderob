@@ -2,14 +2,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s9';
+import { CATALOG, RULES, ARTS } from './catalog.js?v=v14s10';
 
 const $ = id => document.getElementById(id);
 const MM = 0.001;
 const METAL = { white: 0xf7f9fc, black: 0x111111, silver: 0xc3c6c8 };
 // floors: texture, repeat (m per tile set), tint, optional porcelain joint grid [w, h] in m
 const SHB = { soft: { dx: 0.008, len: 0.12, o: 0.4, f: 20 }, left: { dx: 0.03, len: 0.13, o: 0.43, f: 16 }, right: { dx: -0.03, len: 0.13, o: 0.43, f: 16 }, top: { dx: 0, len: 0.15, o: 0.4, f: 18 }, sharp: { dx: 0.008, len: 0.08, o: 0.5, f: 5 }, none: { o: 0 }, sun: { o: 0 } };
-const FLOORS = { oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_light', 3.0, 0xffffff, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
+const FLOORS = { int: ['int_floor', 0.9, 0xffffff, null, 0, 0.9], oak: ['herringbone_parquet', 2.25, 0xffffff, null, 1, 2.25], lam: ['laminate_light', 3.0, 0xffffff, null, 0, 2.25], lamD: ['wood_floor_worn', 4.5, 0x7d6656, null, 0, 4.2], conc: ['concrete_floor_worn_001', 2.4, 0xdedcd8, [0.6, 0.6], 1, 2.4], marble: ['marble_01', 2.4, 0xffffff, [0.6, 0.6], 1, 2.4], carpet: [null, 1, 0xffffff, null, 0, 1] };
 const TYPES = {
   mesh: 'Полка сетчатая', metal: 'Полка металлическая', ldsp: 'Полка ЛДСП',
   basket: 'Корзина стационарная', pull: 'Корзина выдвижная', rail: 'Штанга для вешалок', shoe: 'Полка для обуви', trouser: 'Брючница выдвижная'
@@ -177,7 +177,7 @@ function carpetTex() {
   return CARPET;
 }
 function floorMat() {
-  const [n, mx, tint, , , my] = FLOORS[S.interior != null ? 'lam' : S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
+  const [n, mx, tint, , , my] = FLOORS[S.interior != null ? 'int' : S.floor] || FLOORS.oak, warm = S.preset === 'warm', rep = (60 / mx).toFixed(3) + 'x' + (60 / (my || mx)).toFixed(3);
   if (!n) { const [c, nn] = carpetTex(); return new THREE.MeshStandardMaterial({ color: warm ? 0xfff2e2 : 0xffffff, map: c, normalMap: nn, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, envMapIntensity: 0.2, userData: { floor: true } }); }
   return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(tint).multiply(new THREE.Color(warm ? 0xfff6ec : 0xffffff)), map: tex(n + '_diff', true, rep), normalMap: tex(n + '_nor_gl', false, rep), roughnessMap: tex(n + '_rough', false, rep), roughness: 1, normalScale: new THREE.Vector2(1.2, 1.2), clearcoat: 0, envMapIntensity: 0.15, specularIntensity: 0.06 }); /* v13g: no floor glare */
 }
@@ -1161,13 +1161,9 @@ function adapt() { return; /* v13g: fixed quality - no pixel-ratio / shadow-map 
   if (fps < 32) { hiCnt = 0; if (++lowCnt >= 2 && PR > PR_MIN) { PR = Math.max(PR_MIN, PR - 0.25); renderer.setPixelRatio(PR); resize(); lowCnt = 0; } else if (lowCnt >= 2 && sun.shadow.mapSize.x > 1024) { sun.shadow.mapSize.set(1024, 1024); sun.shadow.map && (sun.shadow.map.dispose(), sun.shadow.map = null); lowCnt = 0; } }
   else if (fps > 55) { lowCnt = 0; if (++hiCnt >= 4 && PR < PR_MAX) { PR = Math.min(PR_MAX, PR + 0.25); renderer.setPixelRatio(PR); resize(); hiCnt = 0; } } }
 function aspectGuard() { const w = view.clientWidth, h = view.clientHeight; if (w && h && (Math.abs(camera.aspect - w / h) > 1e-3 || Math.abs(renderer.domElement.width - Math.round(w * renderer.getPixelRatio())) > 1)) { resize(); if (orb.on) applyCam(); } } // v13b (from v12e): canvas/camera aspect always match - no squeezed first frame
-renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); alignInt(); renderer.render(scene, camera); adapt(); });
+renderer.setAnimationLoop(() => { aspectGuard(); if (orb.on) applyCam(); else { camera.up.set(0, 1, 0); controls.update(); } tickFlash(); tickSpec(); tickOcc(); renderer.render(scene, camera); adapt(); });
 
 // ---------- interiors (v14): room photos; corner = photo point (cx, fy) in 0..1 ----------
-const INTERIORS = [{ src: 'interiors/room1.jpg', cx: 0.5, fy: 0.73, straight: { src: 'interiors/room1_front.jpg', cx: 0.5, fy: 0.77 }, U: { src: 'interiors/room1_u.jpg', cx: 0.5, fy: 0.75 } }];
-const intOf = i => { const R = INTERIORS[i]; return R && (R[S.layout] || R); }, intFlat = () => S.layout === 'straight' || S.layout === 'U';
-function alignInt() { return; const I = intOf(S.interior); if (!I || !photoImg) return; if (photo !== I.src) { photo = I.src; photoImg = new Image(); photoImg.src = I.src; camTo(intFlat() ? 'front' : 'nice'); } const bg = $('photoBg'), vw = $('view').getBoundingClientRect(), p = new THREE.Vector3((intFlat() ? window.__BC : window.__IC) || 0, 0, 0).project(camera), sx = (p.x + 1) / 2 * vw.width, sy = (1 - p.y) / 2 * vw.height, k = 1.25, s = Math.max(vw.width / photoImg.width, vw.height / photoImg.height) * k, iw = photoImg.width * s, ih = photoImg.height * s;
-  bg.style.cssText = `left:${sx - I.cx * iw}px;top:${sy - I.fy * ih}px;width:${iw}px;height:${ih}px;right:auto;transform:none;aspect-ratio:auto;background-size:100% 100%;background-image:url(${I.src})`; }
 function setInterior(i) { const R = S.room; if (i == null) { if (S.interior != null) { const P = S.__intPrev || {}; R.shP = P.shP; S.preset = P.preset; delete S.__intPrev; S.interior = null; } return; }
   if (S.interior == null) S.__intPrev = { shP: R.shP, preset: S.preset }; S.interior = i; S.studio = false; S.studioL = false; R.shP = 'sun'; S.preset = 'warm'; if (photo) $('photoOff').onclick(); setBg(); rebuild(); }
 // ---------- photo ----------
